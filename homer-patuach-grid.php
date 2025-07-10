@@ -724,29 +724,16 @@ function hpg_my_posts_screen_content() {
 
 /**
  * =================================================================
- * SINGLE POST VIEW: Add a responsive author box.
+ * SINGLE POST VIEW: Generate author box HTML.
  * =================================================================
  */
-
-/**
- * Wraps the post content and adds the author box on single post pages.
- */
-function hpg_add_author_box_wrapper($content) {
-    // Only on single post pages, not in loops or other pages.
-    if (is_single() && in_the_loop() && is_main_query()) {
-        $author_box_html = hpg_get_author_box_html();
-        // Wrap content and author box for responsive layout
-        return '<div class="hpg-single-post-wrapper">' . $author_box_html . '<div class="hpg-post-main-content">' . $content . '</div></div>';
-    }
-    return $content;
-}
-add_filter('the_content', 'hpg_add_author_box_wrapper');
 
 /**
  * Generates the HTML for the author box.
  */
 function hpg_get_author_box_html() {
     $author_id = get_the_author_meta('ID');
+    $author_profile_url = function_exists('bp_core_get_user_domain') ? rtrim(bp_core_get_user_domain($author_id), '/') . '/my-posts/' : get_author_posts_url($author_id);
     
     // Using BuddyPress avatar if available, otherwise fallback to standard avatar
     if (function_exists('bp_core_fetch_avatar')) {
@@ -761,10 +748,10 @@ function hpg_get_author_box_html() {
     ob_start();
     ?>
     <aside class="hpg-author-box">
-        <div class="hpg-author-avatar">
+        <a href="<?php echo esc_url($author_profile_url); ?>" class="hpg-author-avatar">
             <img src="<?php echo esc_url($author_avatar); ?>" alt="<?php echo esc_attr($author_name); ?>">
-        </div>
-        <h4 class="hpg-author-name"><?php echo esc_html($author_name); ?></h4>
+        </a>
+        <h4 class="hpg-author-name"><a href="<?php echo esc_url($author_profile_url); ?>"><?php echo esc_html($author_name); ?></a></h4>
         <?php if ($author_description): ?>
             <p class="hpg-author-description"><?php echo esc_html($author_description); ?></p>
         <?php endif; ?>
