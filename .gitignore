@@ -1,0 +1,25 @@
+# WordPress
+/wp-admin/
+/wp-includes/
+/wp-content/plugins/
+/wp-content/themes/
+/wp-content/uploads/
+wp-config.php
+.htaccess
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Local config
+*.sublime-project
+*.sublime-workspace
+.vscode/
+
+# Ignore the "אתר" directory that was accidentally added
+/אתר/
+
+# Ignore other common files
+.DS_Store
+Thumbs.db 
