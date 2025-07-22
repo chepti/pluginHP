@@ -45,7 +45,7 @@ jQuery(document).ready(function($) {
     }
 
     // --- Tweaks for Register/Settings pages ---
-    if ($('body.register').length || $('body.bp-user.settings').length) {
+    if ($('body.bp-user.settings').length) {
         
         // 1. Hide unwanted elements
         $('#template-notices').hide();

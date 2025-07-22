@@ -173,25 +173,27 @@ body.buddypress, .buddypress-wrap {
 
 
 /* --- BuddyPress Form & Notice Styling --- */
-#buddypress div#template-notices {
-    display: none !important; /* Hide all notices on these pages */
-}
+/* General form styling, retained for settings pages etc. */
 #buddypress div#template-notices div.bp-template-notice {
     background: #eaf1ff !important;
     border-right: 5px solid #7699f2 !important;
     color: #333;
     border-radius: 4px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
 }
 .buddypress-wrap form .label,
 .buddypress-wrap form label {
     font-weight: 600 !important;
     color: #333;
+    display: block;
+    margin-bottom: 8px;
 }
 .buddypress-wrap form input[type="text"],
 .buddypress-wrap form input[type="email"],
 .buddypress-wrap form input[type="password"],
 .buddypress-wrap form textarea {
-    border-radius: 8px !important; /* Rounded corners */
+    border-radius: 8px !important;
     border: 1px solid #ccc !important;
     padding: 10px 15px !important;
     transition: all 0.2s ease !important;
@@ -203,41 +205,8 @@ body.buddypress, .buddypress-wrap {
     box-shadow: 0 0 8px rgba(118, 153, 242, 0.4) !important;
 }
 
-/* Password field with strength meter */
-.buddypress-wrap form .password-field,
-.buddypress-wrap form #signup_password {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-.buddypress-wrap form .password-field input[type="password"] {
-    flex: 1;
-    min-width: 200px;
-}
-.buddypress-wrap form .password-field .description {
-    display: none !important; /* Hide password hint */
-}
-#buddypress div.bp-password-strength-results {
-    background-color: #28a745 !important; /* Nicer green */
-    color: white !important;
-    font-weight: 600 !important;
-    border-radius: 20px !important;
-    text-align: center;
-    padding: 5px 15px;
-    margin: 0 !important;
-    height: fit-content;
-}
-
-/* Submit buttons */
-.buddypress-wrap form .submit,
-#buddypress #signup_form #signup_submit {
-    padding: 0 !important;
-    margin-top: 1.5rem !important;
-    min-height: 45px; /* Ensure button is not cut off */
-}
-.buddypress-wrap form .submit input[type="submit"],
-#buddypress #signup_form #signup_submit {
+/* Generic submit buttons */
+.buddypress-wrap form .submit input[type="submit"] {
     background: linear-gradient(135deg, #FB8255, #FB6965) !important;
     color: white !important;
     font-weight: 600 !important;
@@ -246,8 +215,116 @@ body.buddypress, .buddypress-wrap {
     padding: 12px 25px !important;
     cursor: pointer;
     transition: opacity 0.2s;
+    margin-top: 1.5rem !important;
 }
-.buddypress-wrap form .submit input[type="submit"]:hover,
-#buddypress #signup_form #signup_submit:hover {
+.buddypress-wrap form .submit input[type="submit"]:hover {
     opacity: 0.9;
+}
+
+
+/* --- Custom Registration Form --- */
+#hp-bp-custom-register-form {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 30px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    direction: rtl;
+}
+#hp-bp-custom-register-form .form-row {
+    margin-bottom: 20px;
+}
+#hp-bp-custom-register-form label {
+    font-weight: 600;
+    color: #333;
+    display: block;
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+#hp-bp-custom-register-form input[type="text"],
+#hp-bp-custom-register-form input[type="email"],
+#hp-bp-custom-register-form input[type="password"],
+#hp-bp-custom-register-form textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    transition: all 0.2s ease;
+    font-size: 16px;
+}
+#hp-bp-custom-register-form input:focus,
+#hp-bp-custom-register-form textarea:focus {
+    border-color: #7699f2;
+    box-shadow: 0 0 0 3px rgba(118, 153, 242, 0.2);
+    outline: none;
+}
+#hp-bp-custom-register-form .description {
+    font-size: 13px;
+    color: #666;
+    margin-top: 5px;
+    font-style: italic;
+}
+#hp-bp-custom-register-form .submit-row input[type="submit"] {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, #FB8255, #FB6965);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+#hp-bp-custom-register-form .submit-row input[type="submit"]:hover {
+    opacity: 0.9;
+}
+#hp-bp-custom-register-form .login-link {
+    text-align: center;
+    margin-top: 25px;
+    font-size: 14px;
+}
+#hp-bp-custom-register-form .login-link a {
+    color: #7699f2;
+    font-weight: 600;
+}
+.hp-bp-reg-errors {
+    background: #ffebe9;
+    border: 1px solid #ffc2ba;
+    border-right: 5px solid #d9534f;
+    color: #c72525;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+}
+.hp-bp-reg-errors p {
+    margin: 0;
+    padding: 5px 0;
+}
+
+
+/* --- Floating Button --- */
+.hp-bp-floating-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #7699f2;
+    color: white;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    z-index: 999;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+.hp-bp-floating-button:hover {
+    background-color: #5a77c3;
+}
+.hp-bp-floating-button i {
+    font-size: 24px;
 } 

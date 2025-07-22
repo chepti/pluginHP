@@ -60,10 +60,14 @@ jQuery(document).ready(function($) {
                         response.data.forEach(function(collection) {
                             const checkedClass = collection.is_in_collection ? 'hpc-checked' : '';
                             const checkedIcon = collection.is_in_collection ? '✔' : '+';
+                            const collectionNameHtml = collection.url 
+                                ? `<a href="${collection.url}" target="_blank" title="פתח את האוסף בלשונית חדשה">${collection.name}</a>`
+                                : collection.name;
+
                             html += `<li class="${checkedClass}" data-collection-id="${collection.id}">
                                         <button class="hpc-collection-toggle">
                                             <span class="hpc-toggle-icon">${checkedIcon}</span>
-                                            <span class="hpc-collection-name">${collection.name}</span>
+                                            <span class="hpc-collection-name">${collectionNameHtml}</span>
                                         </button>
                                      </li>`;
                         });
@@ -105,6 +109,7 @@ jQuery(document).ready(function($) {
      */
     function togglePostInCollection(postId, collectionId, $button) {
         $button.prop('disabled', true);
+        const originalButtonContent = $button.html(); // Save original content
 
         $.ajax({
             url: hpc_ajax_object.ajax_url,
@@ -117,25 +122,17 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
-                    const $listItem = $button.closest('li');
-                    const $icon = $button.find('.hpc-toggle-icon');
-
-                    if (response.data.action === 'added') {
-                        $listItem.addClass('hpc-checked');
-                        $icon.text('✔');
-                    } else {
-                        $listItem.removeClass('hpc-checked');
-                        $icon.text('+');
-                    }
+                    // Reload the page to show the updated state.
+                    // This is the simplest and most reliable way to reflect the change.
+                    location.reload();
                 } else {
-                    alert(response.data.message || 'שגיאה בעדכון האוסף.');
+                    alert('שגיאה: ' + (response.data.message || 'לא ניתן היה לעדכן את האוסף.'));
+                    $button.prop('disabled', false).html(originalButtonContent);
                 }
             },
             error: function() {
-                alert('שגיאת שרת. נסה שוב מאוחר יותר.');
-            },
-            complete: function() {
-                $button.prop('disabled', false);
+                alert('אירעה שגיאה בלתי צפויה.');
+                $button.prop('disabled', false).html(originalButtonContent);
             }
         });
     }
@@ -259,15 +256,17 @@ jQuery(document).ready(function($) {
                 collection_id: collectionId
             },
             success: function(response) {
-                if (response.success && response.data.action === 'added') {
-                    $button.text('נוסף').addClass('is-added');
+                if (response.success) {
+                    // Reload the page to show the updated state (previews, counts, etc.)
+                    location.reload();
                 } else {
-                    // Handle error or if it was removed (which shouldn't happen from this UI)
-                    $button.text('שגיאה').prop('disabled', false);
+                    alert('שגיאה: ' + (response.data.message || 'לא ניתן היה להוסיף את הפוסט.'));
+                    $button.prop('disabled', false);
                 }
             },
             error: function() {
-                $button.text('שגיאה').prop('disabled', false);
+                alert('אירעה שגיאה בלתי צפויה.');
+                $button.prop('disabled', false);
             }
         });
     });

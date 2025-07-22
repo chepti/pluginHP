@@ -207,20 +207,37 @@ li.hpc-checked .hpc-toggle-icon {
 }
 
 .hpc-post-collections-list li a {
-    display: inline-block;
-    background-color: #f0f2f5;
-    color: #333;
-    padding: 5px 12px;
-    border-radius: 15px;
-    text-decoration: none;
-    font-size: 14px;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
 }
 
 .hpc-post-collections-list li a:hover {
     background-color: #e4e6e9;
     color: #000;
 }
+
+.hpc-post-collection-count {
+    background-color: rgba(0,0,0,0.05);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+}
+
+/* Collection Archive Title */
+.hpc-archive-main-title {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.hpc-archive-creator {
+    display: block;
+    font-size: 0.8em;
+    font-weight: 400;
+    color: #555;
+}
+
 
 /* BuddyPress Collections Tab Content */
 .hpc-collections-grid {
@@ -237,6 +254,9 @@ li.hpc-checked .hpc-toggle-icon {
     padding: 20px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.08);
     transition: box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .hpc-collection-item:hover {
@@ -250,9 +270,13 @@ li.hpc-checked .hpc-toggle-icon {
     font-weight: 600;
 }
 
+.hpc-collection-item-main {
+    flex-grow: 1;
+}
+
 .hpc-collection-item h3 a {
-    text-decoration: none;
     color: #333;
+    text-decoration: none;
 }
 
 .hpc-collection-item h3 a:hover {
@@ -285,19 +309,28 @@ li.hpc-checked .hpc-toggle-icon {
     transform: scale(1.05);
 }
 
-.hpc-empty-collection-message {
-    font-size: 0.9em;
-    color: #666;
-    background: #f9f9f9;
-    padding: 15px;
+.hpc-empty-collection-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100px; /* Ensure it has some height */
+    background-color: #f9f9f9;
     border-radius: 4px;
+    margin-top: 15px;
+}
+
+.hpc-empty-collection-message {
+    margin: 0;
+    padding: 20px;
     text-align: center;
+    color: #777;
+    font-size: 14px;
 }
 
 .hpc-view-all-link {
-    display: inline-block;
-    margin-top: 10px;
-    font-size: 0.9em;
+    display: block;
+    margin-top: 15px;
+    font-size: 14px;
     text-decoration: none;
     font-weight: 500;
     color: #7699f2; /* Use theme color */
@@ -306,30 +339,35 @@ li.hpc-checked .hpc-toggle-icon {
     text-decoration: underline;
 }
 
+.hpc-collection-item-footer {
+    border-top: 1px solid #e9ebee;
+    margin-top: 20px;
+    padding-top: 15px;
+}
+
 /* --- Add Post to Collection UI (Profile Page) --- */
 .hpc-add-post-to-collection-ui {
-    margin-top: 15px;
+    margin-top: 0; /* Reset margin */
     padding-top: 15px;
     border-top: 1px solid #f0f2f5;
 }
 
 .hpc-open-search-button {
-    background: none;
+    background-color: #f0f2f5;
     border: 1px dashed #ccc;
     color: #555;
-    padding: 8px 15px;
+    padding: 10px;
     width: 100%;
     text-align: center;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 5px;
     font-size: 14px;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease;
 }
 
 .hpc-open-search-button:hover {
-    background: #f9f9f9;
-    border-color: #aaa;
+    background-color: #e4e6e9;
 }
 
 .hpc-search-area {
@@ -392,4 +430,91 @@ li.hpc-checked .hpc-toggle-icon {
 
 .hpc-add-searched-post-button.is-added {
     background-color: #4CAF50; /* Green */
+} 
+
+.hpc-search-results .result-item.in-collection {
+    opacity: 0.6;
+    pointer-events: none;
+    background-color: #f0f0f0;
+}
+
+
+/*--------------------------------------------------------------
+5.0 - Post Collections List (Single Post Page)
+--------------------------------------------------------------*/
+.hpc-post-collections-list-container {
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+    margin-top: 30px;
+}
+
+.hpc-post-collections-list-container h3 {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+}
+
+.hpc-post-collections-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.hpc-post-collections-list li a {
+    display: block;
+    padding: 8px 15px;
+    background-color: #f5f5f5;
+    border-radius: 20px;
+    text-decoration: none;
+    color: #333;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+}
+
+.hpc-post-collections-list li a:hover {
+    background-color: #e0e0e0;
+}
+
+.hpc-post-collections-list .collection-count {
+    color: #777;
+    margin-right: 5px;
+} 
+
+/*--------------------------------------------------------------
+6.0 - Archive Title
+--------------------------------------------------------------*/
+/* Using highly specific selectors to override theme styles */
+body.tax-collection .page-header .page-title {
+    display: block !important;
+    text-align: center;
+    line-height: 1.2;
+}
+
+body.tax-collection .page-header .page-title > .hpc-archive-main-title,
+body.tax-collection .page-header .page-title > .hpc-archive-creator {
+    display: block;
+    width: 100%;
+}
+
+.hpc-archive-main-title {
+    font-size: 2.2rem !important; /* Larger font size */
+    font-weight: bold;
+}
+
+.hpc-archive-creator {
+    font-size: 1.1rem !important; /* Smaller font size */
+    font-weight: normal;
+    margin-top: 10px;
+    color: #666;
+}
+
+.hpc-archive-creator a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.hpc-archive-creator a:hover {
+    text-decoration: underline;
 } 

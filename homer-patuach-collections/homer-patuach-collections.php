@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - Collections
  * Plugin URI:        https://homerpatuach.com/
  * Description:       Allows users to create and manage collections of posts.
- * Version:           1.2.0
+ * Version:           1.3.0
  * Author:            Chepti
  * Author URI:        https://homerpatuach.com/
  * License:           GPL-2.0+
@@ -46,7 +46,7 @@ function hpc_register_collection_taxonomy() {
         'show_ui'           => true,
         'show_admin_column' => true,
         'query_var'         => true,
-        'rewrite'           => array( 'slug' => 'collection' ),
+        'rewrite'           => array( 'slug' => 'collection', 'with_front' => false ),
         'public'            => true,
         'show_in_rest'      => true, // Make it available to the block editor & REST API
         'meta_box_cb'       => false, // We will create a custom UI, not the default meta box.
@@ -117,14 +117,21 @@ function hpc_add_collections_ui() {
         echo $button_html . $modal_html;
     }
 }
-add_filter( 'the_content', 'hpc_add_collections_ui_to_content' );
+// This hook was incorrect. We will use the wrapper function below.
+// add_action( 'comments_template', 'hpc_add_collections_ui', 10 );
 
+/**
+ * Append the collections UI to the end of the post content.
+ * This is a more reliable hook than 'comments_template'.
+ * @param string $content The post content.
+ * @return string The modified post content.
+ */
 function hpc_add_collections_ui_to_content( $content ) {
-    // Only add the button to the main post content on single post pages
-    if ( is_single() && 'post' === get_post_type() && in_the_loop() && is_main_query() ) {
+    // Only add the button to the main post content on single post pages for logged-in users.
+    if ( is_single() && 'post' === get_post_type() && in_the_loop() && is_main_query() && is_user_logged_in() ) {
         // We need to capture the output of our function
         ob_start();
-        hpc_add_collections_ui();
+        hpc_add_collections_ui(); // This function now only generates the HTML
         $collections_ui = ob_get_clean();
         return $content . $collections_ui;
     }
@@ -184,10 +191,12 @@ function hpc_get_user_collections() {
         foreach ( $collections as $collection ) {
             // Check if the current post is already in this collection
             $is_in_collection = has_term( $collection->term_id, 'collection', $post_id );
+            $collection_link = get_term_link( $collection );
 
             $data[] = [
                 'id' => $collection->term_id,
                 'name' => esc_html( $collection->name ),
+                'url' => is_wp_error($collection_link) ? '' : esc_url($collection_link),
                 'is_in_collection' => $is_in_collection,
             ];
         }
@@ -257,49 +266,85 @@ add_action( 'wp_ajax_hpc_create_new_collection', 'hpc_create_new_collection' );
  */
 function hpc_add_post_to_collection() {
     // Security check
-    check_ajax_referer( 'hpc_collections_nonce', 'nonce' );
-
-    $user_id = get_current_user_id();
-    if ( ! $user_id ) {
-        wp_send_json_error( ['message' => 'User not logged in.'] );
+    if (!check_ajax_referer('hpc_collections_nonce', 'nonce', false)) {
+        wp_send_json_error(['message' => 'Nonce check failed.']);
+        return;
     }
 
-    $post_id = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
-    $collection_id = isset( $_POST['collection_id'] ) ? intval( $_POST['collection_id'] ) : 0;
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        wp_send_json_error(['message' => 'User not logged in.']);
+        return;
+    }
 
-    if ( ! $post_id || ! $collection_id ) {
-        wp_send_json_error( ['message' => 'Invalid data provided.'] );
+    $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+    $collection_id = isset($_POST['collection_id']) ? intval($_POST['collection_id']) : 0;
+
+    if (!$post_id || !$collection_id) {
+        wp_send_json_error(['message' => 'Invalid data provided.']);
+        return;
+    }
+
+    // --- CRITICAL VALIDATION STEP ---
+    // Get the term object to ensure it exists before proceeding.
+    $term = get_term($collection_id, 'collection');
+    if (!$term || is_wp_error($term)) {
+        wp_send_json_error(['message' => 'Invalid collection specified.']);
+        return;
     }
 
     // Verify the collection belongs to the user by checking term meta
-    $collection_user_id = get_term_meta( $collection_id, 'hpc_user_id', true );
-    if ( (int)$collection_user_id !== $user_id ) {
-        wp_send_json_error( ['message' => 'Invalid collection ownership.'] );
+    $collection_user_id = get_term_meta($term->term_id, 'hpc_user_id', true);
+    if ((int) $collection_user_id !== $user_id) {
+        wp_send_json_error(['message' => 'Invalid collection ownership.']);
+        return;
     }
-    
+
     // Verify the post is a 'post'
-    if ( get_post_type( $post_id ) !== 'post' ) {
-         wp_send_json_error( ['message' => 'Invalid post.' ] );
+    if (get_post_type($post_id) !== 'post') {
+        wp_send_json_error(['message' => 'Invalid post.']);
+        return;
     }
 
-    // Check if the term is already associated with the post
-    if ( has_term( $collection_id, 'collection', $post_id ) ) {
-        // If yes, remove it
-        $result = wp_remove_object_terms( $post_id, $collection_id, 'collection' );
+    global $wpdb;
+    $success = false;
+    $action = '';
+    
+    // Get the term_taxonomy_id from the validated term object
+    $term_taxonomy_id = $term->term_taxonomy_id;
+
+    if (has_term($term->slug, 'collection', $post_id)) {
+        // --- MANUAL REMOVAL ---
         $action = 'removed';
+        $deleted = $wpdb->delete(
+            $wpdb->term_relationships,
+            ['object_id' => $post_id, 'term_taxonomy_id' => $term_taxonomy_id],
+            ['%d', '%d']
+        );
+        $success = ($deleted !== false);
+
     } else {
-        // If no, add it (append)
-        $result = wp_set_post_terms( $post_id, $collection_id, 'collection', true );
+        // --- MANUAL ADDITION ---
         $action = 'added';
+        $inserted = $wpdb->insert(
+            $wpdb->term_relationships,
+            ['object_id' => $post_id, 'term_taxonomy_id' => $term_taxonomy_id],
+            ['%d', '%d']
+        );
+        $success = ($inserted !== false);
     }
 
-    if ( is_wp_error( $result ) ) {
-        wp_send_json_error( ['message' => $result->get_error_message()] );
+    if ($success) {
+        // After successfully changing the relationship, update the count.
+        wp_update_term_count_now([$term_taxonomy_id], 'collection');
+        // Clear the post's cache to ensure changes appear immediately
+        clean_post_cache($post_id);
+        wp_send_json_success(['message' => 'פעולה הושלמה בהצלחה.', 'action' => $action]);
     } else {
-        wp_send_json_success( ['message' => 'Collection updated!', 'action' => $action] );
+        wp_send_json_error(['message' => 'שגיאה בעדכון מסד הנתונים.']);
     }
 }
-add_action( 'wp_ajax_hpc_add_post_to_collection', 'hpc_add_post_to_collection' );
+add_action('wp_ajax_hpc_add_post_to_collection', 'hpc_add_post_to_collection');
 
 
 /**
@@ -357,43 +402,33 @@ add_action('wp_ajax_hpc_search_posts_for_collection', 'hpc_search_posts_for_coll
 
 
 /**
- * Display the collections a post belongs to on the single post page.
+ * Add the creator's name to the collection archive page title.
  */
-function hpc_display_post_collections( $content ) {
-    // Only on single post pages, and not in feeds or other loops.
-    if ( is_single() && 'post' === get_post_type() && in_the_loop() && is_main_query() ) {
-        $post_id = get_the_ID();
-        $collections = wp_get_post_terms( $post_id, 'collection' );
+function hpc_add_creator_to_collection_archive_title( $title ) {
+    if ( is_tax('collection') ) {
+        $term = get_queried_object();
+        if ($term && isset($term->term_id)) {
+            $user_id = get_term_meta($term->term_id, 'hpc_user_id', true);
+            if ($user_id) {
+                $user_info = get_userdata($user_id);
+                if ($user_info) {
+                    $creator_name = esc_html($user_info->display_name);
+                    $creator_html = $creator_name;
 
-        $user_collections = [];
-        if ( ! empty( $collections ) && ! is_wp_error( $collections ) ) {
-            foreach($collections as $collection) {
-                // We only want to show collections that are user-created (have our meta key)
-                if ( get_term_meta( $collection->term_id, 'hpc_user_id', true ) ) {
-                    $user_collections[] = $collection;
+                    // If BuddyPress is active, link to the user's profile
+                    if ( function_exists('bp_core_get_user_domain') ) {
+                        $user_link = bp_core_get_user_domain($user_id);
+                        $creator_html = '<a href="' . esc_url($user_link) . '">' . $creator_name . '</a>';
+                    }
+
+                    $title = '<span class="hpc-archive-main-title">' . esc_html($term->name) . '</span><span class="hpc-archive-creator">אוסף מאת: ' . $creator_html . '</span>';
                 }
             }
         }
-
-        if ( ! empty($user_collections) ) {
-            $output = '<div class="hpc-post-collections-list">';
-            $output .= '<h4>נמצא באוספים:</h4>';
-            $output .= '<ul>';
-            foreach ( $user_collections as $collection ) {
-                 $collection_link = get_term_link( $collection, 'collection' );
-                 if ( ! is_wp_error( $collection_link ) ) {
-                     $output .= '<li><a href="' . esc_url( $collection_link ) . '">' . esc_html( $collection->name ) . '</a></li>';
-                 }
-            }
-            $output .= '</ul>';
-            $output .= '</div>';
-
-            $content .= $output;
-        }
     }
-    return $content;
+    return $title;
 }
-add_filter( 'the_content', 'hpc_display_post_collections' );
+add_filter( 'get_the_archive_title', 'hpc_add_creator_to_collection_archive_title' );
 
 
 /**
@@ -459,72 +494,105 @@ function hpc_collections_screen_content() {
     }
 
     echo '<div class="hpc-collections-grid">';
-
-    foreach ( $collections as $collection ) {
-        // Link to the collection page
+ 
+     foreach ( $collections as $collection ) {
         $collection_link = get_term_link( $collection );
 
-        echo '<div class="hpc-collection-item">';
+        echo '<div class="hpc-collection-item">'; // Start item
         
-        if ( ! is_wp_error( $collection_link ) ) {
-            echo '<h3><a href="' . esc_url( $collection_link ) . '">' . esc_html( $collection->name ) . '</a></h3>';
-        } else {
-            echo '<h3>' . esc_html( $collection->name ) . '</h3>';
-        }
+        echo '<div class="hpc-collection-item-main">'; // Main content area
 
+            // Header
+            if ( ! is_wp_error( $collection_link ) ) {
+                echo '<h3><a href="' . esc_url( $collection_link ) . '">' . esc_html( $collection->name ) . '</a></h3>';
+            } else {
+                echo '<h3>' . esc_html( $collection->name ) . '</h3>';
+            }
 
-        // Query for posts in this collection
-        $args = array(
-            'post_type'      => 'post',
-            'posts_per_page' => 5,
-            'tax_query'      => array(
-                array(
-                    'taxonomy' => 'collection',
-                    'field'    => 'term_id',
-                    'terms'    => $collection->term_id,
-                ),
-            ),
-        );
+            // Query for posts in this collection
+            $posts_in_collection = new WP_Query([
+                'post_type'      => 'post',
+                'posts_per_page' => 5,
+                'tax_query'      => [
+                    [
+                        'taxonomy' => 'collection',
+                        'field'    => 'term_id',
+                        'terms'    => $collection->term_id,
+                    ],
+                ],
+            ]);
 
-        $posts_in_collection = new WP_Query( $args );
-
-        if ( $posts_in_collection->have_posts() ) {
-            echo '<div class="hpc-collection-posts-preview">';
-            while ( $posts_in_collection->have_posts() ) {
-                $posts_in_collection->the_post();
-                if ( has_post_thumbnail() ) {
-                     echo '<a href="' . get_permalink() . '" title="' . esc_attr(get_the_title()) . '">';
-                     the_post_thumbnail( 'thumbnail' );
-                     echo '</a>';
+            if ( $posts_in_collection->have_posts() ) {
+                echo '<div class="hpc-collection-posts-preview">';
+                while ( $posts_in_collection->have_posts() ) {
+                    $posts_in_collection->the_post();
+                    if ( has_post_thumbnail() ) {
+                         echo '<a href="' . get_permalink() . '" title="' . esc_attr(get_the_title()) . '">';
+                         the_post_thumbnail( 'thumbnail' );
+                         echo '</a>';
+                    }
                 }
+                echo '</div>'; // .hpc-collection-posts-preview
+                 // Show "view all" only if there are more posts than the preview shows
+                if ( $posts_in_collection->found_posts > 5 && ! is_wp_error( $collection_link ) ) {
+                    echo '<a href="' . esc_url( $collection_link ) . '" class="hpc-view-all-link">הצג הכל (' . $posts_in_collection->found_posts . ')</a>';
+                }
+            } else {
+                echo '<div class="hpc-empty-collection-wrapper"><p class="hpc-empty-collection-message">אוסף זה ריק.</p></div>';
             }
-            echo '</div>'; // .hpc-collection-posts-preview
-             // Show "view all" only if there are more posts than the preview shows
-            if ( $posts_in_collection->found_posts > 5 && ! is_wp_error( $collection_link ) ) {
-                echo '<a href="' . esc_url( $collection_link ) . '" class="hpc-view-all-link">הצג הכל (' . $posts_in_collection->found_posts . ')</a>';
-            }
+            wp_reset_postdata();
 
-        } else {
-            echo '<p class="hpc-empty-collection-message">אוסף זה ריק. אפשר להוסיף פוסטים דרך עמוד הפוסט.</p>';
-        }
-        wp_reset_postdata();
+        echo '</div>'; // End .hpc-collection-item-main
 
-        echo '</div>'; // .hpc-collection-posts-preview
+        echo '<div class="hpc-collection-item-footer">'; // Footer for actions
+            // Add Post to Collection UI
+            echo '<div class="hpc-add-post-to-collection-ui">';
+            echo '  <button class="hpc-open-search-button" data-collection-id="' . esc_attr($collection->term_id) . '">+ הוסף פוסטים</button>';
+            echo '  <div class="hpc-search-area" id="hpc-search-area-'.esc_attr($collection->term_id).'" style="display: none;">';
+            echo '      <div class="hpc-search-wrapper">';
+            echo '          <input type="text" class="hpc-post-search-input" placeholder="חפש/י פוסטים לפי שם..." data-collection-id="' . esc_attr($collection->term_id) . '">';
+            echo '      </div>';
+            echo '      <div class="hpc-search-results"></div>';
+            echo '  </div>';
+            echo '</div>';
+        echo '</div>'; // End .hpc-collection-item-footer
 
-        // Add Post to Collection UI
-        echo '<div class="hpc-add-post-to-collection-ui">';
-        echo '  <button class="hpc-open-search-button">+ הוסף פוסטים</button>';
-        echo '  <div class="hpc-search-area" style="display: none;">';
-        echo '      <div class="hpc-search-wrapper">';
-        echo '          <input type="text" class="hpc-post-search-input" placeholder="חפש/י פוסטים לפי שם..." data-collection-id="' . esc_attr($collection->term_id) . '">';
-        echo '      </div>';
-        echo '      <div class="hpc-search-results"></div>';
-        echo '  </div>';
-        echo '</div>';
+        echo '</div>'; // End .hpc-collection-item
+    }
+ 
+      echo '</div>'; // .hpc-collections-grid
+ } 
 
-
-        echo '</div>'; // .hpc-collection-item
+/**
+ * Displays the list of collections a post belongs to on the single post page.
+ */
+function hpc_display_post_collections_list() {
+    if ( !is_single() || !in_the_loop() ) {
+        return;
     }
 
-    echo '</div>'; // .hpc-collections-grid
-} 
+    $post_id = get_the_ID();
+    
+    // We get ALL collections this post is part of, regardless of owner, to show everyone.
+    $collections = get_the_terms( $post_id, 'collection' );
+
+    if ( empty( $collections ) || is_wp_error( $collections ) ) {
+        return;
+    }
+
+    $collections_html = '<div class="hpc-post-collections-list-container">';
+    $collections_html .= '<h3>' . esc_html__( 'מופיע באוספים הבאים:', 'homer-patuach-collections' ) . '</h3>';
+    $collections_html .= '<ul class="hpc-post-collections-list">';
+
+    $count = 0;
+    foreach ( $collections as $collection ) {
+        if ($count >= 4) break; // Limit to 4 collections
+        $collection_link = get_term_link( $collection );
+        $collections_html .= '<li><a href="' . esc_url( $collection_link ) . '">' . esc_html( $collection->name ) . ' <span class="collection-count">(' . $collection->count . ')</span></a></li>';
+        $count++;
+    }
+
+    $collections_html .= '</ul></div>';
+    
+    echo $collections_html;
+}
