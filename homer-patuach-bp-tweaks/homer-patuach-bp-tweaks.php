@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - BuddyPress Tweaks
  * Plugin URI:        https://example.com/
  * Description:       Custom styles and functionality for BuddyPress pages.
- * Version:           1.4.0
+ * Version:           2.0.1
  * Author:            chepti
  * Author URI:        https://example.com/
  * License:           GPL-2.0+
@@ -109,6 +109,19 @@ add_action( 'init', 'hp_bp_tweaks_hide_admin_bar' );
 
 
 /**
+ * Force hide the WordPress Admin Bar for all logged-out users.
+ * This overrides BuddyPress settings that might show it.
+ */
+function hp_bp_tweaks_force_hide_admin_bar_for_logout( $show ) {
+    if ( ! is_user_logged_in() ) {
+        return false;
+    }
+    return $show;
+}
+add_filter( 'show_admin_bar', 'hp_bp_tweaks_force_hide_admin_bar_for_logout', 999 );
+
+
+/**
 * Redirect non-admins to the homepage after login.
 */
 function hp_bp_tweaks_login_redirect( $redirect_to, $request, $user ) {
@@ -149,40 +162,34 @@ add_action( 'wp_footer', 'hp_bp_tweaks_add_floating_button' );
 
 /**
  * Adds a custom user bar to the top of the site.
+ * This bar will only be displayed for logged-in users.
  */
 function hp_bp_tweaks_add_user_bar() {
+    if ( ! is_user_logged_in() ) {
+        return;
+    }
+
+    $user_id = get_current_user_id();
+    $profile_url = bp_core_get_user_domain( $user_id );
+    $my_posts_url = rtrim($profile_url, '/') . '/my-posts/';
+    $friends_url = rtrim($profile_url, '/') . '/friends/';
+    $profile_edit_url = rtrim($profile_url, '/') . '/profile/edit/';
+    $logout_url = wp_logout_url( home_url() );
     ?>
     <div class="hp-bp-user-bar">
         <div class="hp-bp-user-bar-inner">
-            <?php if ( is_user_logged_in() ) :
-                $user_id = get_current_user_id();
-                $profile_url = bp_core_get_user_domain( $user_id );
-                $my_posts_url = rtrim($profile_url, '/') . '/my-posts/';
-                $friends_url = rtrim($profile_url, '/') . '/friends/';
-                $profile_edit_url = rtrim($profile_url, '/') . '/profile/edit/';
-                $logout_url = wp_logout_url( home_url() );
-            ?>
-                <div class="hp-bp-user-menu">
-                    <button class="hp-bp-profile-trigger" aria-haspopup="true" aria-expanded="false">
-                        <?php echo get_avatar( $user_id, 40 ); ?>
-                    </button>
-                    <div class="hp-bp-dropdown-menu" aria-hidden="true">
-                        <a href="#" class="hpg-open-popup-button">הוסף פוסט</a>
-                        <a href="<?php echo esc_url($my_posts_url); ?>">הפוסטים שלי</a>
-                        <a href="<?php echo esc_url($profile_edit_url); ?>">הפרופיל שלי</a>
-                        <a href="<?php echo esc_url($friends_url); ?>">חברים</a>
-                        <a href="<?php echo esc_url($logout_url); ?>" class="logout-link">התנתקות</a>
-                    </div>
+            <div class="hp-bp-user-menu">
+                <button class="hp-bp-profile-trigger" aria-haspopup="true" aria-expanded="false">
+                    <?php echo get_avatar( $user_id, 40 ); ?>
+                </button>
+                <div class="hp-bp-dropdown-menu" aria-hidden="true">
+                    <a href="#" class="hpg-open-popup-button">הוסף פוסט</a>
+                    <a href="<?php echo esc_url($my_posts_url); ?>">הפוסטים שלי</a>
+                    <a href="<?php echo esc_url($profile_edit_url); ?>">הפרופיל שלי</a>
+                    <a href="<?php echo esc_url($friends_url); ?>">חברים</a>
+                    <a href="<?php echo esc_url($logout_url); ?>" class="logout-link">התנתקות</a>
                 </div>
-            <?php else :
-                $login_url = wp_login_url( get_permalink() );
-                $register_url = wp_registration_url();
-            ?>
-                 <div class="hp-bp-user-links">
-                    <a href="<?php echo esc_url($login_url); ?>">התחברות</a>
-                    <a href="<?php echo esc_url($register_url); ?>" class="button-register">הרשמה</a>
-                </div>
-            <?php endif; ?>
+            </div>
         </div>
     </div>
     <?php
@@ -420,98 +427,63 @@ function hp_bp_render_custom_registration_form() {
 
 
 /**
- * Customize user data upon registration.
- * Runs AFTER the user is created to ensure all social login data is present.
- * - Sets user_nicename (slug) from the email address prefix.
- * - Sets display_name and nickname from full name or the generated nicename.
+ * Sets the user's nicename (slug) to their user ID upon registration.
+ * This is a robust way to ensure unique, clean slugs without parsing emails.
+ *
+ * @param int $user_id The ID of the newly registered user.
  */
-function hp_bp_tweaks_customize_user_after_creation( $user_id ) {
-    // Get user data object
-    $user = get_userdata( $user_id );
-    if ( ! $user ) {
-        return;
-    }
-
-    $email = $user->user_email;
-
-    // We only proceed if we have an email to work with
-    if ( empty( $email ) || strpos( $email, '@' ) === false ) {
-        return;
-    }
-
-    $email_parts = explode( '@', $email );
-    // Use sanitize_user to be safer and closer to WP standards for usernames. Then sanitize_title for URL slug.
-    $new_nicename_base = sanitize_title( sanitize_user( $email_parts[0], true ) );
-
-    // Ensure the nicename is unique. If the current user already has this nicename, we're good.
-    // Otherwise, we find a new one.
+function hp_bp_tweaks_set_id_as_slug_on_register( $user_id ) {
     global $wpdb;
-    $original_nicename = $new_nicename_base;
-    $new_nicename = $original_nicename;
-    $i = 2;
-    // Check if the nicename is already taken by ANOTHER user
-    $existing_user_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->users WHERE user_nicename = %s", $new_nicename ) );
-    while ( $existing_user_id && $existing_user_id != $user_id ) {
-        $new_nicename = $original_nicename . '-' . $i;
-        $i++;
-        $existing_user_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->users WHERE user_nicename = %s", $new_nicename ) );
-    }
 
-    // --- Data to update ---
-    $user_data_to_update = array(
-        'ID' => $user_id,
-        'user_nicename' => $new_nicename,
+    // Directly update the user_nicename to match the user_id.
+    // This is safe and avoids hook loops.
+    $wpdb->update(
+        $wpdb->users,
+        array(
+            'user_nicename' => $user_id, 
+        ),
+        array( 'ID' => $user_id ),
+        array( '%s' ),
+        array( '%d' )
     );
 
-    // --- Set a better display name ---
-    $new_display_name = '';
-
-    // Priority 1: Use first name and last name if they exist in user meta (common with social logins)
-    $first_name = get_user_meta( $user_id, 'first_name', true );
-    $last_name = get_user_meta( $user_id, 'last_name', true );
-
-    if ( ! empty( trim( $first_name ) ) ) {
-        $new_display_name = trim( $first_name );
-        if ( ! empty( trim( $last_name ) ) ) {
-            $new_display_name .= ' ' . trim( $last_name );
-        }
-    }
-
-    // Priority 2: In BuddyPress, check the "Full Name" xProfile field.
-    if ( empty($new_display_name) && function_exists('xprofile_get_field_data') ) {
-        // As per previous code, we assume the field is named "שם מלא".
-        $full_name_field_id = bp_xprofile_get_field_id_from_name('שם מלא');
-        if ( $full_name_field_id ) {
-             $bp_full_name = xprofile_get_field_data( $full_name_field_id, $user_id );
-             if ( ! empty( trim( $bp_full_name ) ) ) {
-                $new_display_name = trim( $bp_full_name );
-             }
-        }
-    }
-    
-    // Priority 3: Fallback to creating a readable name from the new nicename.
-    if ( empty( $new_display_name ) ) {
-        $new_display_name = ucwords( str_replace( ['-', '_'], ' ', $new_nicename ) );
-    }
-    
-    // Update nickname and display_name in the data array.
-    if ( ! empty( trim( $new_display_name ) ) ) {
-        $user_data_to_update['nickname'] = trim($new_display_name);
-        $user_data_to_update['display_name'] = trim($new_display_name);
-
-        // --- ALSO update BuddyPress xProfile "Full Name" field to ensure sync ---
-        if ( function_exists('xprofile_set_field_data') ) {
-            // As per previous code, we assume the field is named "שם מלא".
-            $full_name_field_id = bp_xprofile_get_field_id_from_name('שם מלא');
-            if ( $full_name_field_id ) {
-                xprofile_set_field_data( $full_name_field_id, $user_id, trim($new_display_name) );
-            }
-        }
-    }
-
-    // Only update if we have something to change to avoid loops.
-    if ( count($user_data_to_update) > 1 ) {
-        wp_update_user( $user_data_to_update );
+    // Clear caches to make the change visible immediately.
+    clean_user_cache( $user_id ); 
+    if ( function_exists('bp_core_clear_user_displayname_cache') ) {
+        bp_core_clear_user_displayname_cache( $user_id );
     }
 }
-add_action( 'user_register', 'hp_bp_tweaks_customize_user_after_creation', 20, 1 ); 
+add_action( 'user_register', 'hp_bp_tweaks_set_id_as_slug_on_register', 99, 1 );
+
+
+/**
+ * Overrides the BuddyPress mention name in profile headers.
+ * Replaces the default "@username" (e.g., "@24") with the user's full display name.
+ * This targets the specific function used in many themes for the profile header name.
+ *
+ * @param string $mention_name The original mention name (e.g., "@24").
+ * @return string The modified display name.
+ */
+function hp_bp_tweaks_replace_mention_name_with_display_name( $mention_name ) {
+    // Only run on member profile pages.
+    if ( ! bp_is_user() ) {
+        return $mention_name;
+    }
+
+    // Get the user ID for the profile being displayed.
+    $displayed_user_id = bp_displayed_user_id();
+
+    if ( $displayed_user_id ) {
+        // Fetch the user's "real" display name.
+        $real_display_name = bp_core_get_user_displayname( $displayed_user_id );
+
+        // If the real display name is not empty, use it.
+        if ( ! empty( $real_display_name ) ) {
+            return $real_display_name;
+        }
+    }
+
+    // Fallback to the original mention name if something goes wrong.
+    return $mention_name;
+}
+add_filter( 'bp_get_displayed_user_mentionname', 'hp_bp_tweaks_replace_mention_name_with_display_name', 10, 1 ); 
