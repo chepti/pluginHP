@@ -328,3 +328,36 @@ body.buddypress, .buddypress-wrap {
 .hp-bp-floating-button i {
     font-size: 24px;
 } 
+
+/* BuddyPress Profile Header Tweaks */
+#buddypress #item-header-cover-image {
+    margin-bottom: 0; /* Removes the grey bar under the cover image */
+}
+
+#buddypress #item-header-avatar img {
+    border-radius: 50% !important; /* Makes the avatar a perfect circle */
+    width: 150px !important; /* Ensure consistent size */
+    height: 150px !important;
+    object-fit: cover; /* Prevents the image from being squashed */
+}
+
+#buddypress #item-header-content h2.user-nicename {
+    font-size: 28px;
+    margin-top: -65px; /* Pulls the name up closer to the avatar */
+    margin-right: 170px; /* Adjusts horizontal position relative to avatar */
+    color: #333;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 5px 15px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+    #buddypress #item-header-content h2.user-nicename {
+        margin-top: 15px;
+        margin-right: 0;
+        display: block;
+        text-align: center;
+    }
+} 

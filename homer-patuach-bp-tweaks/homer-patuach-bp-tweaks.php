@@ -317,7 +317,13 @@ function hp_bp_handle_custom_registration() {
     }
 
     // --- Create User and Set Data ---
-    $user_id = wp_create_user( $user_login, $user_pass, $user_email );
+    $user_data = array(
+        'user_login' => $user_login,
+        'user_pass'  => $user_pass,
+        'user_email' => $user_email,
+        'role'       => 'contributor' // Set role to contributor on creation
+    );
+    $user_id = wp_insert_user( $user_data );
 
     if ( is_wp_error( $user_id ) ) {
         set_transient( 'hp_bp_registration_errors', $user_id->get_error_messages(), 60 );

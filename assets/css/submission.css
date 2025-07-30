@@ -1,0 +1,475 @@
+/* --- General Button Style (re-using from single post) --- */
+.hpg-button {
+    display: inline-block;
+    padding: 12px 28px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    color: #fff !important;
+    background: linear-gradient(135deg, #ff9a44, #ff5f6d);
+    box-shadow: 0 4px 15px rgba(255,107,129,.4);
+    transition: all .3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+.hpg-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255,107,129,.5);
+    color: #fff;
+}
+
+/* --- Popup Overlay and Content --- */
+body.hpg-popup-active {
+    overflow: hidden;
+}
+
+#hpg-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8); /* Darker overlay */
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 15px; /* Add padding for small screens */
+    transition: opacity 0.3s ease;
+}
+
+#hpg-popup-overlay.hpg-popup-hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+#hpg-popup-overlay.hpg-popup-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+#hpg-popup-content {
+    background: #fff;
+    padding: 30px 40px;
+    border-radius: 16px;
+    width: 100%; /* Use 100% width to respect parent padding */
+    max-width: 750px;
+    max-height: calc(100vh - 80px); /* Ensure it fits vertically with padding */
+    overflow-y: auto; /* This is the key for scrolling */
+    position: relative;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+    text-align: right;
+    direction: rtl;
+    margin: 0 auto; /* Center horizontally */
+}
+
+#hpg-close-popup-button {
+    position: absolute;
+    top: 15px;
+    left: 20px;
+    background: transparent;
+    border: none;
+    font-size: 28px;
+    line-height: 1;
+    color: #aaa;
+    cursor: pointer;
+    padding: 5px;
+}
+
+/* --- Form Styling --- */
+#hpg-submission-form h2 {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+#hpg-submission-form p {
+    margin-bottom: 15px;
+}
+
+#hpg-submission-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+#hpg-submission-form input[type="text"],
+#hpg-submission-form select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+#hpg-submission-form input[type="file"] {
+    padding: 8px;
+}
+
+/* WP Editor styles */
+#hpg-submission-form .wp-editor-wrap {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+#hpg-submission-form .wp-editor-tools {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+#hpg-submission-form .wp-editor-container textarea {
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+#hpg-submission-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    min-height: 80px;
+}
+
+.hpg-form-row {
+    display: flex;
+    gap: 20px;
+}
+.hpg-form-col {
+    flex: 1;
+}
+
+#hpg-form-submit-button {
+    width: 100%;
+    padding: 15px;
+}
+
+/* --- Form Error Styling --- */
+.hpg-form-errors {
+    padding: 15px 20px;
+    margin-bottom: 25px;
+    border: 1px solid #ff5f6d;
+    background-color: #fff5f6;
+    color: #c51f33;
+    border-radius: 8px;
+    text-align: right;
+}
+.hpg-form-errors strong {
+    display: block;
+    margin-bottom: 8px;
+}
+.hpg-form-errors ul {
+    margin: 0;
+    padding-right: 20px;
+}
+.hpg-form-errors li {
+    margin-bottom: 5px;
+}
+
+/* --- Field Error Highlighting --- */
+#hpg-submission-form .hpg-error {
+    border: 1px solid #c51f33 !important; /* Use important to override other styles */
+    background-color: #fff5f6;
+}
+/* Ensure the error style doesn't mess up chip labels */
+#hpg-submission-form .hpg-chip-group.hpg-error {
+     padding: 10px;
+     border-radius: 10px;
+}
+
+/* --- User Post List (BuddyPress Profile) --- */
+.hpg-user-post-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.hpg-user-post-list li {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.hpg-user-post-list li:last-child {
+    border-bottom: none;
+}
+.hpg-user-post-list a {
+    font-weight: 600;
+    text-decoration: none;
+}
+.hpg-post-status {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
+    min-width: 80px;
+    text-align: center;
+}
+.hpg-status-publish {
+    background-color: #28a745; /* Green */
+}
+.hpg-status-pending {
+    background-color: #ffc107; /* Yellow */
+    color: #333;
+}
+.hpg-status-draft {
+    background-color: #6c757d; /* Gray */
+}
+.hpg-status-trash {
+    background-color: #dc3545; /* Red */
+}
+
+/* Make profile grid responsive within BuddyPress layout */
+.buddypress #hpg-results-container.hpg-profile-posts {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+/* --- Single Post Layout --- */
+.ast-single-post .entry-content .hpg-single-container, /* Specificity for Astra */
+.hpg-single-container {
+    display: grid;
+    grid-template-columns: 1fr 250px; /* Main content takes up available space, author box is fixed */
+    gap: 40px;
+}
+.hpg-single-main {
+    grid-column: 1 / 2;
+    min-width: 0;
+}
+.hpg-author-box {
+    grid-column: 2 / 3;
+    text-align: center;
+    margin-top: 50px; /* Align with top of content */
+}
+@media (max-width: 900px) {
+    .ast-single-post .entry-content .hpg-single-container,
+    .hpg-single-container {
+        display: block; /* Revert to standard block layout on mobile */
+    }
+    .hpg-author-box {
+        margin-top: 20px;
+    }
+}
+
+
+/* --- Reusable Post Card Styles (Moved from style.css for global access) --- */
+
+#hpg-results-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+    position: relative;
+    min-height: 200px;
+}
+.hpg-card {
+    background-color: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+.hpg-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+.hpg-card a.hpg-card-link-wrapper {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+.hpg-card-image {
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+}
+.hpg-card-content {
+    padding: 15px 20px 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+.hpg-card-meta-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.hpg-card-date {
+    font-size: 13px;
+    color: #888;
+}
+.hpg-card-subject-tag-content {
+    font-size: 13px;
+    font-weight: bold;
+    color: #d9534f;
+}
+.hpg-card-title {
+    margin: 0 0 10px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+    flex-grow: 1;
+}
+.hpg-card-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 20px;
+    padding: 10px 20px;
+    border-top: 1px solid #f0f0f0;
+    color: #777;
+    align-items: center;
+}
+.hpg-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+}
+.hpg-meta-item svg {
+    fill: #999;
+    width: 20px;
+    height: 20px;
+}
+.hpg-like-btn {
+    cursor: pointer;
+    transition: color 0.3s, transform 0.2s;
+}
+.hpg-like-btn:hover {
+    color: #e74c3c;
+}
+.hpg-like-btn:hover svg {
+    fill: #e74c3c;
+}
+.hpg-like-btn.liked svg {
+    fill: #e74c3c;
+    animation: like-pop 0.3s ease-in-out;
+}
+@keyframes like-pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+/* Make profile grid responsive within BuddyPress layout */
+.buddypress #hpg-results-container.hpg-profile-posts {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+
+/* --- Single Post Author Box --- */
+.hpg-author-avatar img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 15px;
+}
+
+.hpg-author-name {
+    margin: 0 0 10px 0;
+    font-size: 22px;
+}
+
+.hpg-author-description {
+    font-size: 15px;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.hpg-author-follow-button .follow-button a {
+    /* Style BuddyPress follow button to match our theme */
+    display: inline-block;
+    padding: 10px 25px;
+    border-radius: 50px;
+    text-decoration: none !important;
+    font-weight: 700;
+    color: #fff !important;
+    background: linear-gradient(135deg, #ff9a44, #ff5f6d);
+    border: none;
+    transition: all .3s ease;
+}
+.hpg-author-follow-button .follow-button a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255,107,129,.4);
+}
+
+/* Responsive Layout for Author Box */
+@media (max-width: 800px) {
+    .hpg-single-post-wrapper {
+        flex-direction: column;
+    }
+    .hpg-author-box {
+        order: 2; /* Place author box after content on mobile */
+        width: 100%;
+        margin-top: 30px;
+    }
+    .hpg-post-main-content {
+        order: 1;
+    }
+}
+
+
+/* --- New Chip Styles - V2 (Higher Specificity) --- */
+#hpg-submission-form .hpg-chip-group {
+    margin-bottom: 20px;
+}
+#hpg-submission-form .hpg-chip-group > label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+#hpg-submission-form .hpg-chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+#hpg-submission-form .hpg-chip {
+    position: relative;
+    margin: 0;
+    padding: 0;
+}
+#hpg-submission-form .hpg-chip input[type="radio"],
+#hpg-submission-form .hpg-chip input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none; /* Make them unclickable */
+}
+#hpg-submission-form .hpg-chip label {
+    display: inline-block;
+    padding: 8px 18px;
+    border: 1px solid #ddd;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    font-weight: 500 !important;
+    margin-bottom: 0 !important;
+    line-height: 1.5;
+}
+
+/* Unchecked state */
+#hpg-submission-form .hpg-chip input + label {
+    background-color: #f9f9f9;
+    color: #555;
+}
+
+/* Hover state */
+#hpg-submission-form .hpg-chip input:hover + label {
+    border-color: #ff9a44;
+    background-color: #fff8f2;
+}
+
+/* Checked state */
+#hpg-submission-form .hpg-chip input:checked + label {
+    background: linear-gradient(135deg, #ff9a44, #ff5f6d);
+    color: #fff;
+    border-color: #ff5f6d;
+    box-shadow: 0 2px 8px rgba(255,107,129,.3);
+} 
