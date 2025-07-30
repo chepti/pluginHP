@@ -400,3 +400,50 @@ body.buddypress, .buddypress-wrap {
 .header-account-icon /* Common theme class - adjust if needed */ {
     display: none !important;
 } 
+
+.hp-bp-user-menu .logout-link {
+    border-top: 1px solid #eee;
+}
+
+/* Make sure dropdown is above content */
+.hp-bp-user-menu .hp-bp-dropdown-menu {
+    z-index: 1000;
+}
+
+/*
+=========================================
+  User Reputation Stats (Profile Header)
+=========================================
+*/
+.hpg-user-stats-container {
+    display: flex;
+    justify-content: space-around;
+    background-color: #fafafa;
+    border-radius: 12px;
+    padding: 20px 15px;
+    margin: 25px 0;
+    border: 1px solid #e7e7e7;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.hpg-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    text-align: center;
+}
+
+.hpg-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2c3e50;
+    line-height: 1;
+}
+
+.hpg-stat-label {
+    font-size: 14px;
+    color: #7f8c8d;
+    font-weight: 500;
+} 

@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - BuddyPress Tweaks
  * Plugin URI:        https://example.com/
  * Description:       Custom styles and functionality for BuddyPress pages.
- * Version:           2.0.1
+ * Version:           2.1.0
  * Author:            chepti
  * Author URI:        https://example.com/
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_BP_TWEAKS_VERSION', '1.0.0' );
+define( 'HP_BP_TWEAKS_VERSION', '2.1.0' );
 define( 'HP_BP_TWEAKS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 
 
@@ -48,6 +48,12 @@ function hp_bp_tweaks_enqueue_scripts() {
             HP_BP_TWEAKS_VERSION,
             true // load in footer
         );
+
+        // Localize script with data for AJAX
+        wp_localize_script('hp-bp-tweaks-main-js', 'hp_bp_ajax_obj', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'report_nonce' => wp_create_nonce('hpg_report_nonce')
+        ]);
     // }
 }
 add_action( 'wp_enqueue_scripts', 'hp_bp_tweaks_enqueue_scripts' );
@@ -99,16 +105,16 @@ add_filter( 'ngettext', 'hp_bp_tweaks_translate_text', 20, 3 );
 
 /**
  * Hide admin bar for non-admin users.
+ * This is the most reliable way to ensure the admin bar is hidden for everyone
+ * who is not an administrator, including logged-out users.
  */
-// Remove existing admin bar hooks to avoid conflicts
-// add_action( 'init', 'hp_bp_tweaks_hide_admin_bar' );
-// add_filter( 'show_admin_bar', 'hp_bp_tweaks_force_hide_admin_bar_for_logout', 999 );
-
 add_filter('show_admin_bar', function($show) {
-    if (current_user_can('manage_options')) {
-        return true; // Show for admins
+    // If the user is logged in and is an administrator, show the bar.
+    if ( is_user_logged_in() && current_user_can('manage_options') ) {
+        return true;
     }
-    return false; // Hide for everyone else
+    // For everyone else (non-admins, logged-out users), hide the bar.
+    return false;
 }, 999);
 
 
@@ -524,3 +530,464 @@ function hp_bp_tweaks_expand_search_to_user_names( $query ) {
     return $query;
 }
 add_action( 'pre_get_posts', 'hp_bp_tweaks_expand_search_to_user_names' ); 
+
+/**
+ * =================================================================
+ * AJAX HANDLER FOR CONTENT REPORTING
+ * =================================================================
+ */
+
+// 1. Register the AJAX action for logged-in users
+add_action('wp_ajax_hpg_handle_report_submission', 'hpg_handle_report_submission_callback');
+
+// 2. The callback function
+function hpg_handle_report_submission_callback() {
+    // Security check
+    check_ajax_referer('hpg_report_nonce', 'security');
+
+    // Basic validation
+    if ( !isset($_POST['post_id']) || !isset($_POST['reason']) || empty($_POST['reason']) ) {
+        wp_send_json_error(['message' => 'שדות חובה חסרים.']);
+        return;
+    }
+
+    $post_id = intval($_POST['post_id']);
+    $reason_code = sanitize_text_field($_POST['reason']);
+    $details = isset($_POST['details']) ? sanitize_textarea_field($_POST['details']) : '';
+    $user_id = get_current_user_id();
+    $user = get_userdata($user_id);
+    $post = get_post($post_id);
+
+    // Ensure the post exists and user is logged in
+    if ( !$post || !$user_id ) {
+        wp_send_json_error(['message' => 'הבקשה אינה תקינה.']);
+        return;
+    }
+
+    // --- Core Logic ---
+
+    // 1. Translate reason code to a readable string
+    $reasons = [
+        'broken_link' => 'קישור שבור',
+        'content_error' => 'שגיאה בתוכן',
+        'offensive_content' => 'תוכן פוגעני'
+    ];
+    $reason_text = isset($reasons[$reason_code]) ? $reasons[$reason_code] : 'לא צוינה סיבה';
+
+    // 2. Save report details as post meta
+    update_post_meta($post_id, '_hpg_report_info', [
+        'reporter_id' => $user_id,
+        'reporter_name' => $user->display_name,
+        'reason_code' => $reason_code,
+        'reason_text' => $reason_text,
+        'details' => $details,
+        'report_time' => current_time('mysql')
+    ]);
+
+    // 3. Change post status to 'pending'
+    // Temporarily grant the user permission to edit this specific post
+    // to allow changing the status to 'pending'.
+    $author_id = $post->post_author;
+    if ($user_id != $author_id) { // Only do this if the reporter is not the author
+        add_filter('user_has_cap', 'hpg_allow_pending_transition', 10, 3);
+    }
+    
+    $post_update_args = [
+        'ID' => $post_id,
+        'post_status' => 'pending'
+    ];
+    wp_update_post($post_update_args);
+
+    // Immediately remove the filter to restore original permissions
+    if ($user_id != $author_id) {
+        remove_filter('user_has_cap', 'hpg_allow_pending_transition', 10);
+    }
+
+    // 4. Send an email notification
+    $admin_email = get_option('admin_email');
+    $subject = '[הומר פתוח] דיווח על תוכן: ' . $post->post_title;
+    $edit_link = get_edit_post_link($post_id, 'raw');
+
+    $message = "שלום מנהל,\n\n";
+    $message .= "התקבל דיווח על הפוסט \"" . $post->post_title . "\".\n";
+    $message .= "הפוסט הועבר למצב 'ממתין לאישור' לבדיקתך.\n\n";
+    $message .= "פרטי הדיווח:\n";
+    $message .= "------------------------\n";
+    $message .= "מדווח: " . $user->display_name . " (ID: " . $user_id . ")\n";
+    $message .= "סיבה: " . $reason_text . "\n";
+    if (!empty($details)) {
+        $message .= "פרטים נוספים: " . $details . "\n";
+    }
+    $message .= "------------------------\n\n";
+    $message .= "תוכל לערוך את הפוסט ולבדוק את הדיווח כאן:\n";
+    $message .= $edit_link . "\n\n";
+    $message .= "תודה,\nצוות האתר";
+
+    wp_mail($admin_email, $subject, $message);
+
+    // Return a success message
+    wp_send_json_success(['message' => 'הדיווח התקבל, תודה! אנו נטפל בו בהקדם.']);
+}
+
+/**
+ * A temporary capabilities filter to allow a user to change a post's status to pending.
+ */
+function hpg_allow_pending_transition($allcaps, $caps, $args) {
+    // Check if the user is trying to edit a post
+    if (isset($args[0]) && $args[0] == 'edit_post' && isset($args[2])) {
+        // Grant the capability for this specific action
+        $allcaps['edit_post'] = true;
+    }
+    return $allcaps;
+}
+
+/**
+ * =================================================================
+ * ADMIN-SIDE REPORT DISPLAY
+ * =================================================================
+ */
+
+// 1. Add a meta box to the post editor screen
+function hpg_register_report_info_meta_box() {
+    add_meta_box(
+        'hpg_report_info_box', // ID
+        'פרטי דיווח על תוכן', // Title
+        'hpg_report_info_meta_box_callback', // Callback
+        'post', // Post type
+        'side', // Context (normal, side, advanced)
+        'high' // Priority
+    );
+}
+add_action('add_meta_boxes', 'hpg_register_report_info_meta_box');
+
+// 2. The callback function to render the meta box content
+function hpg_report_info_meta_box_callback($post) {
+    $report_info = get_post_meta($post->ID, '_hpg_report_info', true);
+
+    if (empty($report_info)) {
+        echo '<p>אין דיווחים על פוסט זה.</p>';
+        return;
+    }
+
+    // Security nonce
+    wp_nonce_field('hpg_clear_report_action', 'hpg_clear_report_nonce');
+
+    echo '<div style="padding: 10px; line-height: 1.6;">';
+    echo '<strong>מדווח:</strong> ' . esc_html($report_info['reporter_name']) . ' (ID: ' . esc_html($report_info['reporter_id']) . ')<br>';
+    echo '<strong>תאריך:</strong> ' . date('j.n.Y H:i', strtotime($report_info['report_time'])) . '<br>';
+    echo '<strong>סיבה:</strong> ' . esc_html($report_info['reason_text']) . '<br>';
+
+    if (!empty($report_info['details'])) {
+        echo '<strong>פרטים:</strong><div style="background: #f9f9f9; border: 1px solid #eee; padding: 5px; margin-top: 5px;">' . nl2br(esc_html($report_info['details'])) . '</div>';
+    }
+    echo '</div>';
+
+    echo '<hr style="margin: 10px 0;">';
+
+    // Add a button to clear the report info
+    echo '<p>לאחר הטיפול בפוסט (אישור מחדש או מחיקה), ניתן לנקות את הדיווח:</p>';
+    echo '<button type="submit" name="hpg_clear_report" class="button">ניקוי דיווח</button>';
+}
+
+// 3. Handle clearing the report info when post is saved/updated
+function hpg_clear_report_on_save($post_id) {
+    // Check if our button was clicked and the nonce is valid
+    if ( !isset($_POST['hpg_clear_report']) || !isset($_POST['hpg_clear_report_nonce']) ) {
+        return;
+    }
+    if ( !wp_verify_nonce($_POST['hpg_clear_report_nonce'], 'hpg_clear_report_action') ) {
+        return;
+    }
+    // Don't save on autosave
+    if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) {
+        return;
+    }
+    // Check user permissions
+    if ( isset($_POST['post_type']) && 'post' == $_POST['post_type'] ) {
+        if ( !current_user_can('edit_post', $post_id) ) {
+            return;
+        }
+    }
+
+    // All good, clear the meta field
+    delete_post_meta($post_id, '_hpg_report_info');
+}
+add_action('save_post', 'hpg_clear_report_on_save'); 
+
+/**
+ * =================================================================
+ * USER REPUTATION & STATISTICS
+ * =================================================================
+ */
+
+// --- 1. Helper functions to get user stats ---
+
+function hpg_get_user_total_likes( $user_id ) {
+    $count = get_user_meta( $user_id, 'hpg_total_likes_received', true );
+    return $count ? (int) $count : 0;
+}
+
+function hpg_get_user_total_comments( $user_id ) {
+    $count = get_user_meta( $user_id, 'hpg_total_comments_received', true );
+    return $count ? (int) $count : 0;
+}
+
+function hpg_get_user_total_posts( $user_id ) {
+    $count = get_user_meta( $user_id, 'hpg_total_posts_created', true );
+    return $count ? (int) $count : 0;
+}
+
+function hpg_get_user_total_views( $user_id ) {
+    $count = get_user_meta( $user_id, 'hpg_total_views_received', true );
+    return $count ? (int) $count : 0;
+}
+
+// --- 2. Hooks to track user stats ---
+
+/**
+ * Recalculate total likes for an author whenever their post's like count changes.
+ * This is the most robust method to ensure accuracy.
+ */
+function hpg_recalculate_user_likes( $meta_id, $object_id, $meta_key, $_meta_value ) {
+    // Only proceed if the meta key is for likes.
+    if ( '_hpg_like_count' !== $meta_key ) {
+        return;
+    }
+
+    $post_id = $object_id;
+    $post = get_post( $post_id );
+
+    // Ensure we're working with a valid post.
+    if ( ! $post || 'post' !== get_post_type($post) ) {
+        return;
+    }
+
+    $author_id = $post->post_author;
+
+    // Perform a direct DB query to sum up all likes for the author's published posts.
+    global $wpdb;
+    $total_likes = $wpdb->get_var( $wpdb->prepare( "
+        SELECT SUM(CAST(m.meta_value AS SIGNED)) 
+        FROM {$wpdb->postmeta} m
+        INNER JOIN {$wpdb->posts} p ON m.post_id = p.ID
+        WHERE p.post_author = %d 
+        AND p.post_type = 'post' 
+        AND p.post_status = 'publish' 
+        AND m.meta_key = '_hpg_like_count'
+    ", $author_id ) );
+
+    update_user_meta( $author_id, 'hpg_total_likes_received', (int)$total_likes );
+}
+// Hook into both adding and updating post meta for likes.
+add_action( 'updated_post_meta', 'hpg_recalculate_user_likes', 10, 4 );
+add_action( 'added_post_meta', 'hpg_recalculate_user_likes', 10, 4 );
+
+
+/**
+ * Recalculate total views for an author whenever their post's view count changes.
+ */
+function hpg_recalculate_user_views( $meta_id, $object_id, $meta_key, $_meta_value ) {
+    // Only proceed if the meta key is for views.
+    if ( '_hpg_view_count' !== $meta_key ) {
+        return;
+    }
+
+    $post_id = $object_id;
+    $post = get_post( $post_id );
+
+    // Ensure we're working with a valid post.
+    if ( ! $post || 'post' !== get_post_type($post) ) {
+        return;
+    }
+
+    $author_id = $post->post_author;
+
+    // Perform a direct DB query to sum up all views for the author's published posts.
+    global $wpdb;
+    $total_views = $wpdb->get_var( $wpdb->prepare( "
+        SELECT SUM(CAST(m.meta_value AS SIGNED)) 
+        FROM {$wpdb->postmeta} m
+        INNER JOIN {$wpdb->posts} p ON m.post_id = p.ID
+        WHERE p.post_author = %d 
+        AND p.post_type = 'post' 
+        AND p.post_status = 'publish' 
+        AND m.meta_key = '_hpg_view_count'
+    ", $author_id ) );
+
+    update_user_meta( $author_id, 'hpg_total_views_received', (int)$total_views );
+}
+// Hook into both adding and updating post meta for views.
+add_action( 'updated_post_meta', 'hpg_recalculate_user_views', 10, 4 );
+add_action( 'added_post_meta', 'hpg_recalculate_user_views', 10, 4 );
+
+
+/**
+ * Track comments when comment status changes (e.g., approved, trashed).
+ */
+function hpg_track_user_comments_on_status_change( $new_status, $old_status, $comment ) {
+    $post = get_post( $comment->comment_post_ID );
+    if ( !$post || 'post' !== get_post_type($post) ) return;
+
+    $author_id = $post->post_author;
+
+    // Don't count comments from the author on their own posts.
+    if ( $comment->user_id && $comment->user_id == $author_id ) {
+        return;
+    }
+
+    $current_comments = hpg_get_user_total_comments( $author_id );
+
+    // Comment is approved
+    if ( 'approved' === $new_status && 'approved' !== $old_status ) {
+        update_user_meta( $author_id, 'hpg_total_comments_received', $current_comments + 1 );
+    } 
+    // Comment is un-approved
+    elseif ( 'approved' === $old_status && 'approved' !== $new_status ) {
+        if ($current_comments > 0) {
+            update_user_meta( $author_id, 'hpg_total_comments_received', $current_comments - 1 );
+        }
+    }
+}
+add_action( 'transition_comment_status', 'hpg_track_user_comments_on_status_change', 10, 3 );
+
+
+/**
+ * Track new posts when they are published.
+ */
+function hpg_track_user_posts_on_publish( $new_status, $old_status, $post ) {
+    if ( 'post' !== $post->post_type ) {
+        return;
+    }
+
+    $author_id = $post->post_author;
+
+    if ( 'publish' === $new_status && 'publish' !== $old_status ) {
+        $current_posts = hpg_get_user_total_posts( $author_id );
+        update_user_meta( $author_id, 'hpg_total_posts_created', $current_posts + 1 );
+    }
+    elseif ( 'publish' === $old_status && 'publish' !== $new_status ) {
+        $current_posts = hpg_get_user_total_posts( $author_id );
+        if ( $current_posts > 0 ) {
+            update_user_meta( $author_id, 'hpg_total_posts_created', $current_posts - 1 );
+        }
+    }
+}
+add_action( 'transition_post_status', 'hpg_track_user_posts_on_publish', 10, 3 );
+
+
+// --- 3. Display stats on BuddyPress profile ---
+
+/**
+ * Display the reputation stats on the member's profile header.
+ */
+function hpg_display_user_reputation_stats() {
+    if ( ! bp_is_user() ) {
+        return;
+    }
+
+    $user_id = bp_displayed_user_id();
+    if ( ! $user_id ) {
+        return;
+    }
+
+    $total_likes = hpg_get_user_total_likes( $user_id );
+    $total_comments = hpg_get_user_total_comments( $user_id );
+    $total_posts = hpg_get_user_total_posts( $user_id );
+    $total_views = hpg_get_user_total_views( $user_id );
+    ?>
+    <div class="hpg-user-stats-container">
+        <div class="hpg-stat-item">
+            <span class="hpg-stat-value"><?php echo number_format_i18n( $total_views ); ?></span>
+            <span class="hpg-stat-label">👁️ צפיות</span>
+        </div>
+        <div class="hpg-stat-item">
+            <span class="hpg-stat-value"><?php echo number_format_i18n( $total_likes ); ?></span>
+            <span class="hpg-stat-label">❤ לבבות</span>
+        </div>
+        <div class="hpg-stat-item">
+            <span class="hpg-stat-value"><?php echo number_format_i18n( $total_comments ); ?></span>
+            <span class="hpg-stat-label">💬 תגובות</span>
+        </div>
+        <div class="hpg-stat-item">
+            <span class="hpg-stat-value"><?php echo number_format_i18n( $total_posts ); ?></span>
+            <span class="hpg-stat-label">📝 פוסטים</span>
+        </div>
+    </div>
+    <?php
+}
+add_action( 'bp_after_member_header', 'hpg_display_user_reputation_stats' );
+
+/**
+ * =================================================================
+ * ONE-TIME RECALCULATION SCRIPT
+ * =================================================================
+ */
+
+/**
+ * Handle the one-time recalculation of all user stats.
+ * Triggered by visiting the admin dashboard with a specific query parameter.
+ * e.g., /wp-admin/?hpg_recalculate_stats=true
+ */
+function hpg_recalculate_all_user_stats() {
+    if ( ! isset( $_GET['hpg_recalculate_stats'] ) || $_GET['hpg_recalculate_stats'] !== 'true' || ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+
+    global $wpdb;
+
+    // Reset all stats to 0 first to prevent duplicates.
+    $wpdb->query( "DELETE FROM {$wpdb->usermeta} WHERE meta_key IN ('hpg_total_likes_received', 'hpg_total_comments_received', 'hpg_total_posts_created', 'hpg_total_views_received')" );
+
+    // Recalculate total published posts for each user.
+    $post_counts = $wpdb->get_results( "
+        SELECT post_author, COUNT(ID) as count 
+        FROM {$wpdb->posts} 
+        WHERE post_type = 'post' AND post_status = 'publish' 
+        GROUP BY post_author
+    " );
+    foreach ( $post_counts as $row ) {
+        update_user_meta( $row->post_author, 'hpg_total_posts_created', $row->count );
+    }
+
+    // Recalculate total likes for each user.
+    $like_counts = $wpdb->get_results( "
+        SELECT p.post_author, SUM(CAST(m.meta_value AS SIGNED)) as count
+        FROM {$wpdb->postmeta} m
+        INNER JOIN {$wpdb->posts} p ON m.post_id = p.ID
+        WHERE p.post_type = 'post' AND p.post_status = 'publish' AND m.meta_key = '_hpg_like_count'
+        GROUP BY p.post_author
+    " );
+    foreach ( $like_counts as $row ) {
+        update_user_meta( $row->post_author, 'hpg_total_likes_received', $row->count );
+    }
+
+    // Recalculate total views for each user.
+    $view_counts = $wpdb->get_results( "
+        SELECT p.post_author, SUM(CAST(m.meta_value AS SIGNED)) as count
+        FROM {$wpdb->postmeta} m
+        INNER JOIN {$wpdb->posts} p ON m.post_id = p.ID
+        WHERE p.post_type = 'post' AND p.post_status = 'publish' AND m.meta_key = '_hpg_view_count'
+        GROUP BY p.post_author
+    " );
+    foreach ( $view_counts as $row ) {
+        update_user_meta( $row->post_author, 'hpg_total_views_received', $row->count );
+    }
+
+    // Recalculate total comments received for each user.
+    $comment_counts = $wpdb->get_results( "
+        SELECT p.post_author, COUNT(c.comment_ID) as count
+        FROM {$wpdb->comments} c
+        INNER JOIN {$wpdb->posts} p ON c.comment_post_ID = p.ID
+        WHERE p.post_type = 'post' AND p.post_status = 'publish' AND c.comment_approved = '1' AND c.user_id != p.post_author
+        GROUP BY p.post_author
+    " );
+    foreach ( $comment_counts as $row ) {
+        update_user_meta( $row->post_author, 'hpg_total_comments_received', $row->count );
+    }
+
+    // Display a success message in the admin panel.
+    add_action( 'admin_notices', function() {
+        echo '<div class="notice notice-success is-dismissible"><p>סטטיסטיקות המשתמשים חושבו מחדש בהצלחה.</p></div>';
+    });
+}
+add_action( 'admin_init', 'hpg_recalculate_all_user_stats' ); 
