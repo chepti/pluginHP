@@ -518,3 +518,9 @@ body.tax-collection .page-header .page-title > .hpc-archive-creator {
 .hpc-archive-creator a:hover {
     text-decoration: underline;
 } 
+
+/* Ensure the new H1 inside the title wrapper has no extra margin */
+.hpc-archive-title-wrapper .hpc-archive-main-title {
+    margin: 0;
+    padding: 0;
+} 

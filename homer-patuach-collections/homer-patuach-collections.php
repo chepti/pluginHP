@@ -421,7 +421,11 @@ function hpc_add_creator_to_collection_archive_title( $title ) {
                         $creator_html = '<a href="' . esc_url($user_link) . '">' . $creator_name . '</a>';
                     }
 
-                    $title = '<span class="hpc-archive-main-title">' . esc_html($term->name) . '</span><span class="hpc-archive-creator">אוסף מאת: ' . $creator_html . '</span>';
+                    // The new structure with divs for separate lines
+                    $title = '<div class="hpc-archive-title-wrapper">';
+                    $title .= '<h1 class="hpc-archive-main-title">' . esc_html($term->name) . '</h1>';
+                    $title .= '<div class="hpc-archive-creator">אוסף מאת ' . $creator_html . '</div>';
+                    $title .= '</div>';
                 }
             }
         }
