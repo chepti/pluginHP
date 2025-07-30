@@ -306,42 +306,25 @@ function hpc_add_post_to_collection() {
         return;
     }
 
-    global $wpdb;
-    $success = false;
     $action = '';
-    
-    // Get the term_taxonomy_id from the validated term object
-    $term_taxonomy_id = $term->term_taxonomy_id;
+    $term_ids = wp_get_object_terms($post_id, 'collection', ['fields' => 'ids']);
 
-    if (has_term($term->slug, 'collection', $post_id)) {
-        // --- MANUAL REMOVAL ---
+    if (in_array($collection_id, $term_ids)) {
+        // Post is in collection, so remove it
         $action = 'removed';
-        $deleted = $wpdb->delete(
-            $wpdb->term_relationships,
-            ['object_id' => $post_id, 'term_taxonomy_id' => $term_taxonomy_id],
-            ['%d', '%d']
-        );
-        $success = ($deleted !== false);
-
+        $term_ids = array_diff($term_ids, [$collection_id]);
     } else {
-        // --- MANUAL ADDITION ---
+        // Post is not in collection, so add it
         $action = 'added';
-        $inserted = $wpdb->insert(
-            $wpdb->term_relationships,
-            ['object_id' => $post_id, 'term_taxonomy_id' => $term_taxonomy_id],
-            ['%d', '%d']
-        );
-        $success = ($inserted !== false);
+        $term_ids[] = $collection_id;
     }
 
-    if ($success) {
-        // After successfully changing the relationship, update the count.
-        wp_update_term_count_now([$term_taxonomy_id], 'collection');
-        // Clear the post's cache to ensure changes appear immediately
-        clean_post_cache($post_id);
-        wp_send_json_success(['message' => 'פעולה הושלמה בהצלחה.', 'action' => $action]);
-    } else {
+    $result = wp_set_object_terms($post_id, $term_ids, 'collection', false);
+
+    if (is_wp_error($result)) {
         wp_send_json_error(['message' => 'שגיאה בעדכון מסד הנתונים.']);
+    } else {
+        wp_send_json_success(['message' => 'פעולה הושלמה בהצלחה.', 'action' => $action]);
     }
 }
 add_action('wp_ajax_hpc_add_post_to_collection', 'hpc_add_post_to_collection');
@@ -421,7 +404,7 @@ function hpc_add_creator_to_collection_archive_title( $title ) {
                         $creator_html = '<a href="' . esc_url($user_link) . '">' . $creator_name . '</a>';
                     }
 
-                    // The new structure with divs for separate lines
+                    // The new structure with divs for separate lines and a space
                     $title = '<div class="hpc-archive-title-wrapper">';
                     $title .= '<h1 class="hpc-archive-main-title">' . esc_html($term->name) . '</h1>';
                     $title .= '<div class="hpc-archive-creator">אוסף מאת ' . $creator_html . '</div>';
@@ -432,7 +415,7 @@ function hpc_add_creator_to_collection_archive_title( $title ) {
     }
     return $title;
 }
-add_filter( 'get_the_archive_title', 'hpc_add_creator_to_collection_archive_title' );
+add_filter( 'get_the_archive_title', 'hpc_add_creator_to_collection_archive_title', 11 );
 
 
 /**

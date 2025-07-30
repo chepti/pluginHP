@@ -519,8 +519,27 @@ body.tax-collection .page-header .page-title > .hpc-archive-creator {
     text-decoration: underline;
 } 
 
-/* Ensure the new H1 inside the title wrapper has no extra margin */
+/* 
+  Override theme styles for the collection archive title.
+  Using a more specific selector to ensure these rules apply.
+*/
+body.tax-collection .page-header h1.page-title {
+    line-height: 1.3;
+}
+
+body.tax-collection .page-header h1.page-title .hpc-archive-title-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
 .hpc-archive-title-wrapper .hpc-archive-main-title {
-    margin: 0;
+    margin: 0 0 5px 0 !important; /* Add space below the main title */
     padding: 0;
+    font-size: 2rem !important;
+}
+
+.hpc-archive-title-wrapper .hpc-archive-creator {
+    font-size: 1rem !important;
 } 

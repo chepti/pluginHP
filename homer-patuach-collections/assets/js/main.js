@@ -109,7 +109,8 @@ jQuery(document).ready(function($) {
      */
     function togglePostInCollection(postId, collectionId, $button) {
         $button.prop('disabled', true);
-        const originalButtonContent = $button.html(); // Save original content
+        const $listItem = $button.closest('li');
+        const $icon = $button.find('.hpc-toggle-icon');
 
         $.ajax({
             url: hpc_ajax_object.ajax_url,
@@ -122,17 +123,24 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
-                    // Reload the page to show the updated state.
-                    // This is the simplest and most reliable way to reflect the change.
-                    location.reload();
+                    // Instead of reloading, just update the UI
+                    if (response.data.action === 'added') {
+                        $listItem.addClass('hpc-checked');
+                        $icon.text('✔');
+                    } else if (response.data.action === 'removed') {
+                        $listItem.removeClass('hpc-checked');
+                        $icon.text('+');
+                    }
+                    // Re-enable the button for further actions
+                    $button.prop('disabled', false);
                 } else {
                     alert('שגיאה: ' + (response.data.message || 'לא ניתן היה לעדכן את האוסף.'));
-                    $button.prop('disabled', false).html(originalButtonContent);
+                    $button.prop('disabled', false);
                 }
             },
             error: function() {
                 alert('אירעה שגיאה בלתי צפויה.');
-                $button.prop('disabled', false).html(originalButtonContent);
+                $button.prop('disabled', false);
             }
         });
     }
@@ -257,8 +265,8 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
-                    // Reload the page to show the updated state (previews, counts, etc.)
-                    location.reload();
+                    // Instead of reloading, just update the button state
+                     $button.text('נוסף').addClass('is-added');
                 } else {
                     alert('שגיאה: ' + (response.data.message || 'לא ניתן היה להוסיף את הפוסט.'));
                     $button.prop('disabled', false);
