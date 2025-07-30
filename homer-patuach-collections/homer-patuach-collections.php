@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - Collections
  * Plugin URI:        https://homerpatuach.com/
  * Description:       Allows users to create and manage collections of posts.
- * Version:           1.3.0
+ * Version:           1.3.1
  * Author:            Chepti
  * Author URI:        https://homerpatuach.com/
  * License:           GPL-2.0+

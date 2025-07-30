@@ -100,25 +100,16 @@ add_filter( 'ngettext', 'hp_bp_tweaks_translate_text', 20, 3 );
 /**
  * Hide admin bar for non-admin users.
  */
-function hp_bp_tweaks_hide_admin_bar() {
-    if ( ! current_user_can( 'manage_options' ) && is_user_logged_in() ) {
-        add_filter('show_admin_bar', '__return_false');
-    }
-}
-add_action( 'init', 'hp_bp_tweaks_hide_admin_bar' );
+// Remove existing admin bar hooks to avoid conflicts
+// add_action( 'init', 'hp_bp_tweaks_hide_admin_bar' );
+// add_filter( 'show_admin_bar', 'hp_bp_tweaks_force_hide_admin_bar_for_logout', 999 );
 
-
-/**
- * Force hide the WordPress Admin Bar for all logged-out users.
- * This overrides BuddyPress settings that might show it.
- */
-function hp_bp_tweaks_force_hide_admin_bar_for_logout( $show ) {
-    if ( ! is_user_logged_in() ) {
-        return false;
+add_filter('show_admin_bar', function($show) {
+    if (current_user_can('manage_options')) {
+        return true; // Show for admins
     }
-    return $show;
-}
-add_filter( 'show_admin_bar', 'hp_bp_tweaks_force_hide_admin_bar_for_logout', 999 );
+    return false; // Hide for everyone else
+}, 999);
 
 
 /**
@@ -493,3 +484,43 @@ function hp_bp_tweaks_replace_mention_name_with_display_name( $mention_name ) {
     return $mention_name;
 }
 add_filter( 'bp_get_displayed_user_mentionname', 'hp_bp_tweaks_replace_mention_name_with_display_name', 10, 1 ); 
+
+
+/**
+ * Extends the default WordPress search to include user display names.
+ * When a user searches, this will also find posts by authors whose display name matches the search term.
+ */
+function hp_bp_tweaks_expand_search_to_user_names( $query ) {
+    // Ensure this is a search query on the frontend and not in the admin area
+    if ( $query->is_search && ! is_admin() ) {
+        
+        $search_term = $query->get( 's' );
+
+        if ( ! empty( $search_term ) ) {
+            // Give our filter a unique name
+            $join_filter = function( $join ) {
+                global $wpdb;
+                $join .= " LEFT JOIN {$wpdb->users} ON {$wpdb->posts}.post_author = {$wpdb->users}.ID ";
+                return $join;
+            };
+            
+            // Give our filter a unique name
+            $where_filter = function( $where ) use ( $search_term ) {
+                global $wpdb;
+                $where .= $wpdb->prepare( " OR ({$wpdb->users}.display_name LIKE %s) ", '%' . $wpdb->esc_like( $search_term ) . '%' );
+                return $where;
+            };
+
+            add_filter( 'posts_join', $join_filter );
+            add_filter( 'posts_where', $where_filter );
+            
+            // Remove the filters after the main query has run
+            add_action('posts_selection', function() use ($join_filter, $where_filter) {
+                remove_filter('posts_join', $join_filter);
+                remove_filter('posts_where', $where_filter);
+            });
+        }
+    }
+    return $query;
+}
+add_action( 'pre_get_posts', 'hp_bp_tweaks_expand_search_to_user_names' ); 

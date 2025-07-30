@@ -361,3 +361,42 @@ body.buddypress, .buddypress-wrap {
         text-align: center;
     }
 } 
+
+/* --- Responsive Menu Fixes --- */
+@media (max-width: 768px) {
+    /* Ensure our custom user bar stays visible and behaves */
+    .hp-bp-user-bar {
+        padding: 5px 10px; /* Reduce padding on mobile */
+    }
+
+    .hp-bp-user-bar-inner {
+        justify-content: flex-end; /* Keep icon to the left (in RTL) */
+        padding: 0;
+    }
+
+    /* Make sure the profile trigger (the account icon) is always visible */
+    .hp-bp-profile-trigger {
+        display: block !important;
+        order: 2; /* Place it after the mobile menu toggle if one exists */
+    }
+
+    /* Position the dropdown menu correctly on mobile */
+    .hp-bp-dropdown-menu {
+        left: 0;
+        right: auto;
+        width: 240px; /* Give it a bit more space */
+    }
+
+    /* This is a common class for theme's mobile menu toggles. 
+       We add some space to avoid overlap with our profile icon. */
+    .main-header-menu-toggle {
+        margin-left: 15px; /* Adjust as needed */
+    }
+}
+
+/* --- Fixes --- */
+/* Hide the default BuddyPress/Theme profile icon in the header to prevent duplication */
+#wp-admin-bar-my-account, /* BuddyPress Default Admin Bar item */
+.header-account-icon /* Common theme class - adjust if needed */ {
+    display: none !important;
+} 

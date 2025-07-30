@@ -36,7 +36,10 @@ jQuery(document).ready(function($) {
         if ($popupOverlay.length > 0) {
             $menu.on('click', '.hpg-open-popup-button', function(e) {
                 e.preventDefault();
-                $popupOverlay.removeClass('hpg-popup-hidden');
+                // Explicitly set visibility by adding/removing classes
+                $popupOverlay.removeClass('hpg-popup-hidden').addClass('hpg-popup-visible');
+                $('body').addClass('hpg-popup-active'); // Prevent background scrolling
+                
                 // Close the dropdown menu as well
                 $dropdown.attr('aria-hidden', 'true');
                 $trigger.attr('aria-expanded', 'false');
