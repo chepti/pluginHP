@@ -77,4 +77,91 @@ jQuery(document).ready(function($) {
             strengthMeter.css('margin', '0');
         }
     }
+
+    /**
+     * ===============================================
+     * Report Content Modal
+     * ===============================================
+     */
+    const reportModal = $('#hpg-report-modal');
+    const reportForm = $('#hpg-report-form');
+
+    // --- Open Modal ---
+    $('body').on('click', '.hpg-report-button', function() {
+        const postId = $(this).data('post-id');
+        if (postId) {
+            $('#hpg-report-post-id').val(postId);
+            reportModal.addClass('visible');
+        }
+    });
+
+    // --- Close Modal ---
+    function closeReportModal() {
+        reportModal.removeClass('visible');
+        // Reset form on close
+        if (reportForm.length) {
+            reportForm[0].reset();
+        }
+        $('#hpg-report-details-wrapper').hide();
+        $('#hpg-report-feedback').hide().empty().removeClass('success error');
+        $('#hpg-submit-report-button').prop('disabled', false).text('שליחת דיווח');
+    }
+
+    reportModal.on('click', '.hpg-modal-close', closeReportModal);
+    reportModal.on('click', function(e) {
+        if ($(e.target).is(reportModal)) {
+            closeReportModal();
+        }
+    });
+
+    // --- Show/Hide Details Textarea ---
+    $('#hpg-report-reason').on('change', function() {
+        const reason = $(this).val();
+        const detailsWrapper = $('#hpg-report-details-wrapper');
+        if (reason === 'content_error' || reason === 'offensive_content') {
+            detailsWrapper.show();
+        } else {
+            detailsWrapper.hide();
+        }
+    });
+
+    // --- Handle Form Submission (AJAX) ---
+    if (reportForm.length) {
+        reportForm.on('submit', function(e) {
+            e.preventDefault();
+
+            const submitButton = $('#hpg-submit-report-button');
+            const feedbackDiv = $('#hpg-report-feedback');
+            
+            // Disable button and show loading text
+            submitButton.prop('disabled', true).text('שולח...');
+            feedbackDiv.hide().empty().removeClass('success error');
+
+            // Prepare data
+            const formData = {
+                action: 'hpg_handle_report_submission',
+                security: hp_bp_ajax_obj.report_nonce,
+                post_id: $('#hpg-report-post-id').val(),
+                reason: $('#hpg-report-reason').val(),
+                details: $('#hpg-report-details').val()
+            };
+
+            // Send AJAX request
+            $.post(hp_bp_ajax_obj.ajax_url, formData, function(response) {
+                if (response.success) {
+                    feedbackDiv.addClass('success').text(response.data.message).show();
+                    // Close modal after a short delay
+                    setTimeout(closeReportModal, 3000);
+                } else {
+                    feedbackDiv.addClass('error').text(response.data.message).show();
+                    // Re-enable button on error
+                    submitButton.prop('disabled', false).text('שליחת דיווח');
+                }
+            }).fail(function() {
+                feedbackDiv.addClass('error').text('אירעה שגיאת רשת. נסה שוב.').show();
+                submitButton.prop('disabled', false).text('שליחת דיווח');
+            });
+        });
+    }
+
 }); 

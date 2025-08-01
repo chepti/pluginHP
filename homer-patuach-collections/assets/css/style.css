@@ -543,3 +543,41 @@ body.tax-collection .page-header h1.page-title .hpc-archive-title-wrapper {
 .hpc-archive-title-wrapper .hpc-archive-creator {
     font-size: 1rem !important;
 } 
+
+.hpc-collection-description-editor {
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-top: 1px solid #eee;
+}
+
+.hpc-collection-description-input {
+    width: 100%;
+    min-height: 80px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    display: block;
+    resize: vertical;
+    box-sizing: border-box; /* Important for padding and border */
+}
+
+.hpc-save-description-button {
+    background-color: #0073aa;
+    color: #fff;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.hpc-save-description-button:hover {
+    background-color: #005a87;
+}
+
+.hpc-save-success-msg {
+    color: #0073aa;
+    margin-right: 10px;
+    font-weight: bold;
+} 

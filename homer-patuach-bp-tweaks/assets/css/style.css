@@ -446,4 +446,88 @@ body.buddypress, .buddypress-wrap {
     font-size: 14px;
     color: #7f8c8d;
     font-weight: 500;
-} 
+}
+
+/*
+=========================================
+  User Bio on Profile
+=========================================
+*/
+.hpg-profile-bio-container {
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    margin-top: 25px;
+    line-height: 1.7;
+    font-size: 16px;
+    color: #555;
+    border: 1px solid #e7e7e7;
+    text-align: right;
+}
+
+.hpg-profile-bio-container p:last-child {
+    margin-bottom: 0;
+}
+
+.hpg-profile-bio-container a {
+    color: #FB7A5F; /* A color that matches the theme */
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 2px solid rgba(251, 122, 95, 0.3);
+    transition: all 0.2s ease-in-out;
+}
+
+.hpg-profile-bio-container a:hover {
+    background-color: rgba(251, 122, 95, 0.1);
+    border-bottom-color: #FB7A5F;
+}
+
+/* Character counter for Bio editor */
+.hpg-char-counter {
+    font-size: 13px;
+    color: #666;
+    text-align: left;
+    margin-top: 5px;
+    direction: ltr;
+}
+
+/* Author Box in Single Post */
+.hpg-author-box {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Puts space between info and button */
+    gap: 20px;
+}
+
+.hpg-author-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.hpg-author-avatar img {
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+}
+
+.hpg-author-name {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+.hpg-author-name a {
+    text-decoration: none;
+    color: #333;
+    transition: color 0.2s;
+}
+.hpg-author-name a:hover {
+    color: #FB7A5F;
+}
+
+/* No changes needed for follow button, it will be pushed to the end by justify-content */ 

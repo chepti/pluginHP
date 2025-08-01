@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - BuddyPress Tweaks
  * Plugin URI:        https://example.com/
  * Description:       Custom styles and functionality for BuddyPress pages.
- * Version:           2.1.0
+ * Version:           2.3.0
  * Author:            chepti
  * Author URI:        https://example.com/
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_BP_TWEAKS_VERSION', '2.1.0' );
+define( 'HP_BP_TWEAKS_VERSION', '2.3.0' );
 define( 'HP_BP_TWEAKS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 
 
@@ -497,8 +497,12 @@ add_filter( 'bp_get_displayed_user_mentionname', 'hp_bp_tweaks_replace_mention_n
  * When a user searches, this will also find posts by authors whose display name matches the search term.
  */
 function hp_bp_tweaks_expand_search_to_user_names( $query ) {
-    // Ensure this is a search query on the frontend and not in the admin area
-    if ( $query->is_search && ! is_admin() ) {
+    // Get our plugin settings
+    $options = get_option('hp_bp_tweaks_settings');
+    $is_user_search_enabled = isset($options['enable_user_search']) && $options['enable_user_search'];
+
+    // Ensure this is a search query on the frontend, not in the admin area, and our setting is enabled
+    if ( $is_user_search_enabled && $query->is_search && ! is_admin() ) {
         
         $search_term = $query->get( 's' );
 
@@ -919,6 +923,73 @@ add_action( 'bp_after_member_header', 'hpg_display_user_reputation_stats' );
 
 /**
  * =================================================================
+ * ADD USER STATS TO ADMIN USERS LIST
+ * =================================================================
+ */
+
+// 1. Add custom columns to the users list
+function hpg_add_user_stats_columns( $columns ) {
+    $columns['hpg_total_views'] = '👁️ סה"כ צפיות';
+    $columns['hpg_total_likes'] = '❤ סה"כ לבבות';
+    $columns['hpg_total_comments'] = '💬 סה"כ תגובות';
+    return $columns;
+}
+add_filter( 'manage_users_columns', 'hpg_add_user_stats_columns' );
+
+// 2. Populate the custom columns with data
+function hpg_show_user_stats_in_columns( $value, $column_name, $user_id ) {
+    switch ( $column_name ) {
+        case 'hpg_total_views':
+            return number_format_i18n( hpg_get_user_total_views( $user_id ) );
+        case 'hpg_total_likes':
+            return number_format_i18n( hpg_get_user_total_likes( $user_id ) );
+        case 'hpg_total_comments':
+            return number_format_i18n( hpg_get_user_total_comments( $user_id ) );
+        default:
+    }
+    return $value;
+}
+add_filter( 'manage_users_custom_column', 'hpg_show_user_stats_in_columns', 10, 3 );
+
+// 3. Make the new columns sortable
+function hpg_make_user_stats_columns_sortable( $columns ) {
+    $columns['hpg_total_views'] = 'hpg_total_views';
+    $columns['hpg_total_likes'] = 'hpg_total_likes';
+    $columns['hpg_total_comments'] = 'hpg_total_comments';
+    return $columns;
+}
+add_filter( 'manage_users_sortable_columns', 'hpg_make_user_stats_columns_sortable' );
+
+// 4. Handle the sorting logic
+function hpg_user_stats_column_sorting( $query ) {
+    if ( ! is_admin() || 'users' !== $query->get('query_id') ) {
+        return;
+    }
+
+    $orderby = $query->get( 'orderby' );
+
+    switch ( $orderby ) {
+        case 'hpg_total_views':
+            $query->set( 'meta_key', 'hpg_total_views_received' );
+            $query->set( 'orderby', 'meta_value_num' );
+            break;
+        case 'hpg_total_likes':
+            $query->set( 'meta_key', 'hpg_total_likes_received' );
+            $query->set( 'orderby', 'meta_value_num' );
+            break;
+        case 'hpg_total_comments':
+            $query->set( 'meta_key', 'hpg_total_comments_received' );
+            $query->set( 'orderby', 'meta_value_num' );
+            break;
+        default:
+            break;
+    }
+}
+add_action( 'pre_get_users', 'hpg_user_stats_column_sorting' );
+
+
+/**
+ * =================================================================
  * ONE-TIME RECALCULATION SCRIPT
  * =================================================================
  */
@@ -991,3 +1062,93 @@ function hpg_recalculate_all_user_stats() {
     });
 }
 add_action( 'admin_init', 'hpg_recalculate_all_user_stats' ); 
+
+/**
+ * =================================================================
+ * PLUGIN SETTINGS PAGE
+ * =================================================================
+ */
+
+// 1. Add settings page to the admin menu
+function hp_bp_tweaks_add_settings_page() {
+    add_options_page(
+        'Homer Patuach Tweaks Settings', // Page Title
+        'Homer Patuach Tweaks',          // Menu Title
+        'manage_options',                // Capability
+        'hp-bp-tweaks-settings',         // Menu Slug
+        'hp_bp_tweaks_render_settings_page' // Callback function
+    );
+}
+add_action('admin_menu', 'hp_bp_tweaks_add_settings_page');
+
+// 2. Register settings
+function hp_bp_tweaks_register_settings() {
+    register_setting(
+        'hp_bp_tweaks_options_group', // Option group
+        'hp_bp_tweaks_settings',      // Option name
+        'hp_bp_tweaks_sanitize_settings' // Sanitize callback
+    );
+
+    add_settings_section(
+        'hp_bp_tweaks_search_section', // ID
+        'הגדרות חיפוש', // Title
+        null, // Callback
+        'hp-bp-tweaks-settings' // Page
+    );
+
+    add_settings_field(
+        'enable_user_search', // ID
+        'הרחבת חיפוש לשמות משתמשים', // Title
+        'hp_bp_tweaks_enable_user_search_callback', // Callback
+        'hp-bp-tweaks-settings', // Page
+        'hp_bp_tweaks_search_section' // Section
+    );
+}
+add_action('admin_init', 'hp_bp_tweaks_register_settings');
+
+// 3. Render the form fields
+function hp_bp_tweaks_enable_user_search_callback() {
+    $options = get_option('hp_bp_tweaks_settings');
+    $checked = isset($options['enable_user_search']) && $options['enable_user_search'] ? 'checked' : '';
+    echo '<input type="checkbox" id="enable_user_search" name="hp_bp_tweaks_settings[enable_user_search]" value="1" ' . $checked . ' />';
+    echo '<label for="enable_user_search">הפעל כדי לכלול בתוצאות החיפוש פוסטים של משתמשים עם שם תצוגה תואם.</label>';
+}
+
+
+// 4. Sanitize the settings
+function hp_bp_tweaks_sanitize_settings($input) {
+    $new_input = [];
+    if (isset($input['enable_user_search'])) {
+        $new_input['enable_user_search'] = absint($input['enable_user_search']);
+    }
+    return $new_input;
+}
+
+// 5. Render the settings page content
+function hp_bp_tweaks_render_settings_page() {
+    ?>
+    <div class="wrap">
+        <h1>הגדרות עבור Homer Patuach Tweaks</h1>
+        <form method="post" action="options.php">
+            <?php
+                settings_fields('hp_bp_tweaks_options_group');
+                do_settings_sections('hp-bp-tweaks-settings');
+                submit_button();
+            ?>
+        </form>
+    </div>
+    <?php
+}
+
+/**
+ * Add a "Settings" link to the plugin's action links on the plugins page.
+ *
+ * @param array  $links An array of plugin action links.
+ * @return array An array of modified plugin action links.
+ */
+function hp_bp_tweaks_add_settings_link($links) {
+    $settings_link = '<a href="options-general.php?page=hp-bp-tweaks-settings">' . __('הגדרות') . '</a>';
+    array_unshift($links, $settings_link); // Add to the beginning of the links array
+    return $links;
+}
+add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'hp_bp_tweaks_add_settings_link'); 

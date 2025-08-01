@@ -331,6 +331,66 @@ add_action('wp_ajax_hpc_add_post_to_collection', 'hpc_add_post_to_collection');
 
 
 /**
+ * A temporary capabilities filter to allow a user to edit a specific term.
+ */
+function hpc_allow_term_edit_for_this_request( $allcaps, $caps, $args ) {
+    // We are checking for 'edit_term'. $args are [$cap, $user_id, $term_id].
+    if ( isset( $args[0] ) && 'edit_term' === $args[0] && isset( $args[2] ) ) {
+        // The ownership check is performed in the AJAX handler before adding this filter.
+        // So, if we are here, we can grant permission for this specific request.
+        $allcaps['edit_term'] = true;
+    }
+    return $allcaps;
+}
+
+
+/**
+ * AJAX handler to update a collection's description.
+ */
+function hpc_update_collection_description() {
+    // Security check
+    check_ajax_referer('hpc_collections_nonce', 'nonce');
+
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        wp_send_json_error(['message' => 'User not logged in.']);
+    }
+
+    $collection_id = isset($_POST['collection_id']) ? intval($_POST['collection_id']) : 0;
+    $description = isset($_POST['description']) ? sanitize_textarea_field($_POST['description']) : '';
+
+    if (!$collection_id) {
+        wp_send_json_error(['message' => 'Invalid data provided.']);
+    }
+
+    // Verify the collection belongs to the user
+    $collection_user_id = get_term_meta($collection_id, 'hpc_user_id', true);
+    if ((int) $collection_user_id !== $user_id) {
+        wp_send_json_error(['message' => 'Invalid collection ownership.']);
+    }
+
+    // Temporarily grant permission to edit the term.
+    add_filter( 'user_has_cap', 'hpc_allow_term_edit_for_this_request', 10, 3 );
+
+    // Update the term description
+    $result = wp_update_term($collection_id, 'collection', [
+        'description' => $description,
+    ]);
+
+    // Immediately remove the filter to restore original permissions.
+    remove_filter( 'user_has_cap', 'hpc_allow_term_edit_for_this_request', 10, 3 );
+
+
+    if (is_wp_error($result)) {
+        wp_send_json_error(['message' => $result->get_error_message()]);
+    }
+
+    wp_send_json_success(['message' => 'Description updated successfully.']);
+}
+add_action('wp_ajax_hpc_update_collection_description', 'hpc_update_collection_description');
+
+
+/**
  * AJAX handler to search for posts to add to a collection.
  */
 function hpc_search_posts_for_collection() {
@@ -385,6 +445,92 @@ add_action('wp_ajax_hpc_search_posts_for_collection', 'hpc_search_posts_for_coll
 
 
 /**
+ * =================================================================
+ * COLLECTION METADATA (LIKES & VIEWS)
+ * =================================================================
+ */
+
+// --- 1. Helper functions ---
+
+function hpc_get_collection_likes( $term_id ) {
+    $count = get_term_meta( $term_id, 'hpc_like_count', true );
+    return $count ? (int) $count : 0;
+}
+
+function hpc_get_collection_views( $term_id ) {
+    $count = get_term_meta( $term_id, 'hpc_view_count', true );
+    return $count ? (int) $count : 0;
+}
+
+function hpc_has_user_liked_collection( $term_id, $user_id ) {
+    if ( ! $user_id ) return false;
+    $liked_collections = get_user_meta( $user_id, 'hpc_liked_collections', true );
+    if ( ! is_array( $liked_collections ) ) {
+        $liked_collections = [];
+    }
+    return in_array( $term_id, $liked_collections );
+}
+
+// --- 2. Track Views ---
+
+function hpc_track_collection_views() {
+    if ( is_tax('collection') ) {
+        $term = get_queried_object();
+        if ( $term && isset($term->term_id) ) {
+            // Simple tracking without checking for unique users to keep it lightweight.
+            $count = hpc_get_collection_views( $term->term_id );
+            update_term_meta( $term->term_id, 'hpc_view_count', $count + 1 );
+        }
+    }
+}
+add_action( 'wp_head', 'hpc_track_collection_views' );
+
+// --- 3. Handle Likes via AJAX ---
+
+function hpc_like_collection_ajax_handler() {
+    check_ajax_referer( 'hpc_collections_nonce', 'nonce' );
+
+    $user_id = get_current_user_id();
+    if ( ! $user_id ) {
+        wp_send_json_error( ['message' => 'יש להתחבר כדי לסמן בלייק.'] );
+    }
+
+    $term_id = isset( $_POST['collection_id'] ) ? intval( $_POST['collection_id'] ) : 0;
+    if ( ! $term_id ) {
+        wp_send_json_error( ['message' => 'אוסף לא חוקי.'] );
+    }
+
+    $liked_collections = get_user_meta( $user_id, 'hpc_liked_collections', true );
+    if ( ! is_array( $liked_collections ) ) {
+        $liked_collections = [];
+    }
+
+    $current_likes = hpc_get_collection_likes( $term_id );
+    $user_has_liked = in_array( $term_id, $liked_collections );
+
+    if ( $user_has_liked ) {
+        // --- Unlike ---
+        $new_count = max( 0, $current_likes - 1 );
+        // Remove term_id from user's liked list
+        $liked_collections = array_diff( $liked_collections, [$term_id] );
+    } else {
+        // --- Like ---
+        $new_count = $current_likes + 1;
+        // Add term_id to user's liked list
+        $liked_collections[] = $term_id;
+    }
+
+    update_term_meta( $term_id, 'hpc_like_count', $new_count );
+    update_user_meta( $user_id, 'hpc_liked_collections', $liked_collections );
+
+    wp_send_json_success([
+        'new_count' => $new_count,
+        'user_has_liked' => ! $user_has_liked,
+    ]);
+}
+add_action('wp_ajax_hpc_like_collection', 'hpc_like_collection_ajax_handler');
+ 
+/**
  * Add the creator's name to the collection archive page title.
  */
 function hpc_add_creator_to_collection_archive_title( $title ) {
@@ -392,6 +538,30 @@ function hpc_add_creator_to_collection_archive_title( $title ) {
         $term = get_queried_object();
         if ($term && isset($term->term_id)) {
             $user_id = get_term_meta($term->term_id, 'hpc_user_id', true);
+
+            // Get stats
+            $views = hpc_get_collection_views( $term->term_id );
+            $likes = hpc_get_collection_likes( $term->term_id );
+            $user_has_liked = hpc_has_user_liked_collection( $term->term_id, get_current_user_id() );
+            $like_btn_class = $user_has_liked ? 'hpc-like-button liked' : 'hpc-like-button';
+            $like_btn_text = $user_has_liked ? 'אהבתי' : 'לייק';
+
+            // Meta line
+            $meta_html = '
+            <div class="hpc-archive-meta">
+                <span class="hpc-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 10c-2.48 0-4.5-2.02-4.5-4.5S9.52 5.5 12 5.5s4.5 2.02 4.5 4.5-2.02 4.5-4.5 4.5zm0-7c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5 2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5z"/></svg> ' . number_format_i18n($views) . '</span>
+                <span class="hpc-meta-item hpc-likes-count"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> <span class="count">' . number_format_i18n($likes) . '</span></span>';
+
+            if (is_user_logged_in()) {
+                $meta_html .= '
+                <button class="' . esc_attr($like_btn_class) . '" data-collection-id="' . esc_attr($term->term_id) . '">
+                    <span class="like-text">' . $like_btn_text . '</span>
+                </button>';
+            }
+
+            $meta_html .= '</div>';
+
+
             if ($user_id) {
                 $user_info = get_userdata($user_id);
                 if ($user_info) {
@@ -408,6 +578,7 @@ function hpc_add_creator_to_collection_archive_title( $title ) {
                     $title = '<div class="hpc-archive-title-wrapper">';
                     $title .= '<h1 class="hpc-archive-main-title">' . esc_html($term->name) . '</h1>';
                     $title .= '<div class="hpc-archive-creator">אוסף מאת ' . $creator_html . '</div>';
+                    $title .= $meta_html; // Add the meta line here
                     $title .= '</div>';
                 }
             }
@@ -529,20 +700,34 @@ function hpc_collections_screen_content() {
             }
             wp_reset_postdata();
 
+            // Only show editing UI if the logged-in user is viewing their own profile.
+            if ( bp_is_my_profile() ) {
+                // Add the description editor
+                echo '<div class="hpc-collection-description-editor">';
+                echo '<textarea class="hpc-collection-description-input" data-collection-id="' . esc_attr($collection->term_id) . '" placeholder="הוסף תיאור קצר לאוסף...">' . esc_textarea($collection->description) . '</textarea>';
+                echo '<button class="hpc-save-description-button" data-collection-id="' . esc_attr($collection->term_id) . '">שמור תיאור</button>';
+                echo '<span class="hpc-save-success-msg" style="display:none;">נשמר!</span>';
+                echo '</div>'; // .hpc-collection-description-editor
+            }
+
+
         echo '</div>'; // End .hpc-collection-item-main
 
-        echo '<div class="hpc-collection-item-footer">'; // Footer for actions
-            // Add Post to Collection UI
-            echo '<div class="hpc-add-post-to-collection-ui">';
-            echo '  <button class="hpc-open-search-button" data-collection-id="' . esc_attr($collection->term_id) . '">+ הוסף פוסטים</button>';
-            echo '  <div class="hpc-search-area" id="hpc-search-area-'.esc_attr($collection->term_id).'" style="display: none;">';
-            echo '      <div class="hpc-search-wrapper">';
-            echo '          <input type="text" class="hpc-post-search-input" placeholder="חפש/י פוסטים לפי שם..." data-collection-id="' . esc_attr($collection->term_id) . '">';
-            echo '      </div>';
-            echo '      <div class="hpc-search-results"></div>';
-            echo '  </div>';
-            echo '</div>';
-        echo '</div>'; // End .hpc-collection-item-footer
+        // Only show editing UI if the logged-in user is viewing their own profile.
+        if ( bp_is_my_profile() ) {
+            echo '<div class="hpc-collection-item-footer">'; // Footer for actions
+                // Add Post to Collection UI
+                echo '<div class="hpc-add-post-to-collection-ui">';
+                echo '  <button class="hpc-open-search-button" data-collection-id="' . esc_attr($collection->term_id) . '">+ הוסף פוסטים</button>';
+                echo '  <div class="hpc-search-area" id="hpc-search-area-'.esc_attr($collection->term_id).'" style="display: none;">';
+                echo '      <div class="hpc-search-wrapper">';
+                echo '          <input type="text" class="hpc-post-search-input" placeholder="חפש/י פוסטים לפי שם..." data-collection-id="' . esc_attr($collection->term_id) . '">';
+                echo '      </div>';
+                echo '      <div class="hpc-search-results"></div>';
+                echo '  </div>';
+                echo '</div>';
+            echo '</div>'; // End .hpc-collection-item-footer
+        }
 
         echo '</div>'; // End .hpc-collection-item
     }

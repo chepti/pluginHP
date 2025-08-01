@@ -279,5 +279,79 @@ jQuery(document).ready(function($) {
         });
     });
 
+    // New: Handle saving the collection description
+    if ($('.hpc-save-description-button').length) {
+        $('.hpc-collections-grid').on('click', '.hpc-save-description-button', function() {
+            const button = $(this);
+            const collection_id = button.data('collection-id');
+            const textarea = button.siblings('.hpc-collection-description-input');
+            const description = textarea.val();
+            const successMsg = button.siblings('.hpc-save-success-msg');
+
+            if (button.hasClass('processing')) {
+                return;
+            }
+            button.addClass('processing').text('שומר...');
+
+            $.post(hpc_ajax_object.ajax_url, {
+                action: 'hpc_update_collection_description',
+                nonce: hpc_ajax_object.nonce,
+                collection_id: collection_id,
+                description: description
+            })
+            .done(function(response) {
+                if (response.success) {
+                    successMsg.fadeIn();
+                    setTimeout(function() {
+                        successMsg.fadeOut();
+                    }, 2000); // Fade out after 2 seconds
+                } else {
+                    alert(response.data.message || 'Error saving description.');
+                }
+            })
+            .fail(function() {
+                alert('Server error while saving description.');
+            })
+            .always(function() {
+                button.removeClass('processing').text('שמור תיאור');
+            });
+        });
+    }
+
+    // New: Handle liking a collection
+    if ($('.hpc-archive-meta').length) {
+        $('.hpc-archive-meta').on('click', '.hpc-like-button', function() {
+            const button = $(this);
+            const collection_id = button.data('collection-id');
+            
+            if (button.hasClass('processing')) {
+                return; // Prevent multiple clicks
+            }
+            button.addClass('processing');
+
+            $.post(hpc_ajax_object.ajax_url, {
+                action: 'hpc_like_collection',
+                nonce: hpc_ajax_object.nonce,
+                collection_id: collection_id
+            })
+            .done(function(response) {
+                if (response.success) {
+                    // Update like count
+                    $('.hpc-likes-count .count').text(response.data.new_count);
+                    // Toggle button class and text
+                    button.toggleClass('liked', response.data.user_has_liked);
+                    button.find('.like-text').text(response.data.user_has_liked ? 'אהבתי' : 'לייק');
+                } else {
+                    alert(response.data.message || 'אירעה שגיאה.');
+                }
+            })
+            .fail(function() {
+                alert('אירעה שגיאת שרת. נסה שוב מאוחר יותר.');
+            })
+            .always(function() {
+                button.removeClass('processing');
+            });
+        });
+    }
 
 }); 
