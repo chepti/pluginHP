@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - BuddyPress Tweaks
  * Plugin URI:        https://example.com/
  * Description:       Custom styles and functionality for BuddyPress pages.
- * Version:           2.3.0
+ * Version:           2.4.0
  * Author:            chepti
  * Author URI:        https://example.com/
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_BP_TWEAKS_VERSION', '2.3.0' );
+define( 'HP_BP_TWEAKS_VERSION', '2.4.0' );
 define( 'HP_BP_TWEAKS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 
 
@@ -548,6 +548,79 @@ function hp_bp_tweaks_strip_attachments_from_results( $posts, $query ) {
 add_filter( 'posts_results', 'hp_bp_tweaks_strip_attachments_from_results', 9999, 2 );
 
 /**
+ * Hard exclude attachments at the SQL clauses level for any frontend search.
+ */
+function hp_bp_tweaks_exclude_attachments_in_clauses( $clauses, $query ) {
+    if ( ! is_admin() && $query->is_search ) {
+        global $wpdb;
+        // Ensure the WHERE exists
+        if ( empty( $clauses['where'] ) ) {
+            $clauses['where'] = '';
+        }
+        // Add exclusion if not already present
+        if ( strpos( $clauses['where'], "{$wpdb->posts}.post_type <> 'attachment'" ) === false ) {
+            $clauses['where'] .= " AND {$wpdb->posts}.post_type <> 'attachment' ";
+        }
+        // Also restrict post_status to publish to avoid 'inherit'
+        if ( strpos( $clauses['where'], "{$wpdb->posts}.post_status" ) === false ) {
+            $clauses['where'] .= " AND {$wpdb->posts}.post_status = 'publish' ";
+        }
+        // DISTINCT to avoid duplicates if joins add rows
+        $clauses['distinct'] = 'DISTINCT';
+    }
+    return $clauses;
+}
+add_filter( 'posts_clauses', 'hp_bp_tweaks_exclude_attachments_in_clauses', 9999, 2 );
+
+/**
+ * Final pass: remove attachments from the_posts array in case any slipped through.
+ */
+function hp_bp_tweaks_filter_the_posts( $posts, $query ) {
+    if ( ! is_admin() && $query->is_search && ! empty( $posts ) ) {
+        $posts = array_values( array_filter( $posts, function( $p ) {
+            return isset( $p->post_type ) && $p->post_type !== 'attachment';
+        } ) );
+    }
+    return $posts;
+}
+add_filter( 'the_posts', 'hp_bp_tweaks_filter_the_posts', 9999, 2 );
+
+/**
+ * Broad exclusion: remove attachments from any frontend list queries (search, archives, home, taxonomies).
+ * Skips only when the query explicitly targets attachments or a singular attachment page.
+ */
+function hp_bp_tweaks_exclude_attachments_front_lists( $clauses, $query ) {
+    if ( is_admin() ) {
+        return $clauses;
+    }
+
+    // Skip if this query is explicitly for attachments or a singular object
+    $pt = $query->get( 'post_type' );
+    if ( ( is_string( $pt ) && $pt === 'attachment' ) || ( is_array( $pt ) && in_array( 'attachment', $pt, true ) ) || $query->is_singular ) {
+        return $clauses;
+    }
+
+    // Apply on common listing contexts
+    if ( $query->is_search || $query->is_home() || $query->is_archive() || $query->is_category() || $query->is_tag() || $query->is_tax() ) {
+        global $wpdb;
+        if ( empty( $clauses['where'] ) ) {
+            $clauses['where'] = '';
+        }
+        if ( strpos( $clauses['where'], "{$wpdb->posts}.post_type <> 'attachment'" ) === false ) {
+            $clauses['where'] .= " AND {$wpdb->posts}.post_type <> 'attachment' ";
+        }
+        // Also restrict to published content to avoid 'inherit' rows
+        if ( strpos( $clauses['where'], "{$wpdb->posts}.post_status" ) === false ) {
+            $clauses['where'] .= " AND {$wpdb->posts}.post_status = 'publish' ";
+        }
+        $clauses['distinct'] = 'DISTINCT';
+    }
+
+    return $clauses;
+}
+add_filter( 'posts_clauses', 'hp_bp_tweaks_exclude_attachments_front_lists', 9999, 2 );
+
+/**
  * Extends the default WordPress search to include user display names and all post meta fields,
  * while excluding attachments from the results.
  */
@@ -577,9 +650,9 @@ function hp_bp_tweaks_expand_search_to_users_and_meta( $query ) {
             
             $where_filter = function( $where ) use ( $search_term ) {
                 global $wpdb;
-                // Add author display name and post meta to the search
+                // AND a grouped OR block so existing constraints (like post_type=post) remain effective
                 $where .= $wpdb->prepare(
-                    " OR ({$wpdb->users}.display_name LIKE %s) OR ({$wpdb->postmeta}.meta_value LIKE %s) ",
+                    " OR (({$wpdb->users}.display_name LIKE %s) OR ({$wpdb->postmeta}.meta_value LIKE %s)) ",
                     '%' . $wpdb->esc_like( $search_term ) . '%',
                     '%' . $wpdb->esc_like( $search_term ) . '%'
                 );
