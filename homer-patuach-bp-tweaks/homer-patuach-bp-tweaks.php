@@ -1158,14 +1158,60 @@ function hpg_display_user_bio_in_header() {
         return;
     }
 
-    // הפוך קישורים ללחיצים ושמור על ירידות שורה/פסקאות
-    $bio_html = wpautop( make_clickable( esc_html( $bio_text ) ) );
+    // אם המשתמש הזין טקסט עשיר (דרך עורך), אפשר HTML בטוח; אחרת, הפוך כתובות לקישורים אוטומטיים
+    $has_html = strpos( $bio_text, '<' ) !== false;
+    if ( $has_html ) {
+        $allowed_tags = [
+            'a' => [ 'href' => true, 'title' => true, 'target' => true, 'rel' => true ],
+            'p' => [], 'br' => [], 'strong' => [], 'em' => [], 'b' => [], 'i' => [],
+            'ul' => [], 'ol' => [], 'li' => [], 'span' => [ 'style' => true ],
+        ];
+        $bio_html = wpautop( wp_kses( $bio_text, $allowed_tags ) );
+    } else {
+        $bio_html = wpautop( make_clickable( esc_html( $bio_text ) ) );
+    }
+
+    // הוסף target="_blank" + rel בטוח לכל קישור
+    $bio_html = hpg_add_target_blank_to_links( $bio_html );
     ?>
     <div class="hpg-profile-bio"><?php echo $bio_html; ?></div>
     <?php
 }
 // ממוקם בתוך #item-header-content לפני ה־meta, כך שזה באמת בבאנר
 add_action( 'bp_before_member_header_meta', 'hpg_display_user_bio_in_header' );
+
+/**
+ * מוסיף target="_blank" ו-rel="noopener nofollow ugc" לכל תגית <a> ב־HTML נתון.
+ */
+function hpg_add_target_blank_to_links( $html ) {
+    return preg_replace_callback( '/<a\s[^>]*href=\"[^\"]+\"[^>]*>/i', function( $matches ) {
+        $tag = $matches[0];
+        // דאג ל-target
+        if ( stripos( $tag, 'target=' ) === false ) {
+            $tag = rtrim( $tag, '>' ) . ' target="_blank">';
+        } else {
+            $tag = preg_replace( '/target=\"[^\"]*\"/i', 'target="_blank"', $tag );
+        }
+        // דאג ל-rel בטוח
+        if ( stripos( $tag, 'rel=' ) === false ) {
+            $tag = rtrim( $tag, '>' ) . ' rel="noopener nofollow ugc">';
+        }
+        return $tag;
+    }, $html );
+}
+
+/**
+ * הפעלת עורך עשיר (TinyMCE) לשדה xProfile "קצת עליי" בממשק העריכה הקדמי.
+ */
+function hpg_enable_richtext_for_bio_field( $enabled, $field ) {
+    if ( is_object( $field ) && isset( $field->name ) ) {
+        if ( 'קצת עליי' === $field->name ) {
+            return true; // אפשר עורך עשיר לשדה הביו
+        }
+    }
+    return $enabled;
+}
+add_filter( 'bp_xprofile_is_richtext_enabled_for_field', 'hpg_enable_richtext_for_bio_field', 10, 2 );
 
 /**
  * =================================================================
