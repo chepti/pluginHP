@@ -1141,38 +1141,13 @@ function hpg_display_user_bio_in_header() {
         return;
     }
 
-    $bio_text = '';
-    if ( function_exists( 'bp_xprofile_get_field_id_from_name' ) ) {
-        $field_id = bp_xprofile_get_field_id_from_name( 'קצת עליי' );
-        if ( $field_id ) {
-            $bio_text = xprofile_get_field_data( $field_id, $user_id );
-        }
-    }
-
-    // נפילה חכמה: נסה שדה description מהמשתמש של וורדפרס
-    if ( empty( $bio_text ) ) {
-        $bio_text = get_user_meta( $user_id, 'description', true );
-    }
+    $bio_text = hpg_get_user_bio_raw( $user_id );
 
     if ( empty( $bio_text ) ) {
         return;
     }
 
-    // אם המשתמש הזין טקסט עשיר (דרך עורך), אפשר HTML בטוח; אחרת, הפוך כתובות לקישורים אוטומטיים
-    $has_html = strpos( $bio_text, '<' ) !== false;
-    if ( $has_html ) {
-        $allowed_tags = [
-            'a' => [ 'href' => true, 'title' => true, 'target' => true, 'rel' => true ],
-            'p' => [], 'br' => [], 'strong' => [], 'em' => [], 'b' => [], 'i' => [],
-            'ul' => [], 'ol' => [], 'li' => [], 'span' => [ 'style' => true ],
-        ];
-        $bio_html = wpautop( wp_kses( $bio_text, $allowed_tags ) );
-    } else {
-        $bio_html = wpautop( make_clickable( esc_html( $bio_text ) ) );
-    }
-
-    // הוסף target="_blank" + rel בטוח לכל קישור
-    $bio_html = hpg_add_target_blank_to_links( $bio_html );
+    $bio_html = hpg_format_bio_html( $bio_text );
     ?>
     <div class="hpg-profile-bio"><?php echo $bio_html; ?></div>
     <?php
@@ -1199,6 +1174,59 @@ function hpg_add_target_blank_to_links( $html ) {
         return $tag;
     }, $html );
 }
+
+/**
+ * מחזיר טקסט ביו גולמי לפי סדר עדיפויות: xProfile("קצת עליי"/"ביו") ואז WP user description.
+ */
+function hpg_get_user_bio_raw( $user_id ) {
+    $text = '';
+    if ( function_exists( 'bp_xprofile_get_field_id_from_name' ) ) {
+        foreach ( array( 'קצת עליי', 'ביו' ) as $name ) {
+            $fid = bp_xprofile_get_field_id_from_name( $name );
+            if ( $fid ) {
+                $text = xprofile_get_field_data( $fid, $user_id );
+                if ( ! empty( $text ) ) break;
+            }
+        }
+    }
+    if ( empty( $text ) ) {
+        $text = get_user_meta( $user_id, 'description', true );
+    }
+    return (string) $text;
+}
+
+/**
+ * מעצב טקסט ביו ל־HTML בטוח עם קישורים וירידות שורה.
+ */
+function hpg_format_bio_html( $bio_text ) {
+    $bio_text = (string) $bio_text;
+    $has_html = strpos( $bio_text, '<' ) !== false;
+    if ( $has_html ) {
+        $allowed_tags = [
+            'a' => [ 'href' => true, 'title' => true, 'target' => true, 'rel' => true ],
+            'p' => [], 'br' => [], 'strong' => [], 'em' => [], 'b' => [], 'i' => [],
+            'ul' => [], 'ol' => [], 'li' => [], 'span' => [ 'style' => true ],
+        ];
+        $bio_html = wpautop( wp_kses( $bio_text, $allowed_tags ) );
+    } else {
+        $bio_html = wpautop( make_clickable( esc_html( $bio_text ) ) );
+    }
+    return hpg_add_target_blank_to_links( $bio_html );
+}
+
+/**
+ * החלת העיצוב והקישורים גם על תצוגת השדה בעמוד "פרופיל" ובכל מקום שבו BuddyPress מציג את הערך.
+ */
+function hpg_filter_xprofile_bio_output( $value, $type = '' ) {
+    if ( function_exists( 'bp_get_the_profile_field_name' ) ) {
+        $name = bp_get_the_profile_field_name();
+        if ( in_array( $name, array( 'קצת עליי', 'ביו' ), true ) ) {
+            return hpg_format_bio_html( $value );
+        }
+    }
+    return $value;
+}
+add_filter( 'bp_get_the_profile_field_value', 'hpg_filter_xprofile_bio_output', 20, 2 );
 
 /**
  * הפעלת עורך עשיר (TinyMCE) לשדה xProfile "קצת עליי" בממשק העריכה הקדמי.
