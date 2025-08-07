@@ -493,47 +493,64 @@ add_filter( 'bp_get_displayed_user_mentionname', 'hp_bp_tweaks_replace_mention_n
 
 
 /**
- * Extends the default WordPress search to include user display names.
- * When a user searches, this will also find posts by authors whose display name matches the search term.
+ * Extends the default WordPress search to include user display names and all post meta fields.
+ * When a user searches, this will also find:
+ *  - Posts by authors whose display name matches the search term.
+ *  - Posts where any custom field (ACF, etc.) contains the search term.
  */
-function hp_bp_tweaks_expand_search_to_user_names( $query ) {
+function hp_bp_tweaks_expand_search_to_users_and_meta( $query ) {
     // Get our plugin settings
     $options = get_option('hp_bp_tweaks_settings');
-    $is_user_search_enabled = isset($options['enable_user_search']) && $options['enable_user_search'];
+    $is_search_enabled = isset($options['enable_user_search']) && $options['enable_user_search'];
 
     // Ensure this is a search query on the frontend, not in the admin area, and our setting is enabled
-    if ( $is_user_search_enabled && $query->is_search && ! is_admin() ) {
+    if ( $is_search_enabled && $query->is_search && ! is_admin() ) {
         
         $search_term = $query->get( 's' );
 
         if ( ! empty( $search_term ) ) {
-            // Give our filter a unique name
+            
             $join_filter = function( $join ) {
                 global $wpdb;
+                // Join users table to search by author display name
                 $join .= " LEFT JOIN {$wpdb->users} ON {$wpdb->posts}.post_author = {$wpdb->users}.ID ";
+                // Join postmeta table to search by custom fields
+                $join .= " LEFT JOIN {$wpdb->postmeta} ON {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id ";
                 return $join;
             };
             
-            // Give our filter a unique name
             $where_filter = function( $where ) use ( $search_term ) {
                 global $wpdb;
-                $where .= $wpdb->prepare( " OR ({$wpdb->users}.display_name LIKE %s) ", '%' . $wpdb->esc_like( $search_term ) . '%' );
+                // Add author display name and post meta to the search
+                // The original WHERE clause for search will be there, so we just add to it with OR
+                $where .= $wpdb->prepare(
+                    " OR ({$wpdb->users}.display_name LIKE %s) OR ({$wpdb->postmeta}.meta_value LIKE %s) ",
+                    '%' . $wpdb->esc_like( $search_term ) . '%',
+                    '%' . $wpdb->esc_like( $search_term ) . '%'
+                );
                 return $where;
+            };
+
+            // Add a DISTINCT clause to avoid duplicate results when a match is found in multiple places
+            $distinct_filter = function( $distinct ) {
+                return 'DISTINCT';
             };
 
             add_filter( 'posts_join', $join_filter );
             add_filter( 'posts_where', $where_filter );
+            add_filter( 'posts_distinct', $distinct_filter );
             
-            // Remove the filters after the main query has run
-            add_action('posts_selection', function() use ($join_filter, $where_filter) {
+            // Remove the filters after the main query has run to avoid affecting other queries
+            add_action('posts_selection', function() use ($join_filter, $where_filter, $distinct_filter) {
                 remove_filter('posts_join', $join_filter);
                 remove_filter('posts_where', $where_filter);
+                remove_filter('posts_distinct', $distinct_filter);
             });
         }
     }
     return $query;
 }
-add_action( 'pre_get_posts', 'hp_bp_tweaks_expand_search_to_user_names' ); 
+add_action( 'pre_get_posts', 'hp_bp_tweaks_expand_search_to_users_and_meta' ); 
 
 /**
  * =================================================================
