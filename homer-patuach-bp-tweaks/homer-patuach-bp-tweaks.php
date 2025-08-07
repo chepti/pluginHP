@@ -1204,14 +1204,43 @@ function hpg_add_target_blank_to_links( $html ) {
  * הפעלת עורך עשיר (TinyMCE) לשדה xProfile "קצת עליי" בממשק העריכה הקדמי.
  */
 function hpg_enable_richtext_for_bio_field( $enabled, $field ) {
-    if ( is_object( $field ) && isset( $field->name ) ) {
-        if ( 'קצת עליי' === $field->name ) {
-            return true; // אפשר עורך עשיר לשדה הביו
+    // נפתח עורך עשיר לכל שדה מסוג טקסט מרובה שורות (textarea) בעריכה הקדמית
+    if ( is_object( $field ) ) {
+        // BuddyPress מחזיר סוג כשם 'textarea' לשדה מרובה שורות
+        if ( isset( $field->type ) && 'textarea' === $field->type ) {
+            return true;
+        }
+        // וגם לפי שם נפוץ לביו
+        if ( isset( $field->name ) && in_array( $field->name, array( 'קצת עליי', 'ביו' ), true ) ) {
+            return true;
         }
     }
     return $enabled;
 }
 add_filter( 'bp_xprofile_is_richtext_enabled_for_field', 'hpg_enable_richtext_for_bio_field', 10, 2 );
+
+/**
+ * הזרקת תרגומים/שינויים טקסטואליים במסך עריכת פרופיל קדמי.
+ */
+function hpg_localize_profile_edit_texts() {
+    if ( function_exists( 'bp_is_user_profile_edit' ) && bp_is_user_profile_edit() ) {
+        ?>
+        <script>
+        (function(){
+            try {
+                var base = document.querySelector('#buddypress .bp-user #profile-edit-form .bp-profile-group .bp-heading');
+                if (base && base.textContent && /Base/i.test(base.textContent)) { base.textContent = 'פרופיל'; }
+                var headings = document.querySelectorAll('#buddypress #profile-edit-form h2');
+                headings.forEach(function(h){ if (/Editing\s+"Base"\s+Profile\s+Group/i.test(h.textContent)) h.textContent = 'עריכת פרופיל'; });
+                var hints = document.querySelectorAll('#buddypress #profile-edit-form .field-visibility-settings-toggle, #buddypress #profile-edit-form .field-visibility-settings-notoggle');
+                hints.forEach(function(el){ el.style.display='none'; });
+            } catch(e){}
+        })();
+        </script>
+        <?php
+    }
+}
+add_action( 'wp_footer', 'hpg_localize_profile_edit_texts', 20 );
 
 /**
  * =================================================================

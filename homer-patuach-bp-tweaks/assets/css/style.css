@@ -165,6 +165,31 @@ body.buddypress, .buddypress-wrap {
 .hpg-profile-bio p { margin: 0; }
 .hpg-profile-bio a { color: #fff; text-decoration: underline; word-break: break-word; }
 .hpg-profile-bio a:hover { text-decoration: none; }
+
+/* --- ניקוי ממשק עריכת פרופיל קדמי --- */
+#buddypress .bp-user #profile-edit-form .field-visibility-settings, 
+#buddypress .bp-user #profile-edit-form .field-visibility-settings-notoggle, 
+#buddypress .bp-user #profile-edit-form .clear-value, 
+#buddypress .bp-user #profile-edit-form .description, 
+#buddypress .bp-user #profile-edit-form legend, 
+#buddypress .bp-user #profile-edit-form .bp-help-text {
+    display: none !important; /* הסתרת טקסטי עזרה, תיאור ושינויי ניראות */
+}
+
+#buddypress .bp-user #profile-edit-form label, 
+#buddypress .bp-user #profile-edit-form h2 {
+    font-weight: 600;
+}
+
+/* כותרות קבוצה (Base) – תרגום/הסתרה ויזואלית */
+#buddypress .bp-user #profile-edit-form .bp-profile-group h2 {
+    font-size: 0; /* הסתר טקסט מקורי */
+    position: relative;
+}
+#buddypress .bp-user #profile-edit-form .bp-profile-group h2:after {
+    content: 'עריכת פרופיל'; /* טקסט חלופי בעברית */
+    font-size: 20px;
+}
 .hpg-profile-bio br { display: block; }
 
 /* מקם את כפתורי החברות מתחת לביו כשקיים */
