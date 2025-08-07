@@ -1158,9 +1158,10 @@ function hpg_display_user_bio_in_header() {
         return;
     }
 
-    $bio_text = wp_kses_post( $bio_text );
+    // הפוך קישורים ללחיצים ושמור על ירידות שורה/פסקאות
+    $bio_html = wpautop( make_clickable( esc_html( $bio_text ) ) );
     ?>
-    <div class="hpg-profile-bio"><?php echo $bio_text; ?></div>
+    <div class="hpg-profile-bio"><?php echo $bio_html; ?></div>
     <?php
 }
 // ממוקם בתוך #item-header-content לפני ה־meta, כך שזה באמת בבאנר

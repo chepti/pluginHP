@@ -163,6 +163,17 @@ body.buddypress, .buddypress-wrap {
     line-height: 1.5;
 }
 .hpg-profile-bio p { margin: 0; }
+.hpg-profile-bio a { color: #fff; text-decoration: underline; word-break: break-word; }
+.hpg-profile-bio br { display: block; }
+
+/* מקם את כפתורי החברות מתחת לביו כשקיים */
+#buddypress #item-header-content .generic-button, 
+#buddypress #item-header-content .bp-profile-buttons, 
+#buddypress #item-header-content .bp-legacy .generic-button {
+    display: inline-flex;
+    gap: 8px;
+    margin-top: 10px;
+}
 
 /* --- BP General Styles --- */
 #buddypress #item-nav ul li a, #buddypress .bp-navs ul li a {
