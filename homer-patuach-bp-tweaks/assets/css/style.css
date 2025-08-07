@@ -119,7 +119,7 @@ body.buddypress, .buddypress-wrap {
     background-color: #e9ebee;
     background-size: cover;
     background-position: center;
-    min-height: 220px !important;
+    min-height: 180px !important; /* היה 220px - צמצום מרווח עליון */
 }
 
 #buddypress #item-header {
@@ -141,7 +141,7 @@ body.buddypress, .buddypress-wrap {
 }
 
 #buddypress #item-header-content {
-    padding-top: 5px; /* Adjust for the thin strip */
+    padding-top: 0; /* פחות רווח כדי להצמיד לבאנר */
     text-align: right;
 }
 
@@ -150,6 +150,19 @@ body.buddypress, .buddypress-wrap {
     text-shadow: 1px 1px 2px rgba(0,0,0,0.3) !important;
     font-size: 2rem;
 }
+
+/* --- BIO בתוך הבאנר --- */
+.hpg-profile-bio {
+    color: #ffffff;
+    max-width: 800px;
+    background: rgba(0,0,0,0.25);
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin-top: 8px;
+    display: inline-block;
+    line-height: 1.5;
+}
+.hpg-profile-bio p { margin: 0; }
 
 /* --- BP General Styles --- */
 #buddypress #item-nav ul li a, #buddypress .bp-navs ul li a {

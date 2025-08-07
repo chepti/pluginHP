@@ -207,6 +207,67 @@ function hp_bp_tweaks_modify_bp_nav() {
 }
 add_action( 'bp_setup_nav', 'hp_bp_tweaks_modify_bp_nav', 99 );
 
+/**
+ * Redirect כל כניסה לעמוד השורש של משתמש BuddyPress אל לשונית "הפוסטים שלי".
+ * כך, קישורים סטנדרטיים לשם משתמש יגיעו ישירות ל- my-posts.
+ */
+function hp_bp_tweaks_redirect_member_root_to_my_posts() {
+    if ( ! function_exists( 'bp_is_user' ) || ! bp_is_user() ) {
+        return;
+    }
+
+    // אל תיגע אם כבר נמצאים ב-my-posts או בתת-עמוד אחר (חברים, הודעות וכו').
+    if ( function_exists( 'bp_is_current_component' ) && bp_is_current_component( 'my-posts' ) ) {
+        return;
+    }
+
+    if ( function_exists( 'bp_is_user_front' ) && bp_is_user_front() ) {
+        $url = trailingslashit( rtrim( bp_displayed_user_domain(), '/' ) . '/my-posts' );
+        bp_core_redirect( $url );
+    }
+}
+add_action( 'bp_template_redirect', 'hp_bp_tweaks_redirect_member_root_to_my_posts', 9 );
+
+/**
+ * שנה את קישור ארכיון המחבר של וורדפרס אל עמוד ה-my-posts בבאדיפרס.
+ */
+function hp_bp_tweaks_author_link_to_my_posts( $link, $author_id = 0, $author_nicename = '' ) {
+    if ( function_exists( 'bp_core_get_user_domain' ) && $author_id ) {
+        return trailingslashit( rtrim( bp_core_get_user_domain( $author_id ), '/' ) . '/my-posts' );
+    }
+    return $link;
+}
+add_filter( 'author_link', 'hp_bp_tweaks_author_link_to_my_posts', 10, 3 );
+
+/**
+ * החלפת קישורי bp_core_get_userlink כך שיובילו ל-my-posts.
+ * עובד גם כאשר מבוקש רק ה-URL וגם כאשר מוחזר HTML של עוגן.
+ */
+function hp_bp_tweaks_force_userlink_to_my_posts( $html_or_url, $user_id = 0 ) {
+    if ( ! function_exists( 'bp_core_get_user_domain' ) ) {
+        return $html_or_url;
+    }
+
+    if ( ! $user_id ) {
+        $user_id = function_exists( 'bp_displayed_user_id' ) ? bp_displayed_user_id() : 0;
+    }
+    if ( ! $user_id ) {
+        return $html_or_url;
+    }
+
+    $my_posts_url = trailingslashit( rtrim( bp_core_get_user_domain( $user_id ), '/' ) . '/my-posts' );
+
+    // אם זה URL פשוט
+    if ( strpos( $html_or_url, '<a' ) === false ) {
+        return $my_posts_url;
+    }
+
+    // אם זה HTML של קישור, החלף את ה-href בלבד
+    $updated = preg_replace( '/href=\"[^\"]*\"/i', 'href="' . esc_url( $my_posts_url ) . '"', $html_or_url );
+    return $updated ? $updated : $html_or_url;
+}
+add_filter( 'bp_core_get_userlink', 'hp_bp_tweaks_force_userlink_to_my_posts', 10, 2 );
+
 
 /**
  * Adds a custom "Bio" profile field if it doesn't exist.
@@ -1065,6 +1126,45 @@ function hpg_display_user_reputation_stats() {
     <?php
 }
 add_action( 'bp_after_member_header', 'hpg_display_user_reputation_stats' );
+
+/**
+ * מציג את הביו (xProfile: "קצת עליי") באזור הכותרת של פרופיל המשתמש.
+ * נטען בתוך ה־header כך שהוא תמיד גלוי.
+ */
+function hpg_display_user_bio_in_header() {
+    if ( ! function_exists( 'bp_is_user' ) || ! bp_is_user() ) {
+        return;
+    }
+
+    $user_id = function_exists( 'bp_displayed_user_id' ) ? bp_displayed_user_id() : 0;
+    if ( ! $user_id ) {
+        return;
+    }
+
+    $bio_text = '';
+    if ( function_exists( 'bp_xprofile_get_field_id_from_name' ) ) {
+        $field_id = bp_xprofile_get_field_id_from_name( 'קצת עליי' );
+        if ( $field_id ) {
+            $bio_text = xprofile_get_field_data( $field_id, $user_id );
+        }
+    }
+
+    // נפילה חכמה: נסה שדה description מהמשתמש של וורדפרס
+    if ( empty( $bio_text ) ) {
+        $bio_text = get_user_meta( $user_id, 'description', true );
+    }
+
+    if ( empty( $bio_text ) ) {
+        return;
+    }
+
+    $bio_text = wp_kses_post( $bio_text );
+    ?>
+    <div class="hpg-profile-bio"><?php echo $bio_text; ?></div>
+    <?php
+}
+// ממוקם בתוך #item-header-content לפני ה־meta, כך שזה באמת בבאנר
+add_action( 'bp_before_member_header_meta', 'hpg_display_user_bio_in_header' );
 
 /**
  * =================================================================

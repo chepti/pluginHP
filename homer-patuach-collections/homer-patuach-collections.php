@@ -568,10 +568,10 @@ function hpc_add_creator_to_collection_archive_title( $title ) {
                     $creator_name = esc_html($user_info->display_name);
                     $creator_html = $creator_name;
 
-                    // If BuddyPress is active, link to the user's profile
+                    // If BuddyPress is active, link to the user's My Posts tab
                     if ( function_exists('bp_core_get_user_domain') ) {
-                        $user_link = bp_core_get_user_domain($user_id);
-                        $creator_html = '<a href="' . esc_url($user_link) . '">' . $creator_name . '</a>';
+                        $user_link = trailingslashit( rtrim( bp_core_get_user_domain( $user_id ), '/' ) . '/my-posts' );
+                        $creator_html = '<a href="' . esc_url( $user_link ) . '">' . $creator_name . '</a>';
                     }
 
                     // The new structure with divs for separate lines and a space
