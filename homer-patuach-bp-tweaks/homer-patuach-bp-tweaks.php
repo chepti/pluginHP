@@ -491,21 +491,77 @@ function hp_bp_tweaks_replace_mention_name_with_display_name( $mention_name ) {
 }
 add_filter( 'bp_get_displayed_user_mentionname', 'hp_bp_tweaks_replace_mention_name_with_display_name', 10, 1 ); 
 
+/**
+ * Always exclude attachments from default WordPress search results.
+ * This ensures media files (e.g., featured images) do not appear as separate results.
+ */
+function hp_bp_tweaks_exclude_attachments_from_search( $query ) {
+    if ( ! is_admin() && $query->is_search ) {
+        $post_type = $query->get('post_type');
+        if ( empty($post_type) || 'any' === $post_type ) {
+            $query->set( 'post_type', array( 'post', 'page' ) );
+        } elseif ( is_string($post_type) ) {
+            if ( 'attachment' === $post_type ) {
+                $query->set( 'post_type', array( 'post', 'page' ) );
+            }
+        } elseif ( is_array($post_type) ) {
+            $filtered = array_values( array_diff( $post_type, array('attachment') ) );
+            if ( empty($filtered) ) {
+                $filtered = array( 'post', 'page' );
+            }
+            $query->set( 'post_type', $filtered );
+        }
+
+        // Only published content
+        $query->set( 'post_status', 'publish' );
+
+        // SQL-level safety net: exclude attachments regardless of post_type mutations by other hooks
+        $where_filter = function( $where ) {
+            global $wpdb;
+            return $where . " AND {$wpdb->posts}.post_type <> 'attachment' ";
+        };
+        add_filter( 'posts_where', $where_filter, 999 );
+        add_action( 'posts_selection', function() use ( $where_filter ) {
+            remove_filter( 'posts_where', $where_filter, 999 );
+        } );
+    }
+    return $query;
+}
+add_action( 'pre_get_posts', 'hp_bp_tweaks_exclude_attachments_from_search', 999 );
 
 /**
- * Extends the default WordPress search to include user display names and all post meta fields.
- * When a user searches, this will also find:
- *  - Posts by authors whose display name matches the search term.
- *  - Posts where any custom field (ACF, etc.) contains the search term.
+ * Final safety net: remove attachments from search results just before rendering.
+ */
+function hp_bp_tweaks_strip_attachments_from_results( $posts, $query ) {
+    if ( ! is_admin() && $query->is_search && ! empty( $posts ) ) {
+        $filtered = [];
+        foreach ( $posts as $p ) {
+            if ( isset($p->post_type) && $p->post_type === 'attachment' ) {
+                continue; // skip attachments
+            }
+            $filtered[] = $p;
+        }
+        return $filtered;
+    }
+    return $posts;
+}
+add_filter( 'posts_results', 'hp_bp_tweaks_strip_attachments_from_results', 9999, 2 );
+
+/**
+ * Extends the default WordPress search to include user display names and all post meta fields,
+ * while excluding attachments from the results.
  */
 function hp_bp_tweaks_expand_search_to_users_and_meta( $query ) {
     // Get our plugin settings
     $options = get_option('hp_bp_tweaks_settings');
     $is_search_enabled = isset($options['enable_user_search']) && $options['enable_user_search'];
 
-    // Ensure this is a search query on the frontend, not in the admin area, and our setting is enabled
-    if ( $is_search_enabled && $query->is_search && ! is_admin() ) {
+    // Ensure this is a main search query on the frontend and not in the admin area
+    if ( $is_search_enabled && $query->is_search && $query->is_main_query() && ! is_admin() ) {
         
+        // Exclude attachments from search results by only including 'post' and 'page'.
+        $query->set('post_type', ['post', 'page']);
+
         $search_term = $query->get( 's' );
 
         if ( ! empty( $search_term ) ) {
@@ -522,7 +578,6 @@ function hp_bp_tweaks_expand_search_to_users_and_meta( $query ) {
             $where_filter = function( $where ) use ( $search_term ) {
                 global $wpdb;
                 // Add author display name and post meta to the search
-                // The original WHERE clause for search will be there, so we just add to it with OR
                 $where .= $wpdb->prepare(
                     " OR ({$wpdb->users}.display_name LIKE %s) OR ({$wpdb->postmeta}.meta_value LIKE %s) ",
                     '%' . $wpdb->esc_like( $search_term ) . '%',
@@ -531,7 +586,7 @@ function hp_bp_tweaks_expand_search_to_users_and_meta( $query ) {
                 return $where;
             };
 
-            // Add a DISTINCT clause to avoid duplicate results when a match is found in multiple places
+            // Add a DISTINCT clause to avoid duplicate results
             $distinct_filter = function( $distinct ) {
                 return 'DISTINCT';
             };
@@ -540,7 +595,7 @@ function hp_bp_tweaks_expand_search_to_users_and_meta( $query ) {
             add_filter( 'posts_where', $where_filter );
             add_filter( 'posts_distinct', $distinct_filter );
             
-            // Remove the filters after the main query has run to avoid affecting other queries
+            // Remove the filters after the main query has run
             add_action('posts_selection', function() use ($join_filter, $where_filter, $distinct_filter) {
                 remove_filter('posts_join', $join_filter);
                 remove_filter('posts_where', $where_filter);
@@ -550,7 +605,7 @@ function hp_bp_tweaks_expand_search_to_users_and_meta( $query ) {
     }
     return $query;
 }
-add_action( 'pre_get_posts', 'hp_bp_tweaks_expand_search_to_users_and_meta' ); 
+add_action( 'pre_get_posts', 'hp_bp_tweaks_expand_search_to_users_and_meta', 99 ); 
 
 /**
  * =================================================================
@@ -1128,7 +1183,7 @@ function hp_bp_tweaks_enable_user_search_callback() {
     $options = get_option('hp_bp_tweaks_settings');
     $checked = isset($options['enable_user_search']) && $options['enable_user_search'] ? 'checked' : '';
     echo '<input type="checkbox" id="enable_user_search" name="hp_bp_tweaks_settings[enable_user_search]" value="1" ' . $checked . ' />';
-    echo '<label for="enable_user_search">הפעל כדי לכלול בתוצאות החיפוש פוסטים של משתמשים עם שם תצוגה תואם.</label>';
+    echo '<label for="enable_user_search">הפעל כדי לכלול בתוצאות החיפוש גם שמות מחברים ואת כל השדות המותאמים (כמו קרדיט וכו\').</label>';
 }
 
 
