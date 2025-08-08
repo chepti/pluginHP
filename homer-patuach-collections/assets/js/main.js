@@ -14,6 +14,7 @@ jQuery(document).ready(function($) {
         if (postId) {
             $modalOverlay.removeClass('hpc-modal-hidden');
             fetchUserCollections(postId);
+            fetchSubjects(); // Fetch subjects for the dropdown
         }
     });
 
@@ -37,15 +38,43 @@ jQuery(document).ready(function($) {
 
 
     // --- AJAX Functions ---
+    
+    /**
+     * Fetch subjects and populate the dropdown.
+     */
+    function fetchSubjects() {
+        const $dropdown = $('#hpc-subject-dropdown');
+
+        $.ajax({
+            url: hpc_ajax_object.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'hpc_get_subjects_for_collections',
+                nonce: hpc_ajax_object.nonce,
+            },
+            success: function(response) {
+                if (response.success && response.data.length > 0) {
+                    $dropdown.html('<option value="0">בחר תחום דעת (אופציונלי)</option>'); // Reset
+                    response.data.forEach(function(subject) {
+                        $dropdown.append(`<option value="${subject.id}">${subject.name}</option>`);
+                    });
+                    $dropdown.show();
+                } else {
+                    $dropdown.hide();
+                }
+            },
+            error: function() {
+                $dropdown.hide();
+            }
+        });
+    }
 
     /**
      * Fetch the current user's collections and render them in the modal.
      */
     function fetchUserCollections(postId) {
         const collectionsList = $('#hpc-user-collections-list');
-        const parentSelect = $('#hpc-collection-group');
         collectionsList.html('<p>טוען אוספים...</p>');
-        parentSelect.prop('disabled', true).empty().append('<option value="">ללא קבוצה</option>');
 
         $.ajax({
             url: hpc_ajax_object.ajax_url,
@@ -57,17 +86,11 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
-                    const data = response.data || {};
-                    const collections = Array.isArray(data.collections) ? data.collections : [];
-                    const parents = Array.isArray(data.groups) ? data.groups : [];
-
-                    // Render collections list
-                    if (collections.length > 0) {
+                    if (response.data.length > 0) {
                         let html = '<ul class="hpc-collections-list">';
-                        collections.forEach(function(collection) {
+                        response.data.forEach(function(collection) {
                             const checkedClass = collection.is_in_collection ? 'hpc-checked' : '';
                             const checkedIcon = collection.is_in_collection ? '✔' : '+';
-                            const parentBadge = collection.group_name ? `<span class="hpc-parent-badge" title="קבוצת אוספים">${collection.group_name}</span>` : '';
                             const collectionNameHtml = collection.url 
                                 ? `<a href="${collection.url}" target="_blank" title="פתח את האוסף בלשונית חדשה">${collection.name}</a>`
                                 : collection.name;
@@ -76,7 +99,6 @@ jQuery(document).ready(function($) {
                                         <button class="hpc-collection-toggle">
                                             <span class="hpc-toggle-icon">${checkedIcon}</span>
                                             <span class="hpc-collection-name">${collectionNameHtml}</span>
-                                            ${parentBadge}
                                         </button>
                                      </li>`;
                         });
@@ -84,14 +106,6 @@ jQuery(document).ready(function($) {
                         collectionsList.html(html);
                     } else {
                         collectionsList.html('<p class="hpc-no-collections-message">עדיין לא יצרת אוספים.</p>');
-                    }
-
-                    // Populate parents dropdown
-                    if (parents.length > 0) {
-                        parents.forEach(function(parent) {
-                            parentSelect.append(`<option value="${parent.id}">${parent.name}</option>`);
-                        });
-                        parentSelect.prop('disabled', false);
                     }
                 } else {
                     collectionsList.html('<p>שגיאה בטעינת האוספים.</p>');
@@ -169,9 +183,8 @@ jQuery(document).ready(function($) {
     function createNewCollection() {
         const input = $('#hpc-new-collection-name');
         const collectionName = input.val().trim();
-        const parentId = $('#hpc-collection-group').val();
         const postId = $('#hpc-open-modal-button').data('post-id');
-
+        const subjectId = $('#hpc-subject-dropdown').val(); // Get subject ID
 
         if (!collectionName) {
             alert('יש להזין שם לאוסף.');
@@ -187,13 +200,27 @@ jQuery(document).ready(function($) {
                 action: 'hpc_create_new_collection',
                 nonce: hpc_ajax_object.nonce,
                 name: collectionName,
-                group_id: parentId || ''
+                subject_id: subjectId // Send subject ID to server
             },
             success: function(response) {
                 if (response.success) {
-                    fetchUserCollections(postId);
+                    // Add the new collection to the list without a full refresh
+                    const collectionsList = $('#hpc-user-collections-list ul');
+                    const collectionNameHtml = response.data.name;
+                    const newCollectionHtml = `<li data-collection-id="${response.data.id}">
+                                                <button class="hpc-collection-toggle">
+                                                    <span class="hpc-toggle-icon">+</span>
+                                                    <span class="hpc-collection-name">${collectionNameHtml}</span>
+                                                </button>
+                                             </li>`;
+                    if(collectionsList.length > 0) {
+                        collectionsList.append(newCollectionHtml);
+                    } else {
+                        // If it's the first collection, create the list
+                        $('#hpc-user-collections-list').html('<ul class="hpc-collections-list">' + newCollectionHtml + '</ul>');
+                    }
+                    
                     input.val('');
-                    $('#hpc-collection-group').val('');
                 } else {
                     alert(response.data.message || 'שגיאה ביצירת האוסף.');
                 }
@@ -209,40 +236,24 @@ jQuery(document).ready(function($) {
 
     $body.on('click', '#hpc-create-collection-button', createNewCollection);
 
-    // Create new group (top-level, global) and add it to the dropdown
-    $body.on('click', '#hpc-create-group-button', function() {
-        const $btn = $(this);
-        const $input = $('#hpc-new-group-name');
-        const name = $input.val().trim();
-        if (!name) { alert('יש להזין שם לקבוצה.'); return; }
-        $btn.prop('disabled', true).text('יוצר...');
-        $.ajax({
-            url: hpc_ajax_object.ajax_url,
-            type: 'POST',
-            data: {
-                action: 'hpc_create_collection_group',
-                nonce: hpc_ajax_object.nonce,
-                name: name
-            }
-        }).done(function(response){
-            if (response.success) {
-                // append to dropdown and select it
-                const data = response.data || {};
-                if (data.id && data.name) {
-                    const $sel = $('#hpc-collection-group');
-                    $sel.append(`<option value="${data.id}">${data.name}</option>`);
-                    $sel.val(String(data.id));
-                    $input.val('');
-                }
-            } else {
-                alert(response.data && response.data.message ? response.data.message : 'שגיאה ביצירת קבוצה.');
-            }
-        }).fail(function(){
-            alert('שגיאת שרת. נסה שוב מאוחר יותר.');
-        }).always(function(){
-            $btn.prop('disabled', false).text('צור קבוצה');
-        });
+    // --- Subject Filter Chip Logic ---
+    $body.on('click', '.hpc-subject-chip', function() {
+        const $chip = $(this);
+        const subjectId = $chip.data('subject-id');
+
+        // Toggle active class on chips
+        $('.hpc-subject-chip').removeClass('active');
+        $chip.addClass('active');
+
+        // Filter the grid
+        if (subjectId === 'all') {
+            $('.hpc-collection-item').show();
+        } else {
+            $('.hpc-collection-item').hide();
+            $('.hpc-collection-item[data-subject-id="' + subjectId + '"]').show();
+        }
     });
+
 
     // --- Toggle Search Area on Profile Page ---
     $body.on('click', '.hpc-open-search-button', function() {
@@ -409,4 +420,4 @@ jQuery(document).ready(function($) {
         });
     }
 
-}); 
+});

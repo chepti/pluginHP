@@ -146,42 +146,42 @@ li.hpc-checked .hpc-toggle-icon {
     flex-grow: 1;
 }
 
-.hpc-parent-badge {
-    margin-right: 10px;
-    padding: 2px 8px;
-    background-color: #eef3ff;
-    color: #3b5bcc;
-    border: 1px solid #d7e2ff;
-    border-radius: 999px;
-    font-size: 12px;
-    white-space: nowrap;
-}
-
 .hpc-no-collections-message {
     padding: 15px;
     text-align: center;
     color: #666;
 }
 
-/* --- New Collection Form --- */
+/* --- New Collection Form (Modal) --- */
 #hpc-new-collection-form {
     margin-top: 20px;
     display: flex;
-    gap: 8px;
+    flex-direction: column; /* Stack items vertically */
+    gap: 15px; /* Add space between dropdown and input */
+}
+
+#hpc-subject-dropdown {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 15px;
+    color: #333;
+    display: none; /* Initially hidden, shown by JS */
+}
+
+.hpc-new-collection-input-wrapper {
+    display: flex;
+    width: 100%;
 }
 
 #hpc-new-collection-name {
     flex-grow: 1;
     border: 1px solid #ccc;
     padding: 10px;
-    border-radius: 4px;
-}
-
-#hpc-collection-parent {
-    min-width: 160px;
-    border: 1px solid #ccc;
-    padding: 10px;
-    border-radius: 4px;
+    border-radius: 0 4px 4px 0; /* RTL adjusted */
+    border-left: none; /* RTL adjusted */
 }
 
 #hpc-new-collection-name:focus {
@@ -189,44 +189,15 @@ li.hpc-checked .hpc-toggle-icon {
     border-color: #7699f2;
 }
 
-
 #hpc-create-collection-button {
     border: 1px solid #7699f2;
     background-color: #7699f2;
     color: white;
     padding: 0 20px;
-    border-radius: 4px;
+    border-radius: 4px 0 0 4px; /* RTL adjusted */
     cursor: pointer;
     font-weight: 500;
-}
-
-.hpc-parent-hint {
-    display: block;
-    font-size: 12px;
-    color: #777;
-    margin-top: 6px;
-}
-
-.hpc-parent-creator {
-    display: flex;
-    gap: 8px;
-    width: 100%;
-}
-
-#hpc-new-parent-name {
-    flex: 1 1 auto;
-    border: 1px solid #ccc;
-    padding: 10px;
-    border-radius: 4px;
-}
-
-#hpc-create-parent-button {
-    border: 1px solid #999;
-    background: #f5f5f5;
-    color: #333;
-    padding: 0 14px;
-    border-radius: 4px;
-    cursor: pointer;
+    flex-shrink: 0; /* Prevent button from shrinking */
 }
 
 /* --- Post Collections List (Single Post Page) --- */
@@ -287,6 +258,39 @@ li.hpc-checked .hpc-toggle-icon {
 
 
 /* BuddyPress Collections Tab Content */
+
+/* --- Subject Filter Chips --- */
+.hpc-subject-filter-chips {
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.hpc-subject-chip {
+    background-color: #f0f2f5;
+    border: 1px solid #e0e2e5;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.hpc-subject-chip:hover {
+    background-color: #e4e6e9;
+    border-color: #d0d2d5;
+}
+
+.hpc-subject-chip.active {
+    background-color: #7699f2;
+    color: white;
+    border-color: #7699f2;
+}
+
+
 .hpc-collections-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -300,7 +304,7 @@ li.hpc-checked .hpc-toggle-icon {
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-    transition: box-shadow 0.2s ease;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -308,6 +312,7 @@ li.hpc-checked .hpc-toggle-icon {
 
 .hpc-collection-item:hover {
     box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
 }
 
 .hpc-collection-item h3 {
@@ -627,4 +632,4 @@ body.tax-collection .page-header h1.page-title .hpc-archive-title-wrapper {
     color: #0073aa;
     margin-right: 10px;
     font-weight: bold;
-} 
+}

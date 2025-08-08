@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - Collections
  * Plugin URI:        https://homerpatuach.com/
  * Description:       Allows users to create and manage collections of posts.
- * Version:           1.3.1
+ * Version:           1.4.0
  * Author:            Chepti
  * Author URI:        https://homerpatuach.com/
  * License:           GPL-2.0+
@@ -41,7 +41,7 @@ function hpc_register_collection_taxonomy() {
     );
 
     $args = array(
-        'hierarchical'      => false, // Collections themselves אינן היררכיות; קיבוץ ייעשה דרך collection_group
+        'hierarchical'      => false, // Collections are not nested. We will use a custom meta field to link to a 'subject' taxonomy.
         'labels'            => $labels,
         'show_ui'           => true,
         'show_admin_column' => true,
@@ -54,25 +54,6 @@ function hpc_register_collection_taxonomy() {
 
     register_taxonomy( 'collection', array( 'post' ), $args );
 
-    // New: Register a dedicated grouping taxonomy for collections
-    $group_labels = array(
-        'name'          => _x( 'Collection Groups', 'taxonomy general name', 'homer-patuach-collections' ),
-        'singular_name' => _x( 'Collection Group', 'taxonomy singular name', 'homer-patuach-collections' ),
-        'menu_name'     => __( 'Collection Groups', 'homer-patuach-collections' ),
-        'add_new_item'  => __( 'Add New Group', 'homer-patuach-collections' ),
-        'edit_item'     => __( 'Edit Group', 'homer-patuach-collections' ),
-        'search_items'  => __( 'Search Groups', 'homer-patuach-collections' ),
-    );
-    register_taxonomy( 'collection_group', [], array(
-        'hierarchical'      => false,
-        'labels'            => $group_labels,
-        'show_ui'           => true,  // Manage groups in admin
-        'show_admin_column' => false,
-        'query_var'         => false,
-        'rewrite'           => false,
-        'public'            => false,
-        'show_in_rest'      => false,
-    ) );
 }
 add_action( 'init', 'hpc_register_collection_taxonomy', 0 );
 
@@ -125,16 +106,14 @@ function hpc_add_collections_ui() {
                         <p>טוען אוספים...</p>
                     </div>
                     <div id="hpc-new-collection-form">
-                        <input type="text" id="hpc-new-collection-name" placeholder="או צור אוסף חדש..." />
-                        <select id="hpc-collection-group">
-                            <option value="">ללא קבוצה</option>
+                        <select id="hpc-subject-dropdown">
+                            <option value="0">בחר תחום דעת (אופציונלי)</option>
+                            <!-- Subjects will be loaded here -->
                         </select>
-                        <button id="hpc-create-collection-button">צור</button>
-                        <div class="hpc-parent-creator">
-                            <input type="text" id="hpc-new-group-name" placeholder="או צור קבוצה חדשה (כמו בקטגוריות)..." />
-                            <button id="hpc-create-group-button">צור קבוצה</button>
+                        <div class="hpc-new-collection-input-wrapper">
+                            <input type="text" id="hpc-new-collection-name" placeholder="או צור אוסף חדש..." />
+                            <button id="hpc-create-collection-button">צור</button>
                         </div>
-                        <small class="hpc-parent-hint">טיפ: מומלץ לשייך אוספים לקבוצת־על (למשל תחום דעת) כדי לשמור על סדר.</small>
                     </div>
                 </div>
             </div>
@@ -200,7 +179,7 @@ function hpc_get_user_collections() {
 
     $post_id = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
 
-    // Get user-owned collections with meta query
+    // Get terms with meta query
     $collections = get_terms( array(
         'taxonomy'   => 'collection',
         'hide_empty' => false,
@@ -213,50 +192,53 @@ function hpc_get_user_collections() {
         ),
     ) );
     
-    // Get available collection groups (standalone taxonomy)
-    $available_groups = get_terms( array(
-        'taxonomy'   => 'collection_group',
-        'hide_empty' => false,
-        'orderby'    => 'name',
-        'order'      => 'ASC',
-    ) );
-
     $data = [];
     if ( ! is_wp_error( $collections ) && ! empty($collections) ) {
         foreach ( $collections as $collection ) {
             // Check if the current post is already in this collection
             $is_in_collection = has_term( $collection->term_id, 'collection', $post_id );
             $collection_link = get_term_link( $collection );
-            $group_terms = wp_get_object_terms( $collection->term_id, 'collection_group' );
-            $group_term = ( ! is_wp_error( $group_terms ) && ! empty( $group_terms ) ) ? $group_terms[0] : null;
 
             $data[] = [
                 'id' => $collection->term_id,
                 'name' => esc_html( $collection->name ),
                 'url' => is_wp_error($collection_link) ? '' : esc_url($collection_link),
                 'is_in_collection' => $is_in_collection,
-                'group_id' => ($group_term) ? (int) $group_term->term_id : null,
-                'group_name' => ($group_term) ? esc_html( $group_term->name ) : null,
             ];
         }
     }
     
-    $groups_payload = [];
-    if ( ! is_wp_error( $available_groups ) && ! empty( $available_groups ) ) {
-        foreach ( $available_groups as $group_term ) {
-            $groups_payload[] = [
-                'id' => $group_term->term_id,
-                'name' => esc_html( $group_term->name ),
+    wp_send_json_success( $data );
+}
+add_action( 'wp_ajax_hpc_get_user_collections', 'hpc_get_user_collections' );
+
+
+/**
+ * AJAX handler for getting subject terms to associate with a collection.
+ */
+function hpc_get_subjects_for_collections() {
+    check_ajax_referer( 'hpc_collections_nonce', 'nonce' );
+
+    $subjects = get_terms( array(
+        'taxonomy'   => 'subject', // The correct taxonomy for "תחומי דעת"
+        'hide_empty' => false,
+        'hierarchical' => true,
+    ) );
+
+    $data = [];
+    if ( ! is_wp_error( $subjects ) && ! empty( $subjects ) ) {
+        // You might want to format this hierarchically if needed in the future
+        foreach ( $subjects as $subject ) {
+            $data[] = [
+                'id'   => $subject->term_id,
+                'name' => esc_html( $subject->name ),
             ];
         }
     }
-
-    wp_send_json_success( [
-        'collections' => $data,
-        'groups'      => $groups_payload,
-    ] );
+    wp_send_json_success( $data );
 }
-add_action( 'wp_ajax_hpc_get_user_collections', 'hpc_get_user_collections' );
+add_action( 'wp_ajax_hpc_get_subjects_for_collections', 'hpc_get_subjects_for_collections' );
+add_action( 'wp_ajax_nopriv_hpc_get_subjects_for_collections', 'hpc_get_subjects_for_collections' );
 
 
 /**
@@ -276,10 +258,8 @@ function hpc_create_new_collection() {
     }
 
     $collection_name = sanitize_text_field( $_POST['name'] );
-    $group_id = isset($_POST['group_id']) ? intval($_POST['group_id']) : 0;
+    $subject_id = isset( $_POST['subject_id'] ) ? intval( $_POST['subject_id'] ) : 0;
     
-    // We don't need the (user_id) suffix anymore, but we should still check
-    // if a user already has a collection with the same name.
     $existing_terms = get_terms([
         'taxonomy' => 'collection',
         'name' => $collection_name,
@@ -296,8 +276,6 @@ function hpc_create_new_collection() {
          wp_send_json_error( ['message' => 'כבר קיים אוסף בשם זה.'] );
     }
 
-
-    // Insert the collection term (flat)
     $result = wp_insert_term( $collection_name, 'collection' );
 
     if ( is_wp_error( $result ) ) {
@@ -307,61 +285,17 @@ function hpc_create_new_collection() {
     // Add user ID as term meta
     add_term_meta( $result['term_id'], 'hpc_user_id', $user_id, true );
 
-    // Optionally assign a grouping term
-    if ( $group_id ) {
-        $group_term = get_term( $group_id, 'collection_group' );
-        if ( $group_term && ! is_wp_error( $group_term ) ) {
-            wp_set_object_terms( (int) $result['term_id'], [ $group_id ], 'collection_group', false );
-        }
+    // Add subject ID as term meta if provided
+    if ( $subject_id > 0 ) {
+        add_term_meta( $result['term_id'], 'hpc_subject_id', $subject_id, true );
     }
 
     wp_send_json_success( [
         'id'   => $result['term_id'],
         'name' => $collection_name,
-        'group_id' => $group_id ?: null,
     ] );
 }
 add_action( 'wp_ajax_hpc_create_new_collection', 'hpc_create_new_collection' );
-
-
-/**
- * AJAX: Create a new top-level parent collection (global, without owner)
- */
-function hpc_create_collection_group() {
-    check_ajax_referer( 'hpc_collections_nonce', 'nonce' );
-
-    if ( ! is_user_logged_in() ) {
-        wp_send_json_error( ['message' => 'יש להתחבר.'] );
-    }
-
-    $name = isset($_POST['name']) ? sanitize_text_field($_POST['name']) : '';
-    if ( empty($name) ) {
-        wp_send_json_error( ['message' => 'יש להזין שם להורה.'] );
-    }
-
-    // Unique name within collection_group taxonomy
-    $existing = get_terms([
-        'taxonomy' => 'collection_group',
-        'hide_empty' => false,
-        'name' => $name,
-    ]);
-    if ( ! is_wp_error($existing) && ! empty($existing) ) {
-        wp_send_json_error( ['message' => 'כבר קיים הורה בשם זה.'] );
-    }
-
-    $result = wp_insert_term( $name, 'collection_group', [] );
-    if ( is_wp_error( $result ) ) {
-        wp_send_json_error( ['message' => $result->get_error_message()] );
-    }
-
-    // Do NOT set hpc_user_id meta; this marks it as global parent
-
-    wp_send_json_success([
-        'id' => $result['term_id'],
-        'name' => $name,
-    ]);
-}
-add_action( 'wp_ajax_hpc_create_collection_group', 'hpc_create_collection_group' );
 
 
 /**
@@ -399,8 +333,11 @@ function hpc_add_post_to_collection() {
     // Verify the collection belongs to the user by checking term meta
     $collection_user_id = get_term_meta($term->term_id, 'hpc_user_id', true);
     if ((int) $collection_user_id !== $user_id) {
-        wp_send_json_error(['message' => 'Invalid collection ownership.']);
-        return;
+        // Allow adding to non-user-owned collections if it's a parent collection
+        if( $term->parent != 0 ) {
+             wp_send_json_error(['message' => 'Invalid collection ownership.']);
+             return;
+        }
     }
 
     // Verify the post is a 'post'
@@ -734,7 +671,7 @@ function hpc_collections_screen_content() {
 
     echo '<h2>האוספים שלי</h2>';
 
-    // Get all collection terms for the displayed user using meta query
+    // Get all collection terms for the displayed user
     $collections = get_terms( array(
         'taxonomy'   => 'collection',
         'hide_empty' => false,
@@ -754,13 +691,43 @@ function hpc_collections_screen_content() {
         return;
     }
 
+    // --- Start: Subject Filter Chips ---
+    $subject_ids = [];
+    foreach ( $collections as $collection ) {
+        $subject_id = get_term_meta( $collection->term_id, 'hpc_subject_id', true );
+        if ( $subject_id ) {
+            $subject_ids[ $subject_id ] = $subject_id;
+        }
+    }
+
+    if ( ! empty( $subject_ids ) ) {
+        $subjects = get_terms( [
+            'taxonomy' => 'subject',
+            'include'  => array_values($subject_ids),
+            'hide_empty' => false,
+        ] );
+
+        if ( ! is_wp_error( $subjects ) && ! empty( $subjects ) ) {
+            echo '<div class="hpc-subject-filter-chips">';
+            echo '<button class="hpc-subject-chip active" data-subject-id="all">הכל</button>';
+            foreach ( $subjects as $subject ) {
+                echo '<button class="hpc-subject-chip" data-subject-id="' . esc_attr( $subject->term_id ) . '">' . esc_html( $subject->name ) . '</button>';
+            }
+            echo '</div>';
+        }
+    }
+    // --- End: Subject Filter Chips ---
+
+
     echo '<div class="hpc-collections-grid">';
  
      foreach ( $collections as $collection ) {
         $collection_link = get_term_link( $collection );
+        $subject_id = get_term_meta( $collection->term_id, 'hpc_subject_id', true );
+        $data_subject_attr = $subject_id ? 'data-subject-id="' . esc_attr( $subject_id ) . '"' : '';
 
-        echo '<div class="hpc-collection-item">'; // Start item
-        
+        echo '<div class="hpc-collection-item" ' . $data_subject_attr . '>'; // Start item with data attribute
+
         echo '<div class="hpc-collection-item-main">'; // Main content area
 
             // Header
@@ -870,4 +837,15 @@ function hpc_display_post_collections_list() {
     $collections_html .= '</ul></div>';
     
     echo $collections_html;
+}
+add_action( 'the_content', 'hpc_display_post_collections_list_after_content' );
+
+function hpc_display_post_collections_list_after_content( $content ) {
+    if ( is_single() && 'post' === get_post_type() && in_the_loop() && is_main_query() ) {
+        ob_start();
+        hpc_display_post_collections_list();
+        $collections_list = ob_get_clean();
+        $content .= $collections_list;
+    }
+    return $content;
 }
