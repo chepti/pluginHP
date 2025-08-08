@@ -43,9 +43,9 @@ jQuery(document).ready(function($) {
      */
     function fetchUserCollections(postId) {
         const collectionsList = $('#hpc-user-collections-list');
-        const parentSelect = $('#hpc-collection-parent');
+        const parentSelect = $('#hpc-collection-group');
         collectionsList.html('<p>טוען אוספים...</p>');
-        parentSelect.prop('disabled', true).empty().append('<option value="">ללא הורה (כללי)</option>');
+        parentSelect.prop('disabled', true).empty().append('<option value="">ללא קבוצה</option>');
 
         $.ajax({
             url: hpc_ajax_object.ajax_url,
@@ -59,7 +59,7 @@ jQuery(document).ready(function($) {
                 if (response.success) {
                     const data = response.data || {};
                     const collections = Array.isArray(data.collections) ? data.collections : [];
-                    const parents = Array.isArray(data.parents) ? data.parents : [];
+                    const parents = Array.isArray(data.groups) ? data.groups : [];
 
                     // Render collections list
                     if (collections.length > 0) {
@@ -67,7 +67,7 @@ jQuery(document).ready(function($) {
                         collections.forEach(function(collection) {
                             const checkedClass = collection.is_in_collection ? 'hpc-checked' : '';
                             const checkedIcon = collection.is_in_collection ? '✔' : '+';
-                            const parentBadge = collection.parent_name ? `<span class="hpc-parent-badge" title="אוסף הורה">${collection.parent_name}</span>` : '';
+                            const parentBadge = collection.group_name ? `<span class="hpc-parent-badge" title="קבוצת אוספים">${collection.group_name}</span>` : '';
                             const collectionNameHtml = collection.url 
                                 ? `<a href="${collection.url}" target="_blank" title="פתח את האוסף בלשונית חדשה">${collection.name}</a>`
                                 : collection.name;
@@ -169,7 +169,7 @@ jQuery(document).ready(function($) {
     function createNewCollection() {
         const input = $('#hpc-new-collection-name');
         const collectionName = input.val().trim();
-        const parentId = $('#hpc-collection-parent').val();
+        const parentId = $('#hpc-collection-group').val();
         const postId = $('#hpc-open-modal-button').data('post-id');
 
 
@@ -187,13 +187,13 @@ jQuery(document).ready(function($) {
                 action: 'hpc_create_new_collection',
                 nonce: hpc_ajax_object.nonce,
                 name: collectionName,
-                parent_id: parentId || ''
+                group_id: parentId || ''
             },
             success: function(response) {
                 if (response.success) {
                     fetchUserCollections(postId);
                     input.val('');
-                    $('#hpc-collection-parent').val('');
+                    $('#hpc-collection-group').val('');
                 } else {
                     alert(response.data.message || 'שגיאה ביצירת האוסף.');
                 }
@@ -209,18 +209,18 @@ jQuery(document).ready(function($) {
 
     $body.on('click', '#hpc-create-collection-button', createNewCollection);
 
-    // Create new parent term (top-level, global) and add it to the dropdown
-    $body.on('click', '#hpc-create-parent-button', function() {
+    // Create new group (top-level, global) and add it to the dropdown
+    $body.on('click', '#hpc-create-group-button', function() {
         const $btn = $(this);
-        const $input = $('#hpc-new-parent-name');
+        const $input = $('#hpc-new-group-name');
         const name = $input.val().trim();
-        if (!name) { alert('יש להזין שם להורה.'); return; }
+        if (!name) { alert('יש להזין שם לקבוצה.'); return; }
         $btn.prop('disabled', true).text('יוצר...');
         $.ajax({
             url: hpc_ajax_object.ajax_url,
             type: 'POST',
             data: {
-                action: 'hpc_create_parent_collection',
+                action: 'hpc_create_collection_group',
                 nonce: hpc_ajax_object.nonce,
                 name: name
             }
@@ -229,18 +229,18 @@ jQuery(document).ready(function($) {
                 // append to dropdown and select it
                 const data = response.data || {};
                 if (data.id && data.name) {
-                    const $sel = $('#hpc-collection-parent');
+                    const $sel = $('#hpc-collection-group');
                     $sel.append(`<option value="${data.id}">${data.name}</option>`);
                     $sel.val(String(data.id));
                     $input.val('');
                 }
             } else {
-                alert(response.data && response.data.message ? response.data.message : 'שגיאה ביצירת הורה.');
+                alert(response.data && response.data.message ? response.data.message : 'שגיאה ביצירת קבוצה.');
             }
         }).fail(function(){
             alert('שגיאת שרת. נסה שוב מאוחר יותר.');
         }).always(function(){
-            $btn.prop('disabled', false).text('צור הורה');
+            $btn.prop('disabled', false).text('צור קבוצה');
         });
     });
 

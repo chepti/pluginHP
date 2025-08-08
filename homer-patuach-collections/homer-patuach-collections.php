@@ -41,7 +41,7 @@ function hpc_register_collection_taxonomy() {
     );
 
     $args = array(
-        'hierarchical'      => true, // Allow parent/child collections for logical grouping
+        'hierarchical'      => false, // Collections themselves אינן היררכיות; קיבוץ ייעשה דרך collection_group
         'labels'            => $labels,
         'show_ui'           => true,
         'show_admin_column' => true,
@@ -54,6 +54,25 @@ function hpc_register_collection_taxonomy() {
 
     register_taxonomy( 'collection', array( 'post' ), $args );
 
+    // New: Register a dedicated grouping taxonomy for collections
+    $group_labels = array(
+        'name'          => _x( 'Collection Groups', 'taxonomy general name', 'homer-patuach-collections' ),
+        'singular_name' => _x( 'Collection Group', 'taxonomy singular name', 'homer-patuach-collections' ),
+        'menu_name'     => __( 'Collection Groups', 'homer-patuach-collections' ),
+        'add_new_item'  => __( 'Add New Group', 'homer-patuach-collections' ),
+        'edit_item'     => __( 'Edit Group', 'homer-patuach-collections' ),
+        'search_items'  => __( 'Search Groups', 'homer-patuach-collections' ),
+    );
+    register_taxonomy( 'collection_group', [], array(
+        'hierarchical'      => false,
+        'labels'            => $group_labels,
+        'show_ui'           => true,  // Manage groups in admin
+        'show_admin_column' => false,
+        'query_var'         => false,
+        'rewrite'           => false,
+        'public'            => false,
+        'show_in_rest'      => false,
+    ) );
 }
 add_action( 'init', 'hpc_register_collection_taxonomy', 0 );
 
@@ -107,15 +126,15 @@ function hpc_add_collections_ui() {
                     </div>
                     <div id="hpc-new-collection-form">
                         <input type="text" id="hpc-new-collection-name" placeholder="או צור אוסף חדש..." />
-                        <select id="hpc-collection-parent">
-                            <option value="">ללא הורה (כללי)</option>
+                        <select id="hpc-collection-group">
+                            <option value="">ללא קבוצה</option>
                         </select>
                         <button id="hpc-create-collection-button">צור</button>
                         <div class="hpc-parent-creator">
-                            <input type="text" id="hpc-new-parent-name" placeholder="או צור הורה חדש (כמו בקטגוריות)..." />
-                            <button id="hpc-create-parent-button">צור הורה</button>
+                            <input type="text" id="hpc-new-group-name" placeholder="או צור קבוצה חדשה (כמו בקטגוריות)..." />
+                            <button id="hpc-create-group-button">צור קבוצה</button>
                         </div>
-                        <small class="hpc-parent-hint">טיפ: מומלץ לשייך אוספים להורה (למשל תחום דעת) כדי לשמור על סדר.</small>
+                        <small class="hpc-parent-hint">טיפ: מומלץ לשייך אוספים לקבוצת־על (למשל תחום דעת) כדי לשמור על סדר.</small>
                     </div>
                 </div>
             </div>
@@ -194,17 +213,10 @@ function hpc_get_user_collections() {
         ),
     ) );
     
-    // Get available parent collections (global groupings): top-level terms with NO owner meta
-    $available_parents = get_terms( array(
-        'taxonomy'   => 'collection',
+    // Get available collection groups (standalone taxonomy)
+    $available_groups = get_terms( array(
+        'taxonomy'   => 'collection_group',
         'hide_empty' => false,
-        'parent'     => 0,
-        'meta_query' => array(
-            array(
-                'key'     => 'hpc_user_id',
-                'compare' => 'NOT EXISTS',
-            ),
-        ),
         'orderby'    => 'name',
         'order'      => 'ASC',
     ) );
@@ -215,32 +227,33 @@ function hpc_get_user_collections() {
             // Check if the current post is already in this collection
             $is_in_collection = has_term( $collection->term_id, 'collection', $post_id );
             $collection_link = get_term_link( $collection );
-            $parent_term = $collection->parent ? get_term( $collection->parent, 'collection' ) : null;
+            $group_terms = wp_get_object_terms( $collection->term_id, 'collection_group' );
+            $group_term = ( ! is_wp_error( $group_terms ) && ! empty( $group_terms ) ) ? $group_terms[0] : null;
 
             $data[] = [
                 'id' => $collection->term_id,
                 'name' => esc_html( $collection->name ),
                 'url' => is_wp_error($collection_link) ? '' : esc_url($collection_link),
                 'is_in_collection' => $is_in_collection,
-                'parent_id' => $collection->parent ? (int) $collection->parent : null,
-                'parent_name' => ($parent_term && ! is_wp_error($parent_term)) ? esc_html( $parent_term->name ) : null,
+                'group_id' => ($group_term) ? (int) $group_term->term_id : null,
+                'group_name' => ($group_term) ? esc_html( $group_term->name ) : null,
             ];
         }
     }
     
-    $parents_payload = [];
-    if ( ! is_wp_error( $available_parents ) && ! empty( $available_parents ) ) {
-        foreach ( $available_parents as $parent_term ) {
-            $parents_payload[] = [
-                'id' => $parent_term->term_id,
-                'name' => esc_html( $parent_term->name ),
+    $groups_payload = [];
+    if ( ! is_wp_error( $available_groups ) && ! empty( $available_groups ) ) {
+        foreach ( $available_groups as $group_term ) {
+            $groups_payload[] = [
+                'id' => $group_term->term_id,
+                'name' => esc_html( $group_term->name ),
             ];
         }
     }
 
     wp_send_json_success( [
         'collections' => $data,
-        'parents'     => $parents_payload,
+        'groups'      => $groups_payload,
     ] );
 }
 add_action( 'wp_ajax_hpc_get_user_collections', 'hpc_get_user_collections' );
@@ -263,7 +276,7 @@ function hpc_create_new_collection() {
     }
 
     $collection_name = sanitize_text_field( $_POST['name'] );
-    $parent_id = isset($_POST['parent_id']) ? intval($_POST['parent_id']) : 0;
+    $group_id = isset($_POST['group_id']) ? intval($_POST['group_id']) : 0;
     
     // We don't need the (user_id) suffix anymore, but we should still check
     // if a user already has a collection with the same name.
@@ -284,21 +297,8 @@ function hpc_create_new_collection() {
     }
 
 
-    // Validate parent if provided: only allow parent terms that are global (no owner)
-    $insert_args = [];
-    if ( $parent_id ) {
-        $parent_term = get_term( $parent_id, 'collection' );
-        if ( ! $parent_term || is_wp_error( $parent_term ) ) {
-            wp_send_json_error( ['message' => 'הורה שנבחר אינו תקין.'] );
-        }
-        $parent_owner = get_term_meta( $parent_id, 'hpc_user_id', true );
-        if ( ! empty( $parent_owner ) ) {
-            wp_send_json_error( ['message' => 'לא ניתן לשייך להורה פרטי. נא לבחור הורה כללי.'] );
-        }
-        $insert_args['parent'] = $parent_id;
-    }
-
-    $result = wp_insert_term( $collection_name, 'collection', $insert_args );
+    // Insert the collection term (flat)
+    $result = wp_insert_term( $collection_name, 'collection' );
 
     if ( is_wp_error( $result ) ) {
         wp_send_json_error( ['message' => $result->get_error_message()] );
@@ -307,10 +307,18 @@ function hpc_create_new_collection() {
     // Add user ID as term meta
     add_term_meta( $result['term_id'], 'hpc_user_id', $user_id, true );
 
+    // Optionally assign a grouping term
+    if ( $group_id ) {
+        $group_term = get_term( $group_id, 'collection_group' );
+        if ( $group_term && ! is_wp_error( $group_term ) ) {
+            wp_set_object_terms( (int) $result['term_id'], [ $group_id ], 'collection_group', false );
+        }
+    }
+
     wp_send_json_success( [
         'id'   => $result['term_id'],
         'name' => $collection_name,
-        'parent_id' => $parent_id ?: null,
+        'group_id' => $group_id ?: null,
     ] );
 }
 add_action( 'wp_ajax_hpc_create_new_collection', 'hpc_create_new_collection' );
@@ -319,7 +327,7 @@ add_action( 'wp_ajax_hpc_create_new_collection', 'hpc_create_new_collection' );
 /**
  * AJAX: Create a new top-level parent collection (global, without owner)
  */
-function hpc_create_parent_collection() {
+function hpc_create_collection_group() {
     check_ajax_referer( 'hpc_collections_nonce', 'nonce' );
 
     if ( ! is_user_logged_in() ) {
@@ -331,21 +339,17 @@ function hpc_create_parent_collection() {
         wp_send_json_error( ['message' => 'יש להזין שם להורה.'] );
     }
 
-    // Must be unique by name among top-level parents (ignore children)
+    // Unique name within collection_group taxonomy
     $existing = get_terms([
-        'taxonomy' => 'collection',
+        'taxonomy' => 'collection_group',
         'hide_empty' => false,
-        'parent' => 0,
         'name' => $name,
-        'meta_query' => [
-            [ 'key' => 'hpc_user_id', 'compare' => 'NOT EXISTS' ]
-        ],
     ]);
     if ( ! is_wp_error($existing) && ! empty($existing) ) {
         wp_send_json_error( ['message' => 'כבר קיים הורה בשם זה.'] );
     }
 
-    $result = wp_insert_term( $name, 'collection', [ 'parent' => 0 ] );
+    $result = wp_insert_term( $name, 'collection_group', [] );
     if ( is_wp_error( $result ) ) {
         wp_send_json_error( ['message' => $result->get_error_message()] );
     }
@@ -357,7 +361,7 @@ function hpc_create_parent_collection() {
         'name' => $name,
     ]);
 }
-add_action( 'wp_ajax_hpc_create_parent_collection', 'hpc_create_parent_collection' );
+add_action( 'wp_ajax_hpc_create_collection_group', 'hpc_create_collection_group' );
 
 
 /**
