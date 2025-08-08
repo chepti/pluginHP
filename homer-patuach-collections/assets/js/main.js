@@ -43,7 +43,9 @@ jQuery(document).ready(function($) {
      */
     function fetchUserCollections(postId) {
         const collectionsList = $('#hpc-user-collections-list');
+        const parentSelect = $('#hpc-collection-parent');
         collectionsList.html('<p>טוען אוספים...</p>');
+        parentSelect.prop('disabled', true).empty().append('<option value="">ללא הורה (כללי)</option>');
 
         $.ajax({
             url: hpc_ajax_object.ajax_url,
@@ -55,11 +57,17 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
-                    if (response.data.length > 0) {
+                    const data = response.data || {};
+                    const collections = Array.isArray(data.collections) ? data.collections : [];
+                    const parents = Array.isArray(data.parents) ? data.parents : [];
+
+                    // Render collections list
+                    if (collections.length > 0) {
                         let html = '<ul class="hpc-collections-list">';
-                        response.data.forEach(function(collection) {
+                        collections.forEach(function(collection) {
                             const checkedClass = collection.is_in_collection ? 'hpc-checked' : '';
                             const checkedIcon = collection.is_in_collection ? '✔' : '+';
+                            const parentBadge = collection.parent_name ? `<span class="hpc-parent-badge" title="אוסף הורה">${collection.parent_name}</span>` : '';
                             const collectionNameHtml = collection.url 
                                 ? `<a href="${collection.url}" target="_blank" title="פתח את האוסף בלשונית חדשה">${collection.name}</a>`
                                 : collection.name;
@@ -68,6 +76,7 @@ jQuery(document).ready(function($) {
                                         <button class="hpc-collection-toggle">
                                             <span class="hpc-toggle-icon">${checkedIcon}</span>
                                             <span class="hpc-collection-name">${collectionNameHtml}</span>
+                                            ${parentBadge}
                                         </button>
                                      </li>`;
                         });
@@ -75,6 +84,14 @@ jQuery(document).ready(function($) {
                         collectionsList.html(html);
                     } else {
                         collectionsList.html('<p class="hpc-no-collections-message">עדיין לא יצרת אוספים.</p>');
+                    }
+
+                    // Populate parents dropdown
+                    if (parents.length > 0) {
+                        parents.forEach(function(parent) {
+                            parentSelect.append(`<option value="${parent.id}">${parent.name}</option>`);
+                        });
+                        parentSelect.prop('disabled', false);
                     }
                 } else {
                     collectionsList.html('<p>שגיאה בטעינת האוספים.</p>');
@@ -152,6 +169,7 @@ jQuery(document).ready(function($) {
     function createNewCollection() {
         const input = $('#hpc-new-collection-name');
         const collectionName = input.val().trim();
+        const parentId = $('#hpc-collection-parent').val();
         const postId = $('#hpc-open-modal-button').data('post-id');
 
 
@@ -169,11 +187,13 @@ jQuery(document).ready(function($) {
                 action: 'hpc_create_new_collection',
                 nonce: hpc_ajax_object.nonce,
                 name: collectionName,
+                parent_id: parentId || ''
             },
             success: function(response) {
                 if (response.success) {
                     fetchUserCollections(postId);
                     input.val('');
+                    $('#hpc-collection-parent').val('');
                 } else {
                     alert(response.data.message || 'שגיאה ביצירת האוסף.');
                 }

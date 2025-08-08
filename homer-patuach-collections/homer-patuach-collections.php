@@ -41,7 +41,7 @@ function hpc_register_collection_taxonomy() {
     );
 
     $args = array(
-        'hierarchical'      => false, // Collections are not nested like categories
+        'hierarchical'      => true, // Allow parent/child collections for logical grouping
         'labels'            => $labels,
         'show_ui'           => true,
         'show_admin_column' => true,
@@ -107,7 +107,11 @@ function hpc_add_collections_ui() {
                     </div>
                     <div id="hpc-new-collection-form">
                         <input type="text" id="hpc-new-collection-name" placeholder="או צור אוסף חדש..." />
+                        <select id="hpc-collection-parent">
+                            <option value="">ללא הורה (כללי)</option>
+                        </select>
                         <button id="hpc-create-collection-button">צור</button>
+                        <small class="hpc-parent-hint">טיפ: מומלץ לשייך אוספים להורה (למשל תחום דעת) כדי לשמור על סדר.</small>
                     </div>
                 </div>
             </div>
@@ -173,7 +177,7 @@ function hpc_get_user_collections() {
 
     $post_id = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
 
-    // Get terms with meta query
+    // Get user-owned collections with meta query
     $collections = get_terms( array(
         'taxonomy'   => 'collection',
         'hide_empty' => false,
@@ -186,23 +190,54 @@ function hpc_get_user_collections() {
         ),
     ) );
     
+    // Get available parent collections (global groupings): top-level terms with NO owner meta
+    $available_parents = get_terms( array(
+        'taxonomy'   => 'collection',
+        'hide_empty' => false,
+        'parent'     => 0,
+        'meta_query' => array(
+            array(
+                'key'     => 'hpc_user_id',
+                'compare' => 'NOT EXISTS',
+            ),
+        ),
+        'orderby'    => 'name',
+        'order'      => 'ASC',
+    ) );
+
     $data = [];
     if ( ! is_wp_error( $collections ) && ! empty($collections) ) {
         foreach ( $collections as $collection ) {
             // Check if the current post is already in this collection
             $is_in_collection = has_term( $collection->term_id, 'collection', $post_id );
             $collection_link = get_term_link( $collection );
+            $parent_term = $collection->parent ? get_term( $collection->parent, 'collection' ) : null;
 
             $data[] = [
                 'id' => $collection->term_id,
                 'name' => esc_html( $collection->name ),
                 'url' => is_wp_error($collection_link) ? '' : esc_url($collection_link),
                 'is_in_collection' => $is_in_collection,
+                'parent_id' => $collection->parent ? (int) $collection->parent : null,
+                'parent_name' => ($parent_term && ! is_wp_error($parent_term)) ? esc_html( $parent_term->name ) : null,
             ];
         }
     }
     
-    wp_send_json_success( $data );
+    $parents_payload = [];
+    if ( ! is_wp_error( $available_parents ) && ! empty( $available_parents ) ) {
+        foreach ( $available_parents as $parent_term ) {
+            $parents_payload[] = [
+                'id' => $parent_term->term_id,
+                'name' => esc_html( $parent_term->name ),
+            ];
+        }
+    }
+
+    wp_send_json_success( [
+        'collections' => $data,
+        'parents'     => $parents_payload,
+    ] );
 }
 add_action( 'wp_ajax_hpc_get_user_collections', 'hpc_get_user_collections' );
 
@@ -224,6 +259,7 @@ function hpc_create_new_collection() {
     }
 
     $collection_name = sanitize_text_field( $_POST['name'] );
+    $parent_id = isset($_POST['parent_id']) ? intval($_POST['parent_id']) : 0;
     
     // We don't need the (user_id) suffix anymore, but we should still check
     // if a user already has a collection with the same name.
@@ -244,7 +280,21 @@ function hpc_create_new_collection() {
     }
 
 
-    $result = wp_insert_term( $collection_name, 'collection' );
+    // Validate parent if provided: only allow parent terms that are global (no owner)
+    $insert_args = [];
+    if ( $parent_id ) {
+        $parent_term = get_term( $parent_id, 'collection' );
+        if ( ! $parent_term || is_wp_error( $parent_term ) ) {
+            wp_send_json_error( ['message' => 'הורה שנבחר אינו תקין.'] );
+        }
+        $parent_owner = get_term_meta( $parent_id, 'hpc_user_id', true );
+        if ( ! empty( $parent_owner ) ) {
+            wp_send_json_error( ['message' => 'לא ניתן לשייך להורה פרטי. נא לבחור הורה כללי.'] );
+        }
+        $insert_args['parent'] = $parent_id;
+    }
+
+    $result = wp_insert_term( $collection_name, 'collection', $insert_args );
 
     if ( is_wp_error( $result ) ) {
         wp_send_json_error( ['message' => $result->get_error_message()] );
@@ -256,6 +306,7 @@ function hpc_create_new_collection() {
     wp_send_json_success( [
         'id'   => $result['term_id'],
         'name' => $collection_name,
+        'parent_id' => $parent_id ?: null,
     ] );
 }
 add_action( 'wp_ajax_hpc_create_new_collection', 'hpc_create_new_collection' );
