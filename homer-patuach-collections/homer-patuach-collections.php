@@ -111,6 +111,10 @@ function hpc_add_collections_ui() {
                             <option value="">ללא הורה (כללי)</option>
                         </select>
                         <button id="hpc-create-collection-button">צור</button>
+                        <div class="hpc-parent-creator">
+                            <input type="text" id="hpc-new-parent-name" placeholder="או צור הורה חדש (כמו בקטגוריות)..." />
+                            <button id="hpc-create-parent-button">צור הורה</button>
+                        </div>
                         <small class="hpc-parent-hint">טיפ: מומלץ לשייך אוספים להורה (למשל תחום דעת) כדי לשמור על סדר.</small>
                     </div>
                 </div>
@@ -310,6 +314,50 @@ function hpc_create_new_collection() {
     ] );
 }
 add_action( 'wp_ajax_hpc_create_new_collection', 'hpc_create_new_collection' );
+
+
+/**
+ * AJAX: Create a new top-level parent collection (global, without owner)
+ */
+function hpc_create_parent_collection() {
+    check_ajax_referer( 'hpc_collections_nonce', 'nonce' );
+
+    if ( ! is_user_logged_in() ) {
+        wp_send_json_error( ['message' => 'יש להתחבר.'] );
+    }
+
+    $name = isset($_POST['name']) ? sanitize_text_field($_POST['name']) : '';
+    if ( empty($name) ) {
+        wp_send_json_error( ['message' => 'יש להזין שם להורה.'] );
+    }
+
+    // Must be unique by name among top-level parents (ignore children)
+    $existing = get_terms([
+        'taxonomy' => 'collection',
+        'hide_empty' => false,
+        'parent' => 0,
+        'name' => $name,
+        'meta_query' => [
+            [ 'key' => 'hpc_user_id', 'compare' => 'NOT EXISTS' ]
+        ],
+    ]);
+    if ( ! is_wp_error($existing) && ! empty($existing) ) {
+        wp_send_json_error( ['message' => 'כבר קיים הורה בשם זה.'] );
+    }
+
+    $result = wp_insert_term( $name, 'collection', [ 'parent' => 0 ] );
+    if ( is_wp_error( $result ) ) {
+        wp_send_json_error( ['message' => $result->get_error_message()] );
+    }
+
+    // Do NOT set hpc_user_id meta; this marks it as global parent
+
+    wp_send_json_success([
+        'id' => $result['term_id'],
+        'name' => $name,
+    ]);
+}
+add_action( 'wp_ajax_hpc_create_parent_collection', 'hpc_create_parent_collection' );
 
 
 /**

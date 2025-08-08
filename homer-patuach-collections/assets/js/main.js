@@ -209,6 +209,41 @@ jQuery(document).ready(function($) {
 
     $body.on('click', '#hpc-create-collection-button', createNewCollection);
 
+    // Create new parent term (top-level, global) and add it to the dropdown
+    $body.on('click', '#hpc-create-parent-button', function() {
+        const $btn = $(this);
+        const $input = $('#hpc-new-parent-name');
+        const name = $input.val().trim();
+        if (!name) { alert('יש להזין שם להורה.'); return; }
+        $btn.prop('disabled', true).text('יוצר...');
+        $.ajax({
+            url: hpc_ajax_object.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'hpc_create_parent_collection',
+                nonce: hpc_ajax_object.nonce,
+                name: name
+            }
+        }).done(function(response){
+            if (response.success) {
+                // append to dropdown and select it
+                const data = response.data || {};
+                if (data.id && data.name) {
+                    const $sel = $('#hpc-collection-parent');
+                    $sel.append(`<option value="${data.id}">${data.name}</option>`);
+                    $sel.val(String(data.id));
+                    $input.val('');
+                }
+            } else {
+                alert(response.data && response.data.message ? response.data.message : 'שגיאה ביצירת הורה.');
+            }
+        }).fail(function(){
+            alert('שגיאת שרת. נסה שוב מאוחר יותר.');
+        }).always(function(){
+            $btn.prop('disabled', false).text('צור הורה');
+        });
+    });
+
     // --- Toggle Search Area on Profile Page ---
     $body.on('click', '.hpc-open-search-button', function() {
         const $button = $(this);
