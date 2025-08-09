@@ -106,14 +106,8 @@ function hpc_add_collections_ui() {
                         <p>טוען אוספים...</p>
                     </div>
                     <div id="hpc-new-collection-form">
-                        <select id="hpc-subject-dropdown">
-                            <option value="0">בחר תחום דעת (אופציונלי)</option>
-                            <!-- Subjects will be loaded here -->
-                        </select>
-                        <div class="hpc-new-collection-input-wrapper">
-                            <input type="text" id="hpc-new-collection-name" placeholder="או צור אוסף חדש..." />
-                            <button id="hpc-create-collection-button">צור</button>
-                        </div>
+                        <input type="text" id="hpc-new-collection-name" placeholder="או צור אוסף חדש..." />
+                        <button id="hpc-create-collection-button">צור</button>
                     </div>
                 </div>
             </div>
@@ -258,7 +252,6 @@ function hpc_create_new_collection() {
     }
 
     $collection_name = sanitize_text_field( $_POST['name'] );
-    $subject_id = isset( $_POST['subject_id'] ) ? intval( $_POST['subject_id'] ) : 0;
     
     $existing_terms = get_terms([
         'taxonomy' => 'collection',
@@ -284,11 +277,6 @@ function hpc_create_new_collection() {
 
     // Add user ID as term meta
     add_term_meta( $result['term_id'], 'hpc_user_id', $user_id, true );
-
-    // Add subject ID as term meta if provided
-    if ( $subject_id > 0 ) {
-        add_term_meta( $result['term_id'], 'hpc_subject_id', $subject_id, true );
-    }
 
     wp_send_json_success( [
         'id'   => $result['term_id'],
@@ -428,6 +416,48 @@ function hpc_update_collection_description() {
     wp_send_json_success(['message' => 'Description updated successfully.']);
 }
 add_action('wp_ajax_hpc_update_collection_description', 'hpc_update_collection_description');
+
+
+/**
+ * AJAX handler to update a collection's associated subject.
+ */
+function hpc_update_collection_subject() {
+    // Security check
+    check_ajax_referer('hpc_collections_nonce', 'nonce');
+
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        wp_send_json_error(['message' => 'User not logged in.']);
+    }
+
+    $collection_id = isset($_POST['collection_id']) ? intval($_POST['collection_id']) : 0;
+    $subject_id = isset($_POST['subject_id']) ? intval($_POST['subject_id']) : 0; // Can be 0 to unset
+
+    if (!$collection_id) {
+        wp_send_json_error(['message' => 'Invalid data provided.']);
+    }
+
+    // Verify the collection belongs to the user
+    $collection_user_id = get_term_meta($collection_id, 'hpc_user_id', true);
+    if ((int) $collection_user_id !== $user_id) {
+        wp_send_json_error(['message' => 'Invalid collection ownership.']);
+    }
+
+    // If subject_id is provided, update/add the meta.
+    // If subject_id is 0 or empty, delete the meta.
+    if ( $subject_id > 0 ) {
+        $result = update_term_meta($collection_id, 'hpc_subject_id', $subject_id);
+    } else {
+        $result = delete_term_meta($collection_id, 'hpc_subject_id');
+    }
+
+    if ($result === false) {
+         wp_send_json_error(['message' => 'Could not update subject.']);
+    }
+
+    wp_send_json_success(['message' => 'Subject updated successfully.']);
+}
+add_action('wp_ajax_hpc_update_collection_subject', 'hpc_update_collection_subject');
 
 
 /**
@@ -719,6 +749,13 @@ function hpc_collections_screen_content() {
     // --- End: Subject Filter Chips ---
 
 
+    // Get all subjects once to create the dropdown for each collection
+    $all_subjects = get_terms([
+        'taxonomy' => 'subject',
+        'hide_empty' => false,
+        'hierarchical' => true,
+    ]);
+
     echo '<div class="hpc-collections-grid">';
  
      foreach ( $collections as $collection ) {
@@ -770,8 +807,31 @@ function hpc_collections_screen_content() {
             }
             wp_reset_postdata();
 
-            // Only show editing UI if the logged-in user is viewing their own profile.
             if ( bp_is_my_profile() ) {
+                // Add the subject selector
+                if ( ! is_wp_error( $all_subjects ) && ! empty( $all_subjects ) ) {
+                    echo '<div class="hpc-collection-subject-editor">';
+                    echo '<label for="hpc-subject-selector-' . esc_attr($collection->term_id) . '">שייך לתחום דעת:</label>';
+                    echo '<select class="hpc-subject-selector" id="hpc-subject-selector-' . esc_attr($collection->term_id) . '" data-collection-id="' . esc_attr($collection->term_id) . '">';
+                    echo '<option value="">' . esc_html__( 'בחר תחום דעת...', 'homer-patuach-collections' ) . '</option>';
+                    foreach ( $all_subjects as $subject ) {
+                        // Check if this subject is a parent
+                        if ( $subject->parent == 0 ) {
+                            echo '<option value="' . esc_attr( $subject->term_id ) . '" ' . selected( $subject_id, $subject->term_id, false ) . '>' . esc_html( $subject->name ) . '</option>';
+                            // Check for children of this parent
+                            foreach ( $all_subjects as $child_subject ) {
+                                if ( $child_subject->parent == $subject->term_id ) {
+                                     echo '<option value="' . esc_attr( $child_subject->term_id ) . '" ' . selected( $subject_id, $child_subject->term_id, false ) . '>&nbsp;&nbsp;&ndash; ' . esc_html( $child_subject->name ) . '</option>';
+                                }
+                            }
+                        }
+                    }
+                    echo '</select>';
+                    echo '<button class="hpc-save-subject-button" data-collection-id="' . esc_attr($collection->term_id) . '">שמור</button>';
+                    echo '<span class="hpc-subject-save-success-msg" style="display:none;">נשמר!</span>';
+                    echo '</div>'; // .hpc-collection-subject-editor
+                }
+
                 // Add the description editor
                 echo '<div class="hpc-collection-description-editor">';
                 echo '<textarea class="hpc-collection-description-input" data-collection-id="' . esc_attr($collection->term_id) . '" placeholder="הוסף תיאור קצר לאוסף...">' . esc_textarea($collection->description) . '</textarea>';
@@ -849,3 +909,70 @@ function hpc_display_post_collections_list_after_content( $content ) {
     }
     return $content;
 }
+
+/**
+ * =================================================================
+ * ADMIN AREA - EDIT COLLECTION SCREEN
+ * =================================================================
+ */
+
+/**
+ * Add a 'Subject' dropdown to the Edit Collection screen in the admin area.
+ *
+ * @param WP_Term $term The term object.
+ */
+function hpc_add_subject_field_to_edit_collection_screen( $term ) {
+    $subjects = get_terms([
+        'taxonomy' => 'subject',
+        'hide_empty' => false,
+        'hierarchical' => true,
+    ]);
+    
+    $current_subject_id = get_term_meta( $term->term_id, 'hpc_subject_id', true );
+
+    ?>
+    <tr class="form-field">
+        <th scope="row" valign="top"><label for="hpc_subject_id"><?php _e( 'תחום דעת', 'homer-patuach-collections' ); ?></label></th>
+        <td>
+            <select name="hpc_subject_id" id="hpc_subject_id">
+                <option value=""><?php _e( 'ללא', 'homer-patuach-collections' ); ?></option>
+                <?php
+                if ( ! is_wp_error( $subjects ) && ! empty( $subjects ) ) {
+                    foreach ( $subjects as $subject ) {
+                        if ( $subject->parent == 0 ) {
+                            echo '<option value="' . esc_attr( $subject->term_id ) . '"' . selected( $current_subject_id, $subject->term_id, false ) . '>' . esc_html( $subject->name ) . '</option>';
+                            // Find and display children
+                            foreach ( $subjects as $child_subject ) {
+                                if ( $child_subject->parent == $subject->term_id ) {
+                                    echo '<option value="' . esc_attr( $child_subject->term_id ) . '"' . selected( $current_subject_id, $child_subject->term_id, false ) . '>&nbsp;&nbsp;&ndash; ' . esc_html( $child_subject->name ) . '</option>';
+                                }
+                            }
+                        }
+                    }
+                }
+                ?>
+            </select>
+            <p class="description"><?php _e( 'שייך את האוסף הזה לתחום דעת ספציפי.', 'homer-patuach-collections' ); ?></p>
+        </td>
+    </tr>
+    <?php
+}
+add_action( 'collection_edit_form_fields', 'hpc_add_subject_field_to_edit_collection_screen', 10, 2 );
+
+/**
+ * Save the custom subject field when a collection is edited.
+ *
+ * @param int $term_id The term ID.
+ */
+function hpc_save_collection_subject_meta( $term_id ) {
+    if ( isset( $_POST['hpc_subject_id'] ) ) {
+        $subject_id = intval( $_POST['hpc_subject_id'] );
+        if ( $subject_id > 0 ) {
+            update_term_meta( $term_id, 'hpc_subject_id', $subject_id );
+        } else {
+            delete_term_meta( $term_id, 'hpc_subject_id' );
+        }
+    }
+}
+add_action( 'edited_collection', 'hpc_save_collection_subject_meta', 10, 2 );
+

@@ -14,7 +14,6 @@ jQuery(document).ready(function($) {
         if (postId) {
             $modalOverlay.removeClass('hpc-modal-hidden');
             fetchUserCollections(postId);
-            fetchSubjects(); // Fetch subjects for the dropdown
         }
     });
 
@@ -184,7 +183,6 @@ jQuery(document).ready(function($) {
         const input = $('#hpc-new-collection-name');
         const collectionName = input.val().trim();
         const postId = $('#hpc-open-modal-button').data('post-id');
-        const subjectId = $('#hpc-subject-dropdown').val(); // Get subject ID
 
         if (!collectionName) {
             alert('יש להזין שם לאוסף.');
@@ -200,7 +198,6 @@ jQuery(document).ready(function($) {
                 action: 'hpc_create_new_collection',
                 nonce: hpc_ajax_object.nonce,
                 name: collectionName,
-                subject_id: subjectId // Send subject ID to server
             },
             success: function(response) {
                 if (response.success) {
@@ -419,5 +416,44 @@ jQuery(document).ready(function($) {
             });
         });
     }
+
+    // Use a more specific container for the event listener
+    $('.hpc-collections-grid').on('click', '.hpc-save-subject-button', function() {
+        const button = $(this);
+        const collection_id = button.data('collection-id');
+        const selector = $('#hpc-subject-selector-' + collection_id);
+        const subject_id = selector.val();
+        const successMsg = button.siblings('.hpc-subject-save-success-msg');
+
+        if (button.hasClass('processing')) {
+            return;
+        }
+        button.addClass('processing').text('שומר...');
+
+        $.post(hpc_ajax_object.ajax_url, {
+            action: 'hpc_update_collection_subject',
+            nonce: hpc_ajax_object.nonce,
+            collection_id: collection_id,
+            subject_id: subject_id
+        })
+        .done(function(response) {
+            if (response.success) {
+                successMsg.fadeIn();
+                setTimeout(function() {
+                    successMsg.fadeOut();
+                }, 2000);
+                // Also update the data-subject-id on the parent item for filtering
+                button.closest('.hpc-collection-item').attr('data-subject-id', subject_id);
+            } else {
+                alert(response.data.message || 'Error saving subject.');
+            }
+        })
+        .fail(function() {
+            alert('Server error while saving subject.');
+        })
+        .always(function() {
+            button.removeClass('processing').text('שמור');
+        });
+    });
 
 });

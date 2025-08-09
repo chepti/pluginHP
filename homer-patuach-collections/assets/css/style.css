@@ -346,7 +346,7 @@ li.hpc-checked .hpc-toggle-icon {
     display: block;
     aspect-ratio: 1 / 1;
     overflow: hidden;
-    border-radius: 4px;
+    border-radius: 12px; /* Increased border-radius */
     border: 1px solid #eee;
 }
 
@@ -401,6 +401,8 @@ li.hpc-checked .hpc-toggle-icon {
 .hpc-add-post-to-collection-ui {
     margin-top: 0; /* Reset margin */
     padding-top: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
     border-top: 1px solid #f0f2f5;
 }
 
@@ -412,7 +414,7 @@ li.hpc-checked .hpc-toggle-icon {
     width: 100%;
     text-align: center;
     cursor: pointer;
-    border-radius: 5px;
+    border-radius: 20px; /* Increased border-radius */
     font-size: 14px;
     font-weight: 500;
     transition: background-color 0.2s ease;
@@ -633,3 +635,124 @@ body.tax-collection .page-header h1.page-title .hpc-archive-title-wrapper {
     margin-right: 10px;
     font-weight: bold;
 }
+
+/* --- Style Overhaul for BuddyPress 'My Collections' Tab --- */
+
+/* Style for the collection item card itself */
+.hpc-collection-item {
+    border-radius: 30px; /* Even more rounded corners for the card */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border: 1px solid #f0f0f0;
+    overflow: hidden; /* This is key to clip the inner content */
+}
+
+.hpc-collection-item-main {
+    padding: 20px;
+}
+
+/* Container for the editor sections (subject and description) */
+.hpc-collection-subject-editor,
+.hpc-collection-description-editor {
+    background-color: transparent; /* Remove the inner background color */
+    padding: 0 20px 20px 20px; /* Add padding to match the card */
+    margin-top: 20px; /* Space from content above */
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Consistent gap between elements */
+}
+
+.hpc-collection-subject-editor {
+     border-bottom: 1px solid #f0f2f5;
+     padding-bottom: 20px;
+}
+
+/* Style for the form labels */
+.hpc-collection-subject-editor label {
+    font-family: 'Rubik', sans-serif;
+    font-weight: 500;
+    color: #555;
+    font-size: 14px;
+    padding-right: 5px;
+}
+
+/* Style for the select dropdown */
+.hpc-subject-selector {
+    border-radius: 30px; /* Fully rounded */
+}
+
+/* Common style for inputs and textareas */
+.hpc-subject-selector,
+.hpc-collection-description-input {
+    width: 100%;
+    padding: 12px 20px;
+    border: 1px solid #e0e2e5;
+    background-color: #f7f9fc;
+    font-family: 'Rubik', sans-serif;
+    font-size: 15px;
+    color: #333;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.hpc-collection-description-input {
+    border-radius: 15px; /* Slightly less rounded for textarea */
+    min-height: 100px;
+}
+
+/* Focus styles */
+.hpc-subject-selector:focus,
+.hpc-collection-description-input:focus {
+    outline: none;
+    border-color: #7699f2;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(118, 153, 242, 0.2);
+}
+
+
+/* Common button style */
+.hpc-save-subject-button,
+.hpc-save-description-button {
+    font-family: 'Rubik', sans-serif;
+    font-weight: 600;
+    border: none;
+    border-radius: 30px; /* Fully rounded */
+    padding: 12px 25px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    color: white;
+    width: 100%; /* Make buttons full-width */
+}
+
+/* Save Subject Button - Primary Action Color */
+.hpc-save-subject-button {
+    background: linear-gradient(135deg, #7699f2, #94b2ff); /* Blue gradient */
+}
+.hpc-save-subject-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Save Description Button - Secondary Action Color */
+.hpc-save-description-button {
+    background: linear-gradient(135deg, #FB8255, #fbad91); /* Orange gradient */
+}
+
+.hpc-save-description-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Success message styling */
+.hpc-subject-save-success-msg,
+.hpc-save-success-msg {
+    color: #4CAF50;
+    font-family: 'Rubik', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    text-align: center;
+    margin-top: -5px; /* Pull it closer to the button */
+    height: 18px; /* Prevent layout shift */
+}
+
+
