@@ -359,7 +359,7 @@ body.buddypress, .buddypress-wrap {
     position: fixed;
     bottom: 25px;
     right: 25px;
-    background: linear-gradient(135deg, #FB8255, #FB6965, #7699f2);
+    background: linear-gradient(135deg, #FB8255, #FB6965);
     color: white !important;
     text-decoration: none;
     border-radius: 50%;
@@ -374,6 +374,7 @@ body.buddypress, .buddypress-wrap {
     transition: all 0.3s ease;
     text-align: center;
     line-height: 1.2;
+    font-family: 'Rubik', sans-serif;
 }
 .hp-bp-floating-button:hover {
     transform: translateY(-3px);

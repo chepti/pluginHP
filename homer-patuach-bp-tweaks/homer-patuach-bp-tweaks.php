@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - BuddyPress Tweaks
  * Plugin URI:        https://example.com/
  * Description:       Custom styles and functionality for BuddyPress pages.
- * Version:           2.4.1
+ * Version:           2.4.2
  * Author:            chepti
  * Author URI:        https://example.com/
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_BP_TWEAKS_VERSION', '2.4.1' );
+define( 'HP_BP_TWEAKS_VERSION', '2.4.2' );
 define( 'HP_BP_TWEAKS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 
 
