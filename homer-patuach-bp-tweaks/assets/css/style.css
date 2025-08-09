@@ -357,27 +357,33 @@ body.buddypress, .buddypress-wrap {
 /* --- Floating Button --- */
 .hp-bp-floating-button {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: #7699f2;
-    color: white;
+    bottom: 25px;
+    right: 25px;
+    background: linear-gradient(135deg, #FB8255, #FB6965, #7699f2);
+    color: white !important;
+    text-decoration: none;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
+    width: 80px;
+    height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.25);
     z-index: 999;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
+    text-align: center;
+    line-height: 1.2;
 }
 .hp-bp-floating-button:hover {
-    background-color: #5a77c3;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    color: white;
 }
-.hp-bp-floating-button i {
-    font-size: 24px;
-} 
+.hp-bp-floating-button span {
+    font-weight: 700;
+    font-size: 14px;
+}
 
 /* BuddyPress Profile Header Tweaks */
 #buddypress #item-header-cover-image {

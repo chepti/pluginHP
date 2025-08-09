@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - BuddyPress Tweaks
  * Plugin URI:        https://example.com/
  * Description:       Custom styles and functionality for BuddyPress pages.
- * Version:           2.4.0
+ * Version:           2.4.1
  * Author:            chepti
  * Author URI:        https://example.com/
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_BP_TWEAKS_VERSION', '2.4.0' );
+define( 'HP_BP_TWEAKS_VERSION', '2.4.1' );
 define( 'HP_BP_TWEAKS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 
 
@@ -145,13 +145,10 @@ function hp_bp_tweaks_add_floating_button() {
         return;
     }
 
-    // Get the URL for the user's "My Posts" tab
-    $my_posts_url = bp_loggedin_user_domain() . 'my-posts/';
-
+    // This link will now trigger the popup from the other plugin
     ?>
-    <a href="<?php echo esc_url($my_posts_url); ?>" class="hp-bp-floating-button" title="הפוסטים שלי">
-        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/></svg>
-        <span>הפוסטים שלי</span>
+    <a href="#" class="hp-bp-floating-button hpg-open-popup-button" title="הוספת פוסט חדש">
+        <span>הוספת<br>פוסט</span>
     </a>
     <?php
 }
