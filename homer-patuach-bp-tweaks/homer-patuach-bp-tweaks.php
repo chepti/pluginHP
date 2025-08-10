@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - BuddyPress Tweaks
  * Plugin URI:        https://example.com/
  * Description:       Custom styles and functionality for BuddyPress pages.
- * Version:           2.5.0
+ * Version:           2.4.2
  * Author:            chepti
  * Author URI:        https://example.com/
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_BP_TWEAKS_VERSION', '2.5.0' );
+define( 'HP_BP_TWEAKS_VERSION', '2.4.2' );
 define( 'HP_BP_TWEAKS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 
 
@@ -166,7 +166,6 @@ function hp_bp_tweaks_add_user_bar() {
     $user_id = get_current_user_id();
     $profile_url = bp_core_get_user_domain( $user_id );
     $my_posts_url = rtrim($profile_url, '/') . '/my-posts/';
-    $collections_url = rtrim($profile_url, '/') . '/collections/';
     $friends_url = rtrim($profile_url, '/') . '/friends/';
     $profile_edit_url = rtrim($profile_url, '/') . '/profile/edit/';
     $logout_url = wp_logout_url( home_url() );
@@ -181,7 +180,6 @@ function hp_bp_tweaks_add_user_bar() {
                     <a href="#" class="hpg-open-popup-button">הוסף פוסט</a>
                     <a href="<?php echo esc_url($my_posts_url); ?>">הפוסטים שלי</a>
                     <a href="<?php echo esc_url($profile_edit_url); ?>">הפרופיל שלי</a>
-                    <a href="<?php echo esc_url($collections_url); ?>">האוספים שלי</a>
                     <a href="<?php echo esc_url($friends_url); ?>">חברים</a>
                     <a href="<?php echo esc_url($logout_url); ?>" class="logout-link">התנתקות</a>
                 </div>
@@ -190,100 +188,8 @@ function hp_bp_tweaks_add_user_bar() {
     </div>
     <?php
 }
-// add_action( 'wp_body_open', 'hp_bp_tweaks_add_user_bar' );
+add_action( 'wp_body_open', 'hp_bp_tweaks_add_user_bar' );
 
-
-/**
- * =================================================================
- * CUSTOMIZE BUDDYPRESS USER MENU (replaces the custom user bar)
- * =================================================================
- */
-
-/**
- * Add custom items to the BuddyPress user menu and reorder/rename existing ones.
- */
-function hp_bp_tweaks_add_custom_user_nav_items() {
-    if ( ! is_user_logged_in() || ! function_exists('buddypress') ) {
-        return;
-    }
-
-    $user_id = get_current_user_id();
-    $profile_url = bp_core_get_user_domain( $user_id );
-    $bp = buddypress();
-
-    // --- RENAME EXISTING ITEMS ---
-    if (isset($bp->bp_nav['profile'])) {
-        $bp->bp_nav['profile']['name'] = 'הפרופיל שלי';
-        $bp->bp_nav['profile']['position'] = 20;
-    }
-    if (isset($bp->bp_nav['posts'])) {
-        $bp->bp_nav['posts']['name'] = 'הפוסטים שלי';
-        $bp->bp_nav['posts']['position'] = 15;
-    }
-     if (isset($bp->bp_nav['friends'])) {
-        $bp->bp_nav['friends']['position'] = 30;
-    }
-
-    // --- ADD NEW ITEMS ---
-
-    // 1. "הוסף פוסט" link
-    bp_core_new_nav_item( array(
-        'name'            => 'הוסף פוסט',
-        'slug'            => 'add-post-popup',
-        'parent_slug'     => bp_get_personal_slug(),
-        'position'        => 10,
-        'screen_function' => 'hp_bp_tweaks_dummy_screen_function',
-        'link'            => '#',
-        'css_id'          => 'hpg-open-popup-button-nav',
-        'user_has_access' => true
-    ), 'members' );
-
-    // 2. "האוספים שלי" link
-    if ( taxonomy_exists('collection') ) {
-        bp_core_new_nav_item( array(
-            'name'            => 'האוספים שלי',
-            'slug'            => 'my-collections',
-            'parent_slug'     => bp_get_personal_slug(),
-            'position'        => 25,
-            'screen_function' => 'hp_bp_tweaks_dummy_screen_function',
-            'link'            => trailingslashit( rtrim( $profile_url, '/' ) . '/collections' ),
-            'user_has_access' => true
-        ), 'members' );
-    }
-
-    // 3. "התנתקות" link
-    bp_core_new_nav_item( array(
-        'name'            => 'התנתקות',
-        'slug'            => 'logout',
-        'parent_slug'     => bp_get_personal_slug(),
-        'position'        => 999,
-        'screen_function' => 'hp_bp_tweaks_dummy_screen_function',
-        'link'            => wp_logout_url( home_url() ),
-        'user_has_access' => true
-    ), 'members' );
-}
-add_action( 'bp_setup_nav', 'hp_bp_tweaks_add_custom_user_nav_items', 100 );
-
-/**
- * Dummy screen function to satisfy BuddyPress nav API.
- */
-function hp_bp_tweaks_dummy_screen_function() {
-    // This function does nothing. Its purpose is to prevent BuddyPress from
-    // trying to load a template file for our custom menu items.
-    return;
-}
-
-/**
- * Add custom attributes to the new nav items.
- * Specifically, add the correct class to the "הוסף פוסט" link.
- */
-function hp_bp_tweaks_add_nav_item_attributes( $nav_item, $css_id ) {
-    if ( 'hpg-open-popup-button-nav' === $css_id ) {
-        $nav_item = str_replace('<a ', '<a class="hpg-open-popup-button" ', $nav_item);
-    }
-    return $nav_item;
-}
-add_filter( 'bp_get_nav_menu_item', 'hp_bp_tweaks_add_nav_item_attributes', 10, 2 );
 
 /**
  * Modify BuddyPress navigation tabs.
