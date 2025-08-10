@@ -155,13 +155,15 @@ function hp_bp_tweaks_add_floating_button() {
 add_action( 'wp_footer', 'hp_bp_tweaks_add_floating_button' );
 
 /**
- * Adds a custom user bar to the top of the site.
- * This bar will only be displayed for logged-in users.
+ * Renders the custom user menu HTML.
+ * This is now used by the shortcode.
  */
-function hp_bp_tweaks_add_user_bar() {
+function hp_bp_tweaks_get_user_bar_html() {
     if ( ! is_user_logged_in() ) {
-        return;
+        return '';
     }
+
+    ob_start();
 
     $user_id = get_current_user_id();
     $profile_url = bp_core_get_user_domain( $user_id );
@@ -171,26 +173,41 @@ function hp_bp_tweaks_add_user_bar() {
     $profile_edit_url = rtrim($profile_url, '/') . '/profile/edit/';
     $logout_url = wp_logout_url( home_url() );
     ?>
-    <div class="hp-bp-user-bar">
-        <div class="hp-bp-user-bar-inner">
-            <div class="hp-bp-user-menu">
-                <button class="hp-bp-profile-trigger" aria-haspopup="true" aria-expanded="false">
-                    <?php echo get_avatar( $user_id, 40 ); ?>
-                </button>
-                <div class="hp-bp-dropdown-menu" aria-hidden="true">
-                    <a href="#" class="hpg-open-popup-button">הוסף פוסט</a>
-                    <a href="<?php echo esc_url($my_posts_url); ?>">הפוסטים שלי</a>
-                    <a href="<?php echo esc_url($profile_edit_url); ?>">הפרופיל שלי</a>
-                    <a href="<?php echo esc_url($collections_url); ?>">האוספים שלי</a>
-                    <a href="<?php echo esc_url($friends_url); ?>">חברים</a>
-                    <a href="<?php echo esc_url($logout_url); ?>" class="logout-link">התנתקות</a>
-                </div>
+    <div class="hp-bp-user-menu-container">
+        <div class="hp-bp-user-menu">
+            <button class="hp-bp-profile-trigger" aria-haspopup="true" aria-expanded="false">
+                <?php echo get_avatar( $user_id, 40 ); ?>
+            </button>
+            <div class="hp-bp-dropdown-menu" aria-hidden="true">
+                <a href="#" class="hpg-open-popup-button">הוסף פוסט</a>
+                <a href="<?php echo esc_url($my_posts_url); ?>">הפוסטים שלי</a>
+                <a href="<?php echo esc_url($profile_edit_url); ?>">הפרופיל שלי</a>
+                <a href="<?php echo esc_url($collections_url); ?>">האוספים שלי</a>
+                <a href="<?php echo esc_url($friends_url); ?>">חברים</a>
+                <a href="<?php echo esc_url($logout_url); ?>" class="logout-link">התנתקות</a>
             </div>
         </div>
     </div>
     <?php
+    return ob_get_clean();
 }
-add_action( 'wp_body_open', 'hp_bp_tweaks_add_user_bar' );
+
+/**
+ * Original function to add the user bar.
+ * We are now disabling this to use a shortcode instead.
+ */
+function hp_bp_tweaks_add_user_bar() {
+    echo hp_bp_tweaks_get_user_bar_html();
+}
+// add_action( 'wp_body_open', 'hp_bp_tweaks_add_user_bar' ); // Disabled in favor of shortcode
+
+/**
+ * Register the shortcode [hp_custom_user_menu]
+ */
+function hp_bp_tweaks_register_user_menu_shortcode() {
+    return hp_bp_tweaks_get_user_bar_html();
+}
+add_shortcode( 'hp_custom_user_menu', 'hp_bp_tweaks_register_user_menu_shortcode' );
 
 
 /**

@@ -9,7 +9,12 @@ body.buddypress, .buddypress-wrap {
 }
 
 
-/* --- Custom User Bar --- */
+/* --- Custom User Bar (now Shortcode) --- */
+.hp-bp-user-menu-container {
+    display: inline-block; /* Allows it to sit inside the header nicely */
+    position: relative;
+    line-height: 1; /* Prevents extra vertical space */
+}
 .hp-bp-user-bar {
     background: #ffffff;
     border-bottom: 1px solid #e9ebee;
@@ -75,7 +80,7 @@ body.buddypress, .buddypress-wrap {
 
 .hp-bp-dropdown-menu {
     position: absolute;
-    top: calc(100% + 10px);
+    top: calc(100% + 15px); /* Increased spacing a bit */
     left: 0;
     right: auto;
     background: white;
