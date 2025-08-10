@@ -587,4 +587,11 @@ body.buddypress, .buddypress-wrap {
     color: #FB7A5F;
 }
 
+/* --- Hide the default BuddyPress account menu in the main header to prevent duplication --- */
+/* This targets the menu that shows "My Account", "Log Out", etc. */
+#buddypress-header-part .header-navigation ul li#bp-li-account,
+.site-header #buddypress-header-part .header-navigation ul li#bp-li-account {
+    display: none !important;
+}
+
 /* No changes needed for follow button, it will be pushed to the end by justify-content */ 

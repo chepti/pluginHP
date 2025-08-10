@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - BuddyPress Tweaks
  * Plugin URI:        https://example.com/
  * Description:       Custom styles and functionality for BuddyPress pages.
- * Version:           2.4.2
+ * Version:           2.4.3
  * Author:            chepti
  * Author URI:        https://example.com/
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_BP_TWEAKS_VERSION', '2.4.2' );
+define( 'HP_BP_TWEAKS_VERSION', '2.4.3' );
 define( 'HP_BP_TWEAKS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 
 
@@ -166,6 +166,7 @@ function hp_bp_tweaks_add_user_bar() {
     $user_id = get_current_user_id();
     $profile_url = bp_core_get_user_domain( $user_id );
     $my_posts_url = rtrim($profile_url, '/') . '/my-posts/';
+    $collections_url = rtrim($profile_url, '/') . '/collections/';
     $friends_url = rtrim($profile_url, '/') . '/friends/';
     $profile_edit_url = rtrim($profile_url, '/') . '/profile/edit/';
     $logout_url = wp_logout_url( home_url() );
@@ -180,6 +181,7 @@ function hp_bp_tweaks_add_user_bar() {
                     <a href="#" class="hpg-open-popup-button">הוסף פוסט</a>
                     <a href="<?php echo esc_url($my_posts_url); ?>">הפוסטים שלי</a>
                     <a href="<?php echo esc_url($profile_edit_url); ?>">הפרופיל שלי</a>
+                    <a href="<?php echo esc_url($collections_url); ?>">האוספים שלי</a>
                     <a href="<?php echo esc_url($friends_url); ?>">חברים</a>
                     <a href="<?php echo esc_url($logout_url); ?>" class="logout-link">התנתקות</a>
                 </div>
