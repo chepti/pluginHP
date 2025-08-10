@@ -1,0 +1,162 @@
+/**
+ * Study Timeline Styles
+ */
+
+.study-timeline-container {
+    border: 1px solid #ccc;
+    height: 600px; /* Default height */
+}
+
+/* Style for the background topic bands */
+.timeline-topic-band {
+    opacity: 0.2;
+    text-align: center;
+    font-weight: bold;
+    color: #333;
+    font-size: 16px;
+    box-sizing: border-box;
+    padding-top: 10px;
+}
+
+/* Default item styling */
+.vis-item {
+    border-color: #0073aa;
+    background-color: #f0f6fc;
+}
+
+/* Styling for the groups/lanes labels */
+.vis-labelset .vis-label {
+    border-right: 1px solid #d9d9d9;
+    padding: 10px;
+    background-color: #f7f7f7;
+    width: 150px; /* Give more space to the labels */
+    box-sizing: border-box;
+}
+
+.vis-left .vis-label.vis-group {
+    text-align: right;
+    padding-right: 20px;
+}
+
+/* --- Item Styling based on Zoom Level --- */
+
+.timeline-item-icon-only {
+    text-align: center;
+    padding-top: 5px;
+}
+.timeline-item-icon-only .dashicons {
+    font-size: 24px;
+    color: #0073aa;
+}
+
+.timeline-item-with-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.timeline-item-with-title .dashicons {
+    font-size: 20px;
+}
+.timeline-item-with-title .item-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.timeline-item-detailed {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 100%;
+}
+.timeline-item-detailed .item-thumbnail,
+.timeline-item-detailed .item-thumbnail-placeholder {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.timeline-item-detailed .item-thumbnail-placeholder {
+    background-color: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.timeline-item-detailed .item-thumbnail-placeholder .dashicons {
+    font-size: 28px;
+    color: #555;
+}
+.timeline-item-detailed .item-title {
+    font-weight: bold;
+}
+
+/* --- Hide Button --- */
+.hide-item-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    color: #555;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 18px;
+    text-align: center;
+    padding: 0;
+    opacity: 0; /* Hidden by default */
+    transition: opacity 0.2s;
+}
+
+.vis-item:hover .hide-item-btn {
+    opacity: 1; /* Show on hover */
+}
+
+.hide-item-btn:hover {
+    background-color: #f00;
+    color: #fff;
+    border-color: #c00;
+}
+
+.timeline-item-detailed .item-content-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Repository Styles --- */
+.study-timeline-wrapper {
+    display: flex;
+    gap: 10px;
+}
+.study-timeline-container {
+    flex-grow: 1; /* Timeline takes remaining space */
+}
+.study-timeline-repository {
+    width: 250px;
+    flex-shrink: 0;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #f9f9f9;
+    height: 600px;
+    overflow-y: auto;
+}
+.study-timeline-repository h4 {
+    margin-top: 0;
+    text-align: center;
+}
+.repo-item {
+    padding: 8px 10px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    cursor: grab;
+    user-select: none;
+}
+.repo-item:active {
+    cursor: grabbing;
+    background-color: #e9e9e9;
+}
