@@ -159,36 +159,44 @@ add_action( 'wp_footer', 'hp_bp_tweaks_add_floating_button' );
  * This is now used by the shortcode.
  */
 function hp_bp_tweaks_get_user_bar_html() {
-    if ( ! is_user_logged_in() ) {
-        return '';
-    }
-
     ob_start();
 
-    $user_id = get_current_user_id();
-    $profile_url = bp_core_get_user_domain( $user_id );
-    $my_posts_url = rtrim($profile_url, '/') . '/my-posts/';
-    $collections_url = rtrim($profile_url, '/') . '/collections/';
-    $friends_url = rtrim($profile_url, '/') . '/friends/';
-    $profile_edit_url = rtrim($profile_url, '/') . '/profile/edit/';
-    $logout_url = wp_logout_url( home_url() );
-    ?>
-    <div class="hp-bp-user-menu-container">
-        <div class="hp-bp-user-menu">
-            <button class="hp-bp-profile-trigger" aria-haspopup="true" aria-expanded="false">
-                <?php echo get_avatar( $user_id, 40 ); ?>
-            </button>
-            <div class="hp-bp-dropdown-menu" aria-hidden="true">
-                <a href="#" class="hpg-open-popup-button">הוסף פוסט</a>
-                <a href="<?php echo esc_url($my_posts_url); ?>">הפוסטים שלי</a>
-                <a href="<?php echo esc_url($profile_edit_url); ?>">הפרופיל שלי</a>
-                <a href="<?php echo esc_url($collections_url); ?>">האוספים שלי</a>
-                <a href="<?php echo esc_url($friends_url); ?>">חברים</a>
-                <a href="<?php echo esc_url($logout_url); ?>" class="logout-link">התנתקות</a>
+    if ( is_user_logged_in() ) {
+        $user_id = get_current_user_id();
+        $profile_url = bp_core_get_user_domain( $user_id );
+        $my_posts_url = rtrim($profile_url, '/') . '/my-posts/';
+        $collections_url = rtrim($profile_url, '/') . '/collections/';
+        $friends_url = rtrim($profile_url, '/') . '/friends/';
+        $profile_edit_url = rtrim($profile_url, '/') . '/profile/edit/';
+        $logout_url = wp_logout_url( home_url() );
+        ?>
+        <div class="hp-bp-user-menu-container">
+            <div class="hp-bp-user-menu">
+                <button class="hp-bp-profile-trigger" aria-haspopup="true" aria-expanded="false">
+                    <?php echo get_avatar( $user_id, 40 ); ?>
+                </button>
+                <div class="hp-bp-dropdown-menu" aria-hidden="true">
+                    <a href="#" class="hpg-open-popup-button">הוסף פוסט</a>
+                    <a href="<?php echo esc_url($my_posts_url); ?>">הפוסטים שלי</a>
+                    <a href="<?php echo esc_url($profile_edit_url); ?>">הפרופיל שלי</a>
+                    <a href="<?php echo esc_url($collections_url); ?>">האוספים שלי</a>
+                    <a href="<?php echo esc_url($friends_url); ?>">חברים</a>
+                    <a href="<?php echo esc_url($logout_url); ?>" class="logout-link">התנתקות</a>
+                </div>
             </div>
         </div>
-    </div>
-    <?php
+        <?php
+    } else {
+        // --- Logged-out User View ---
+        ?>
+        <div class="hp-bp-user-menu-container hp-bp-logged-out">
+            <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="hp-bp-login-link" title="התחברות / הרשמה">
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="38" height="38"><path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.718 7.718 0 0112 15.75a7.718 7.718 0 015.855 2.062A8.25 8.25 0 0112 20.25a8.25 8.25 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" /></svg>
+            </a>
+        </div>
+        <?php
+    }
+
     return ob_get_clean();
 }
 

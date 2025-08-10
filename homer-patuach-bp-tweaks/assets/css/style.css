@@ -14,7 +14,28 @@ body.buddypress, .buddypress-wrap {
     display: inline-block; /* Allows it to sit inside the header nicely */
     position: relative;
     line-height: 1; /* Prevents extra vertical space */
+    vertical-align: middle; /* Aligns items nicely in a row */
 }
+
+/* Style for the logged-out login icon */
+.hp-bp-user-menu-container.hp-bp-logged-out {
+    margin-top: 5px; /* Adjust vertical alignment */
+}
+.hp-bp-login-link {
+    color: #555;
+    transition: color 0.2s;
+}
+.hp-bp-login-link:hover {
+    color: #FB7A5F;
+}
+
+/* Wrapper for the header elements to sit in a row */
+.astra-advanced-headers-wrap .ast-header-html {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Space between items */
+}
+
 .hp-bp-user-bar {
     background: #ffffff;
     border-bottom: 1px solid #e9ebee;
