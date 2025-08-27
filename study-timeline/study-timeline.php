@@ -3,7 +3,7 @@
  * Plugin Name:       Study Timeline
  * Plugin URI:        https://example.com/
  * Description:       A plugin to create and manage interactive study timelines for study groups.
- * Version:           2.0.0~a1b2c3d4
+ * Version:           2.0.0~b2c3d4e5
  * Author:            Chepti
  * Author URI:        
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'STUDY_TIMELINE_VERSION', '2.0.0~a1b2c3d4' );
+define( 'STUDY_TIMELINE_VERSION', '2.0.0~b2c3d4e5' );
 define( 'STUDY_TIMELINE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 /**

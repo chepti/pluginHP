@@ -39,6 +39,15 @@ class Study_Timeline_REST_API {
             ],
         ] );
 
+        // Route to get filter data for the repository
+        register_rest_route( $this->namespace, '/repository/filters', [
+            [
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => [ $this, 'get_repository_filters' ],
+                'permission_callback' => [ $this, 'can_view_timeline' ],
+            ],
+        ]);
+
         // Route to save/update timeline items
         register_rest_route( $this->namespace, '/timeline/(?P<id>[\d]+)/item', [
             [
@@ -49,6 +58,8 @@ class Study_Timeline_REST_API {
                     'post_id'   => [ 'required' => true, 'validate_callback' => 'is_numeric' ],
                     'item_date' => [ 'required' => true, 'validate_callback' => [ $this, 'is_valid_datetime' ] ],
                     'item_lane' => [ 'required' => true, 'validate_callback' => 'is_numeric' ],
+                    'item_shape' => [ 'required' => true, 'validate_callback' => function($param) { return in_array($param, ['square', 'circle', 'triangle', 'star']); } ],
+                    'item_color' => [ 'required' => false, 'sanitize_callback' => 'sanitize_hex_color' ],
                 ],
             ],
         ] );
@@ -123,10 +134,12 @@ class Study_Timeline_REST_API {
                 'post_id'          => $params['post_id'],
                 'item_date'        => $params['item_date'],
                 'item_lane'        => $params['item_lane'],
+                'item_shape'       => $params['item_shape'],
+                'item_color'       => $params['item_color'] ?? '',
                 'added_by_user_id' => get_current_user_id(),
                 'creation_date'    => current_time( 'mysql', 1 ),
             ],
-            [ '%d', '%d', '%s', '%d', '%d', '%s' ]
+            [ '%d', '%d', '%s', '%d', '%s', '%s', '%d', '%s' ]
         );
 
         if ( $result === false ) {
@@ -136,6 +149,16 @@ class Study_Timeline_REST_API {
         $new_item_id = $wpdb->insert_id;
         // Fetch the newly created item to return it fully formed
         $new_item = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE id = %d", $new_item_id ) );
+
+        // Enhance with post data for immediate correct rendering on the frontend
+        if ($new_item) {
+            $post = get_post( $new_item->post_id );
+            if ( $post ) {
+                $new_item->post_title = esc_html($post->post_title);
+                $new_item->post_type = $post->post_type;
+                $new_item->thumbnail_url = get_the_post_thumbnail_url( $post->ID, 'thumbnail' );
+            }
+        }
 
         return new WP_REST_Response( $new_item, 201 );
     }
@@ -163,13 +186,55 @@ class Study_Timeline_REST_API {
      * @return WP_Error|WP_REST_Response
      */
     public function get_repository_items( $request ) {
-        // Define which post types are relevant for the timeline
-        $supported_post_types = [ 'post', 'page', 'mamarim', 'matzgot', 'media' ]; // Add your CPTs here
+        // Define which categories are relevant for the timeline.
+        $category_slugs = [
+            'מערך-שיעור' => 0, // Maps slug to lane 0
+            'פעילות'      => 1, // Maps slug to lane 1
+        ];
+
+        // --- Start Filtering Logic ---
+        $tax_query = [
+            'relation' => 'AND',
+        ];
+
+        // Filter by main categories (lesson-plan, activity)
+        $category_ids = get_terms([
+            'slug'   => array_keys($category_slugs),
+            'fields' => 'ids',
+            'hide_empty' => false,
+        ]);
+        $tax_query[] = [
+            'taxonomy' => 'category',
+            'field'    => 'term_id',
+            'terms'    => $category_ids,
+        ];
+
+        // Filter by Subject (custom taxonomy)
+        $subject_id = $request->get_param( 'subject_id' );
+        if ( ! empty( $subject_id ) && is_numeric( $subject_id ) ) {
+            $tax_query[] = [
+                'taxonomy' => 'Subjects', // Replaced placeholder
+                'field'    => 'term_id',
+                'terms'    => (int) $subject_id,
+            ];
+        }
+
+        // Filter by Grade (custom taxonomy)
+        $grade_id = $request->get_param( 'grade_id' );
+        if ( ! empty( $grade_id ) && is_numeric( $grade_id ) ) {
+            $tax_query[] = [
+                'taxonomy' => 'Classes', // Replaced placeholder
+                'field'    => 'term_id',
+                'terms'    => (int) $grade_id,
+            ];
+        }
+        // --- End Filtering Logic ---
 
         $args = [
-            'post_type'      => $supported_post_types,
-            'posts_per_page' => -1, // Get all of them
+            'post_type'      => 'post', 
+            'posts_per_page' => -1,
             'post_status'    => 'publish',
+            'tax_query'      => $tax_query,
         ];
 
         $query = new WP_Query( $args );
@@ -178,16 +243,55 @@ class Study_Timeline_REST_API {
         if ( $query->have_posts() ) {
             while ( $query->have_posts() ) {
                 $query->the_post();
+                $post_id = get_the_ID();
+                $post_categories = wp_get_post_categories($post_id, ['fields' => 'slugs']);
+                
+                // Determine which lane this post belongs to
+                $lane = null;
+                foreach($post_categories as $slug) {
+                    if (isset($category_slugs[$slug])) {
+                        $lane = $category_slugs[$slug];
+                        break;
+                    }
+                }
+
                 $items[] = [
-                    'id'          => get_the_ID(),
-                    'title'       => get_the_title(),
-                    'post_type'   => get_post_type(),
+                    'id'    => $post_id,
+                    'title' => get_the_title(),
+                    'lane'  => $lane, // Pass the pre-determined lane to the frontend
                 ];
             }
         }
         wp_reset_postdata();
 
         return new WP_REST_Response( $items, 200 );
+    }
+
+    /**
+     * Route to get all available terms for repository filters.
+     */
+    public function get_repository_filters( $request ) {
+        // Replace with actual taxonomy slugs
+        $taxonomies = [
+            'subjects' => 'Subjects',
+            'grades'   => 'Classes',
+        ];
+
+        $filters = [];
+        foreach ($taxonomies as $key => $slug) {
+            $terms = get_terms( [
+                'taxonomy'   => $slug,
+                'hide_empty' => false, // Set to false to show all possible filters
+            ] );
+            // Ensure we don't return an error object
+            if ( ! is_wp_error( $terms ) ) {
+                $filters[$key] = $terms;
+            } else {
+                $filters[$key] = [];
+            }
+        }
+
+        return new WP_REST_Response( $filters, 200 );
     }
 
     /**
@@ -213,7 +317,7 @@ class Study_Timeline_REST_API {
 
         // Fetch items
         $items = $wpdb->get_results( $wpdb->prepare(
-            "SELECT id, post_id, item_date, item_lane FROM {$tables['items']} WHERE timeline_id = %d",
+            "SELECT id, post_id, item_date, item_lane, item_shape, item_color FROM {$tables['items']} WHERE timeline_id = %d",
             $timeline_id
         ) );
         
@@ -223,10 +327,12 @@ class Study_Timeline_REST_API {
             if ( $post ) {
                 $item->post_title = esc_html($post->post_title);
                 $item->post_type = $post->post_type;
+                $item->post_url = get_permalink($post->ID);
                 $item->thumbnail_url = get_the_post_thumbnail_url( $post->ID, 'thumbnail' );
             } else {
                 $item->post_title = 'Invalid Post';
                 $item->post_type = 'invalid';
+                $item->post_url = '#';
                 $item->thumbnail_url = '';
             }
         }

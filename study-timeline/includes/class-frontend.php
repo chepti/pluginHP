@@ -6,20 +6,34 @@
 class Study_Timeline_Frontend {
 
     public function __construct() {
+        // Only initialize if we're in WordPress environment
+        if (!defined('ABSPATH') || !function_exists('add_shortcode')) {
+            return;
+        }
+
         // Register the shortcode [study_timeline id="..."]
         add_shortcode( 'study_timeline', [ $this, 'render_timeline_shortcode' ] );
 
-        // Register the NEW shortcode [annual_timeline ...]
-        add_shortcode( 'annual_timeline', [ $this, 'render_new_timeline_shortcode' ] );
+        // Register the NEW shortcode [annual_timeline ...] - with extra safety checks
+        if (function_exists('add_shortcode') && function_exists('wp_enqueue_scripts')) {
+            add_shortcode( 'annual_timeline', [ $this, 'render_new_timeline_shortcode' ] );
+        }
 
-        // Register scripts and styles, but don't enqueue them yet.
-        add_action( 'wp_enqueue_scripts', [ $this, 'register_assets' ] );
+        // Register scripts and styles only if wp_enqueue_scripts exists
+        if (function_exists('add_action') && function_exists('wp_enqueue_scripts')) {
+            add_action( 'wp_enqueue_scripts', [ $this, 'register_assets' ] );
+        }
     }
 
     /**
      * Registers all necessary CSS and JS files.
      */
     public function register_assets() {
+        // Safety check - only proceed if WordPress functions exist
+        if (!function_exists('wp_register_style') || !function_exists('wp_register_script')) {
+            return;
+        }
+
         $plugin_url = plugin_dir_url( dirname( __FILE__ ) );
 
         // Register Vis.js Timeline library
@@ -62,6 +76,11 @@ class Study_Timeline_Frontend {
      * @return string HTML output.
      */
     public function render_timeline_shortcode( $atts ) {
+        // Safety check - only proceed if WordPress functions exist
+        if (!function_exists('shortcode_atts') || !function_exists('wp_enqueue_script') || !function_exists('wp_enqueue_style')) {
+            return '<p>שגיאה: סביבת WordPress לא נכונה.</p>';
+        }
+
         // Extract the timeline ID from attributes, with a default of 0.
         $atts = shortcode_atts( [
             'id' => 0,
@@ -70,29 +89,41 @@ class Study_Timeline_Frontend {
         $timeline_id = (int) $atts['id'];
 
         if ( ! $timeline_id ) {
-            return '<p>Error: Please provide a valid timeline ID.</p>';
+            return '<p>שגיאה: יש לספק מזהה ציר זמן תקין.</p>';
         }
 
-        // Enqueue the assets.
-        wp_enqueue_script( 'vis-timeline-script' );
-        wp_enqueue_script( 'study-timeline-controller' );
-        wp_enqueue_style( 'vis-timeline-style' );
-        wp_enqueue_style( 'study-timeline-style' );
+        // Enqueue the assets with safety checks.
+        if (function_exists('wp_enqueue_script')) {
+            wp_enqueue_script( 'vis-timeline-script' );
+            wp_enqueue_script( 'study-timeline-controller' );
+        }
 
-        // Localize script to pass data like timeline_id and API nonce to JS.
-        wp_localize_script(
-            'study-timeline-controller',
-            'studyTimelineData',
-            [
-                'timelineId'  => $timeline_id,
-                'nonce'       => wp_create_nonce( 'wp_rest' ),
-                'apiBaseUrl'  => rest_url( 'study-timeline/v1/' )
-            ]
-        );
+        if (function_exists('wp_enqueue_style')) {
+            wp_enqueue_style( 'vis-timeline-style' );
+            wp_enqueue_style( 'study-timeline-style' );
+        }
+
+        // Localize script with safety checks
+        if (function_exists('wp_localize_script') && function_exists('wp_create_nonce') && function_exists('rest_url')) {
+            wp_localize_script(
+                'study-timeline-controller',
+                'studyTimelineData',
+                [
+                    'timelineId'  => $timeline_id,
+                    'nonce'       => wp_create_nonce( 'wp_rest' ),
+                    'apiBaseUrl'  => rest_url( 'study-timeline/v1/' )
+                ]
+            );
+        }
+
+        // Safe HTML output
+        if (!function_exists('esc_attr')) {
+            return '<p>שגיאה: פונקציות אבטחה של WordPress לא זמינות.</p>';
+        }
 
         // New structure based on the sketch
         $output = '<div class="study-timeline-app-wrapper">';
-        
+
         // 1. Top section for the timeline visualization
         $output .= '<div id="study-timeline-container-' . esc_attr( $timeline_id ) . '" class="study-timeline-container"></div>';
 
@@ -156,14 +187,14 @@ class Study_Timeline_Frontend {
         // If assets are not registered, use inline versions as fallback
         if (function_exists('wp_script_is') && function_exists('wp_register_script') && !wp_script_is('hpat-timeline-script', 'registered')) {
             wp_register_script('hpat-timeline-script', false, ['jquery', 'vis-timeline']);
-            if (function_exists('wp_add_inline_script')) {
+            if (function_exists('wp_add_inline_script') && method_exists($this, 'get_inline_js')) {
                 wp_add_inline_script('hpat-timeline-script', $this->get_inline_js());
             }
         }
 
         if (function_exists('wp_style_is') && function_exists('wp_register_style') && !wp_style_is('hpat-timeline-styles', 'registered')) {
             wp_register_style('hpat-timeline-styles', false);
-            if (function_exists('wp_add_inline_style')) {
+            if (function_exists('wp_add_inline_style') && method_exists($this, 'get_inline_css')) {
                 wp_add_inline_style('hpat-timeline-styles', $this->get_inline_css());
             }
         }
@@ -176,6 +207,11 @@ class Study_Timeline_Frontend {
      * @return string HTML output.
      */
     public function render_new_timeline_shortcode( $atts ) {
+        // Safety check - only proceed if WordPress functions exist
+        if (!function_exists('shortcode_atts') || !function_exists('esc_html') || !function_exists('esc_attr')) {
+            return '<p>שגיאה: סביבת WordPress לא נכונה.</p>';
+        }
+
         // Default attributes
         $atts = shortcode_atts( [
             'group_id' => '',
@@ -191,8 +227,10 @@ class Study_Timeline_Frontend {
             $atts['group_id'] = 'demo_timeline';
         }
 
-        // Register and enqueue the new assets only when needed
-        $this->register_new_assets();
+        // Register and enqueue the new assets only when needed - with safety check
+        if (method_exists($this, 'register_new_assets')) {
+            $this->register_new_assets();
+        }
 
         // Safe enqueue with error handling
         if (function_exists('wp_script_is') && function_exists('wp_enqueue_script') && wp_script_is('vis-timeline', 'registered')) {
@@ -231,8 +269,11 @@ class Study_Timeline_Frontend {
             );
         }
 
-        // Create demo timeline data
-        $demo_data = $this->get_demo_timeline_data($atts);
+        // Create demo timeline data - with safety check
+        $demo_data = [];
+        if (method_exists($this, 'get_demo_timeline_data')) {
+            $demo_data = $this->get_demo_timeline_data($atts);
+        }
 
         $output = '<div class="hpat-annual-timeline-wrapper" data-timeline-id="demo">';
         $output .= '<div class="hpat-timeline-header">';
