@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - Annual Timeline
  * Plugin URI:        https://homerpatuach.com/
  * Description:       ציר זמן שנתי אינטראקטיבי ללמידה עם אפשרות גרירה והנחה של פריטים
- * Version:           1.0.0~a1b2c3d4
+ * Version:           1.0.0~c3d4e5f6
  * Author:            Chepti
  * Author URI:        https://chepti.com/
  * License:           GPL-2.0+
@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) {
 }
 
 // הגדרות התוסף
-define('HPAT_VERSION', '1.0.0~a1b2c3d4');
+define('HPAT_VERSION', '1.0.0~c3d4e5f6');
 define('HPAT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('HPAT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('HPAT_PLUGIN_BASENAME', plugin_basename(__FILE__));

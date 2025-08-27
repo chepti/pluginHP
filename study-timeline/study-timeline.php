@@ -3,7 +3,7 @@
  * Plugin Name:       Study Timeline
  * Plugin URI:        https://example.com/
  * Description:       A plugin to create and manage interactive study timelines for study groups.
- * Version:           1.0.0
+ * Version:           2.0.0~a1b2c3d4
  * Author:            Chepti
  * Author URI:        
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'STUDY_TIMELINE_VERSION', '1.0.0' );
+define( 'STUDY_TIMELINE_VERSION', '2.0.0~a1b2c3d4' );
 define( 'STUDY_TIMELINE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 /**
@@ -67,6 +67,8 @@ function study_timeline_activate() {
         item_lane smallint(5) DEFAULT 0 NOT NULL, -- 0: מערכים, 1: מצגות, etc.
         added_by_user_id bigint(20) unsigned NOT NULL,
         creation_date datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+        item_shape varchar(20) DEFAULT 'square' NOT NULL,
+        item_color varchar(20) DEFAULT '' NOT NULL,
         PRIMARY KEY  (id),
         KEY timeline_id (timeline_id),
         KEY post_id (post_id)
@@ -107,5 +109,10 @@ function run_study_timeline() {
     require_once STUDY_TIMELINE_PLUGIN_DIR . 'includes/class-frontend.php';
     new Study_Timeline_Frontend();
 
+    // If we are in the admin area, load the admin class.
+    if ( is_admin() ) {
+        require_once STUDY_TIMELINE_PLUGIN_DIR . 'includes/class-admin.php';
+        new Study_Timeline_Admin();
+    }
 }
 run_study_timeline();
