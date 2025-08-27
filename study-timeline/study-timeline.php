@@ -3,7 +3,7 @@
  * Plugin Name:       Study Timeline
  * Plugin URI:        https://example.com/
  * Description:       A plugin to create and manage interactive study timelines for study groups.
- * Version:           2.0.0~b2c3d4e5
+ * Version:           2.0.0~c3d4e5f6
  * Author:            Chepti
  * Author URI:        
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'STUDY_TIMELINE_VERSION', '2.0.0~b2c3d4e5' );
+define( 'STUDY_TIMELINE_VERSION', '2.0.0~c3d4e5f6' );
 define( 'STUDY_TIMELINE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 /**
@@ -100,19 +100,72 @@ register_deactivation_hook( __FILE__, 'study_timeline_deactivate' );
  * @since    1.0.0
  */
 function run_study_timeline() {
+    // Safety check - only run if WordPress is properly loaded
+    if (!defined('ABSPATH') || !function_exists('wp_enqueue_scripts')) {
+        return;
+    }
 
-    // Include the REST API class file and initialize it.
-    require_once STUDY_TIMELINE_PLUGIN_DIR . 'includes/class-rest-api.php';
-    new Study_Timeline_REST_API();
+    // Check if database tables exist before proceeding
+    if (!study_timeline_check_database_tables()) {
+        // Try to create tables if they don't exist
+        study_timeline_activate();
+    }
 
-    // Include the Frontend class file and initialize it.
-    require_once STUDY_TIMELINE_PLUGIN_DIR . 'includes/class-frontend.php';
-    new Study_Timeline_Frontend();
+    // Safety check - make sure required files exist before including them
+    $rest_api_file = STUDY_TIMELINE_PLUGIN_DIR . 'includes/class-rest-api.php';
+    $frontend_file = STUDY_TIMELINE_PLUGIN_DIR . 'includes/class-frontend.php';
+    $admin_file = STUDY_TIMELINE_PLUGIN_DIR . 'includes/class-admin.php';
+
+    // Include the REST API class file and initialize it only if file exists
+    if (file_exists($rest_api_file) && function_exists('register_rest_route')) {
+        require_once $rest_api_file;
+        if (class_exists('Study_Timeline_REST_API')) {
+            new Study_Timeline_REST_API();
+        }
+    }
+
+    // Include the Frontend class file and initialize it only if file exists
+    if (file_exists($frontend_file) && function_exists('add_shortcode')) {
+        require_once $frontend_file;
+        if (class_exists('Study_Timeline_Frontend')) {
+            new Study_Timeline_Frontend();
+        }
+    }
 
     // If we are in the admin area, load the admin class.
-    if ( is_admin() ) {
-        require_once STUDY_TIMELINE_PLUGIN_DIR . 'includes/class-admin.php';
-        new Study_Timeline_Admin();
+    if (is_admin() && file_exists($admin_file) && function_exists('add_menu_page')) {
+        require_once $admin_file;
+        if (class_exists('Study_Timeline_Admin')) {
+            new Study_Timeline_Admin();
+        }
     }
 }
-run_study_timeline();
+
+/**
+ * Check if required database tables exist
+ */
+function study_timeline_check_database_tables() {
+    global $wpdb;
+
+    $tables = [
+        $wpdb->prefix . 'study_timelines',
+        $wpdb->prefix . 'study_timeline_topics',
+        $wpdb->prefix . 'study_timeline_items'
+    ];
+
+    foreach ($tables as $table) {
+        $result = $wpdb->get_var("SHOW TABLES LIKE '$table'");
+        if ($result !== $table) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// Only run if WordPress is properly initialized
+if (function_exists('add_action')) {
+    add_action('plugins_loaded', 'run_study_timeline');
+} else {
+    run_study_timeline();
+}

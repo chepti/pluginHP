@@ -7,13 +7,20 @@ class Study_Timeline_REST_API {
     protected $namespace = 'study-timeline/v1';
 
     public function __construct() {
-        add_action( 'rest_api_init', [ $this, 'register_routes' ] );
+        // Only register REST routes if WordPress REST API is available
+        if (function_exists('add_action') && function_exists('register_rest_route')) {
+            add_action( 'rest_api_init', [ $this, 'register_routes' ] );
+        }
     }
 
     /**
      * Register the routes for the objects of the controller.
      */
     public function register_routes() {
+        // Safety check - make sure WordPress database is available
+        if (!isset($GLOBALS['wpdb'])) {
+            return;
+        }
         // Route to get a full timeline data (topics and items)
         register_rest_route( $this->namespace, '/timeline/(?P<id>[\d]+)', [
             [
