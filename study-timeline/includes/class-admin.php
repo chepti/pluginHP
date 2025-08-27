@@ -5,11 +5,20 @@
 class Study_Timeline_Admin {
 
     public function __construct() {
+        // Safety checks before registering hooks
+        if (!function_exists('add_action')) {
+            return;
+        }
+
         add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_assets' ] );
-        add_action( 'admin_post_study_timeline_add_timeline', [ $this, 'handle_add_timeline' ] );
-        add_action( 'admin_post_study_timeline_add_topic', [ $this, 'handle_add_topic' ] );
-        add_action( 'admin_post_study_timeline_delete_topic', [ $this, 'handle_delete_topic' ] );
+
+        if (function_exists('admin_url')) {
+            add_action( 'admin_post_study_timeline_add_timeline', [ $this, 'handle_add_timeline' ] );
+            add_action( 'admin_post_study_timeline_add_topic', [ $this, 'handle_add_topic' ] );
+            add_action( 'admin_post_study_timeline_delete_topic', [ $this, 'handle_delete_topic' ] );
+        }
+
         // AJAX handler for updating topic dates
         add_action( 'wp_ajax_study_timeline_update_topic_dates', [ $this, 'handle_update_topic_dates' ] );
         // AJAX handler for updating topic title
@@ -90,6 +99,11 @@ class Study_Timeline_Admin {
             wp_die( 'A valid timeline ID is required.' );
         }
         $timeline_id = (int) $_GET['timeline_id'];
+
+        // Safety check - make sure WordPress database is available
+        if (!isset($GLOBALS['wpdb'])) {
+            wp_die( 'Database connection not available.' );
+        }
 
         global $wpdb;
         $timelines_table = $wpdb->prefix . 'study_timelines';
@@ -191,6 +205,11 @@ class Study_Timeline_Admin {
      * Render the main admin page for listing timelines.
      */
     public function render_main_admin_page() {
+        // Safety check - make sure WordPress database is available
+        if (!isset($GLOBALS['wpdb'])) {
+            wp_die( 'Database connection not available.' );
+        }
+
         global $wpdb;
         $table_name = $wpdb->prefix . 'study_timelines';
         $timelines = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY id DESC" );
@@ -255,6 +274,11 @@ class Study_Timeline_Admin {
      * Handle the form submission for adding a new timeline.
      */
     public function handle_add_timeline() {
+        // Safety check - make sure WordPress database is available
+        if (!isset($GLOBALS['wpdb'])) {
+            wp_die( 'Database connection not available.' );
+        }
+
         if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'study_timeline_add_timeline_nonce' ) ) {
             wp_die( 'Security check failed.' );
         }
