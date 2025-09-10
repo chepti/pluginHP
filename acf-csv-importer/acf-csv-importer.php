@@ -2,7 +2,7 @@
 /**
  * Plugin Name: ACF CSV Importer
  * Plugin URI:  https://github.com/chepti
- * Description: תוסף לייבוא נתונים מקובץ CSV לפוסטים ושדות ACF. פשוט, מאובטח ומותאם אישית.
+ * Description: תוסף לייבוא נתונים מקובץ CSV לפוסטים ושדות ACF. פשוט, מאובטח ומותאם אישית.    
  * Version:     1.1.0
  * Author:      Chepti
  * Author URI:  https://github.com/chepti

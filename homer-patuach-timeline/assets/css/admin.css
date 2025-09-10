@@ -1,0 +1,193 @@
+/* Timeline Topic Admin Styles */
+.taxonomy-timeline_topic #edittag,
+.taxonomy-timeline_topic #addtag {
+    max-width: 95%;
+    margin: 0 auto;
+}
+
+.taxonomy-timeline_topic .form-field {
+    margin: 2em 0;
+    padding: 0;
+}
+
+.taxonomy-timeline_topic .form-field input[type="date"],
+.taxonomy-timeline_topic .form-field input[type="text"] {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Color Picker */
+.taxonomy-timeline_topic .wp-picker-container {
+    display: inline-block;
+    position: relative;
+}
+
+.taxonomy-timeline_topic .wp-picker-container .wp-color-result {
+    margin: 0 4px;
+}
+
+.taxonomy-timeline_topic .wp-picker-container .wp-picker-input-wrap {
+    margin-top: 8px;
+}
+
+/* Preview Section */
+.hpt-topic-preview {
+    margin: 2em 0;
+    padding: 2em;
+    background: #f5f6fa;
+    border-radius: 8px;
+}
+
+.hpt-topic-preview h3 {
+    margin: 0 0 1em;
+    font-size: 1.2em;
+    color: #444;
+}
+
+.hpt-preview-timeline {
+    background: #fff;
+    padding: 2em;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* RTL Support */
+.rtl .taxonomy-timeline_topic .form-field label {
+    text-align: right;
+}
+
+.rtl .taxonomy-timeline_topic .wp-picker-container {
+    margin-right: 0;
+    margin-left: 4px;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 782px) {
+    .taxonomy-timeline_topic .form-field input[type="date"],
+    .taxonomy-timeline_topic .form-field input[type="text"] {
+        max-width: 100%;
+    }
+
+    .taxonomy-timeline_topic .wp-picker-container {
+        display: block;
+        margin: 1em 0;
+    }
+}
+
+/* Date Picker Customization */
+.ui-datepicker {
+    padding: .2em .2em 0;
+    display: none;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.ui-datepicker .ui-datepicker-header {
+    position: relative;
+    padding: .2em 0;
+    background: #f5f6fa;
+    border-bottom: 1px solid #ddd;
+}
+
+.ui-datepicker .ui-datepicker-prev,
+.ui-datepicker .ui-datepicker-next {
+    position: absolute;
+    top: 2px;
+    width: 1.8em;
+    height: 1.8em;
+    cursor: pointer;
+}
+
+.ui-datepicker .ui-datepicker-prev {
+    left: 2px;
+}
+
+.ui-datepicker .ui-datepicker-next {
+    right: 2px;
+}
+
+.ui-datepicker .ui-datepicker-title {
+    margin: 0 2.3em;
+    line-height: 1.8em;
+    text-align: center;
+}
+
+.ui-datepicker table {
+    width: 100%;
+    font-size: .9em;
+    border-collapse: collapse;
+    margin: 0 0 .4em;
+}
+
+.ui-datepicker th {
+    padding: .7em .3em;
+    text-align: center;
+    font-weight: bold;
+    border: 0;
+    background: #f5f6fa;
+}
+
+.ui-datepicker td {
+    border: 0;
+    padding: 1px;
+}
+
+.ui-datepicker td span,
+.ui-datepicker td a {
+    display: block;
+    padding: .2em;
+    text-align: center;
+    text-decoration: none;
+}
+
+.ui-datepicker .ui-state-highlight {
+    background: #e8f0fe;
+}
+
+.ui-datepicker .ui-state-active {
+    background: #3498db;
+    color: #fff;
+}
+
+/* Form Validation Styles */
+.taxonomy-timeline_topic .form-field.form-invalid input {
+    border-color: #dc3232;
+}
+
+.taxonomy-timeline_topic .form-field.form-invalid .description {
+    color: #dc3232;
+}
+
+/* Help Text */
+.taxonomy-timeline_topic .form-field .description {
+    color: #666;
+    font-style: italic;
+    margin: 4px 0 0;
+}
+
+/* Loading State */
+.taxonomy-timeline_topic .form-field.is-loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.taxonomy-timeline_topic .form-field.is-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}

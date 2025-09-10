@@ -1,0 +1,33 @@
+.sendises-wrap .nav-tab-wrapper {
+    margin-bottom: 20px;
+}
+
+.sendises-filters {
+    margin-bottom: 20px;
+}
+
+.sendises-filters select {
+    margin-right: 10px;
+}
+
+.sendises-export-form {
+    margin-bottom: 20px;
+}
+
+.sendises-report-table .status-read {
+    color: green;
+    font-weight: bold;
+}
+
+.sendises-report-table .status-unread {
+    color: #a00;
+}
+
+.sendises-report-table .status-success {
+    color: green;
+}
+
+.sendises-report-table .status-error {
+    color: #a00;
+    font-weight: bold;
+}

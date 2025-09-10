@@ -1,0 +1,200 @@
+/* Animation Variables */
+:root {
+    --animation-duration: 300ms;
+    --animation-easing: cubic-bezier(0.4, 0, 0.2, 1);
+    --hover-transition: 200ms ease-out;
+    --bounce-easing: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Topic Animations */
+.hpt-timeline-topic {
+    transition: transform var(--hover-transition),
+                box-shadow var(--hover-transition);
+    will-change: transform, box-shadow;
+}
+
+.hpt-timeline-topic:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Item Animations */
+.hpt-timeline-item {
+    transition: transform var(--hover-transition),
+                box-shadow var(--hover-transition),
+                opacity var(--hover-transition);
+    will-change: transform, box-shadow, opacity;
+}
+
+.hpt-timeline-item:hover {
+    transform: scale(1.1);
+    z-index: 2;
+}
+
+.hpt-timeline-item.is-dragging {
+    opacity: 0.8;
+    transform: scale(1.1);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+/* Tooltip Animations */
+.hpt-timeline-item-tooltip {
+    transition: opacity var(--hover-transition),
+                transform var(--hover-transition);
+    will-change: opacity, transform;
+    transform-origin: bottom center;
+}
+
+.hpt-timeline-item:hover .hpt-timeline-item-tooltip {
+    opacity: 1;
+    transform: translateY(-4px);
+}
+
+/* Button Animations */
+.hpt-zoom-controls button {
+    transition: transform 100ms ease-out,
+                background-color var(--hover-transition);
+    will-change: transform, background-color;
+}
+
+.hpt-zoom-controls button:active {
+    transform: scale(0.9);
+}
+
+/* Search Input Animations */
+.hpt-search-input {
+    transition: border-color var(--hover-transition),
+                box-shadow var(--hover-transition);
+    will-change: border-color, box-shadow;
+}
+
+.hpt-search-input:focus {
+    border-color: #3498db;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+}
+
+/* Search Results Animations */
+.hpt-search-results {
+    transition: opacity var(--animation-duration) var(--animation-easing),
+                transform var(--animation-duration) var(--animation-easing);
+    will-change: opacity, transform;
+    transform-origin: top center;
+}
+
+.hpt-search-results.active {
+    animation: slideDown var(--animation-duration) var(--animation-easing);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading Animations */
+.hpt-timeline-loading::after {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Ripple Effect */
+.hpt-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(52, 152, 219, 0.2);
+    transform: scale(0);
+    pointer-events: none;
+    animation: ripple 600ms ease-out;
+}
+
+@keyframes ripple {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* Scroll Indicators */
+.hpt-timeline-scroll-left,
+.hpt-timeline-scroll-right {
+    transition: opacity var(--hover-transition);
+    will-change: opacity;
+}
+
+.is-scrolling .hpt-timeline-scroll-left,
+.is-scrolling .hpt-timeline-scroll-right {
+    opacity: 1;
+}
+
+/* Topic Entrance Animation */
+.hpt-timeline-topic {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: topicEntrance var(--animation-duration) var(--animation-easing) forwards;
+}
+
+@keyframes topicEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Item Drop Animation */
+.hpt-timeline-item.dropped {
+    animation: dropBounce 300ms var(--bounce-easing);
+}
+
+@keyframes dropBounce {
+    0% { transform: scale(1.1); }
+    50% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+}
+
+/* Hover Effects */
+.hpt-timeline-topic:hover .hpt-timeline-topic-content {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.hpt-timeline-item:hover::before {
+    transform: scale(1.1);
+}
+
+/* Touch Device Support */
+@media (hover: none) {
+    .hpt-timeline-topic:hover,
+    .hpt-timeline-item:hover {
+        transform: none;
+    }
+
+    .hpt-timeline-topic:active,
+    .hpt-timeline-item:active {
+        transform: scale(0.98);
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

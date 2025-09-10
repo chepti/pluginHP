@@ -1,0 +1,100 @@
+.hpg-load-more-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/*--------------------------------------------------------------
+7.0 - Single Post Enhancements
+--------------------------------------------------------------*/
+
+/* Author Box */
+.hpg-author-box {
+    background-color: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 25px;
+    margin: 30px 0;
+    text-align: center;
+}
+
+.hpg-author-box-title {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin: 0 0 20px 0;
+    color: #333;
+}
+
+.hpg-author-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.hpg-author-avatar img {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.hpg-author-name a {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #222;
+    text-decoration: none;
+}
+.hpg-author-name a:hover {
+    color: #ff5f6d;
+}
+
+.hpg-author-follow-button .bp-follow-button {
+    /* Style the follow button if BuddyPress Follow plugin is used */
+    display: inline-block;
+}
+
+
+/* Related Posts Section */
+.hpg-related-posts-container {
+    margin: 30px 0;
+}
+
+.related-posts-title {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 25px;
+}
+
+/* Desktop Grid */
+.hpg-related-posts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+/* Mobile Carousel */
+@media (max-width: 768px) {
+    .hpg-related-posts-grid {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 15px;
+        padding: 10px;
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+
+    .hpg-related-posts-grid::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+
+    .hpg-related-posts-grid .hpg-card {
+        flex: 0 0 80%; /* Each card takes 80% of the container width */
+        scroll-snap-align: start;
+        max-width: 300px;
+    }
+}

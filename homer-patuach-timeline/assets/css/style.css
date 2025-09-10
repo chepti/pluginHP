@@ -1,0 +1,358 @@
+/* Timeline Container */
+.hpt-timeline-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+    direction: rtl;
+}
+
+/* Timeline Header */
+.hpt-timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.hpt-timeline-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.hpt-timeline-controls {
+    display: flex;
+    gap: 10px;
+}
+
+/* Zoom Controls */
+.hpt-zoom-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.hpt-zoom-button {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.hpt-zoom-button:hover {
+    background: #f5f5f5;
+}
+
+/* Timeline Scale */
+.hpt-timeline-scale {
+    position: relative;
+    height: 40px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.hpt-timeline-scale-marker {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #666;
+    border-right: 1px solid #ddd;
+    padding: 0 10px;
+}
+
+/* Timeline Content */
+.hpt-timeline-content {
+    position: relative;
+    min-height: 400px;
+}
+
+/* Timeline Topics */
+.hpt-timeline-topics {
+    position: relative;
+    height: 60px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.hpt-timeline-topic {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    padding: 0 10px;
+}
+
+.hpt-timeline-topic:hover {
+    filter: brightness(1.1);
+}
+
+/* Timeline Items */
+.hpt-timeline-items {
+    position: relative;
+    min-height: 200px;
+}
+
+.hpt-timeline-item {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.hpt-timeline-item:hover {
+    transform: translateY(-2px);
+}
+
+/* Item Shapes */
+.hpt-item-shape {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 5px;
+}
+
+.hpt-item-shape.square {
+    border-radius: 4px;
+}
+
+.hpt-item-shape.circle {
+    border-radius: 50%;
+}
+
+.hpt-item-shape.triangle {
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+.hpt-item-shape.star {
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+/* Item Line */
+.hpt-item-line {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    width: 2px;
+    height: 10px;
+    background: #ddd;
+}
+
+/* Item Title */
+.hpt-item-title {
+    font-size: 12px;
+    color: #333;
+    text-align: center;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Search Panel */
+.hpt-search-panel {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    background: #fff;
+    border-top: 1px solid #ddd;
+    padding: 20px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+}
+
+.hpt-search-panel.open {
+    transform: translateY(0);
+}
+
+.hpt-search-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.hpt-search-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.hpt-search-item {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    cursor: grab;
+}
+
+.hpt-search-item:active {
+    cursor: grabbing;
+}
+
+/* Pin Dialog */
+.hpt-pin-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    display: none;
+}
+
+.hpt-pin-dialog.open {
+    display: block;
+}
+
+.hpt-pin-dialog h3 {
+    margin: 0 0 20px;
+}
+
+.hpt-pin-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.hpt-pin-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.hpt-pin-option:hover {
+    background: #f5f5f5;
+}
+
+.hpt-pin-option input[type="radio"] {
+    margin: 0;
+}
+
+.hpt-pin-color {
+    margin-bottom: 20px;
+}
+
+.hpt-pin-color label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.hpt-pin-color input[type="color"] {
+    width: 100%;
+    height: 40px;
+    padding: 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.hpt-pin-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.hpt-pin-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.hpt-pin-cancel {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.hpt-pin-save {
+    background: #007cba;
+    color: #fff;
+}
+
+.hpt-pin-button:hover {
+    filter: brightness(0.9);
+}
+
+/* Overlay */
+.hpt-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: none;
+}
+
+.hpt-overlay.open {
+    display: block;
+}
+
+/* Animations */
+@keyframes pinPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.hpt-timeline-item.pinned {
+    animation: pinPulse 0.3s ease-in-out;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .hpt-timeline-container {
+        padding: 10px;
+    }
+
+    .hpt-timeline-scale-marker {
+        font-size: 12px;
+    }
+
+    .hpt-timeline-topic {
+        font-size: 12px;
+    }
+
+    .hpt-search-results {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
