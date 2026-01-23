@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Homer Patuach - BuddyPress Tweaks
  * Plugin URI:        https://example.com/
- * Description:       Custom styles and functionality for BuddyPress pages.
- * Version:           2.4.3
+ * Description:       Custom styles and functionality for BuddyPress pages with community badges system.
+ * Version:           2.6.1
  * Author:            chepti
  * Author URI:        https://example.com/
  * License:           GPL-2.0+
@@ -17,10 +17,24 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_BP_TWEAKS_VERSION', '2.4.3' );
+define( 'HP_BP_TWEAKS_VERSION', '2.6.1' );
 define( 'HP_BP_TWEAKS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
+define( 'HP_BP_TWEAKS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
+// Include badges system
+if ( file_exists( HP_BP_TWEAKS_PLUGIN_DIR . 'includes/badges-system.php' ) ) {
+    require_once HP_BP_TWEAKS_PLUGIN_DIR . 'includes/badges-system.php';
+}
 
+// Include admin functions
+if ( file_exists( HP_BP_TWEAKS_PLUGIN_DIR . 'includes/admin-functions.php' ) ) {
+    require_once HP_BP_TWEAKS_PLUGIN_DIR . 'includes/admin-functions.php';
+}
+
+// Include admin columns
+if ( file_exists( HP_BP_TWEAKS_PLUGIN_DIR . 'includes/admin-columns.php' ) ) {
+    require_once HP_BP_TWEAKS_PLUGIN_DIR . 'includes/admin-columns.php';
+}
 /**
  * Enqueue custom stylesheet for the theme.
  */
@@ -65,17 +79,134 @@ add_action( 'wp_enqueue_scripts', 'hp_bp_tweaks_enqueue_scripts' );
 function hp_bp_tweaks_translate_text( $translated_text, $text, $domain ) {
     if ( 'buddypress' === $domain ) {
         switch ( $text ) {
+            // כותרות וניווט כלליים
             case 'Member Activities':
                 $translated_text = 'פעילויות';
                 break;
-            // Name is handled by JS for reliability
-            // case 'Name':
-            //     $translated_text = 'כינוי (יוצג באתר)';
-            //     break;
-            // Visibility text is handled by JS
-            // case 'This field may be seen by':
-            //     $translated_text = 'מי יוכל לראות שדה זה?';
-            //     break;
+            case 'Home':
+                $translated_text = 'פעילות';
+                break;
+            case 'Group Activities':
+                $translated_text = 'פעילויות הקבוצה';
+                break;
+            case 'Group Administrators':
+                $translated_text = 'מנהלי הקבוצה';
+                break;
+            case 'Manage':
+                $translated_text = 'ניהול';
+                break;
+            case 'Invite':
+                $translated_text = 'הזמנת חברים';
+                break;
+            case 'Members':
+                $translated_text = 'חברים';
+                break;
+            case 'Joined':
+                $translated_text = 'הצטרף';
+                break;
+            case 'Joined %s':
+                $translated_text = 'הצטרף %s';
+                break;
+            case 'Add Friend':
+                $translated_text = 'הוסף כחבר';
+                break;
+            case 'Friends':
+                $translated_text = 'חברים';
+                break;
+            case 'Friend':
+                $translated_text = 'חבר';
+                break;
+            case 'Membership List':
+                $translated_text = 'רשימת חברים';
+                break;
+            case '%d Members':
+                $translated_text = '%d חברים';
+                break;
+            case '%d Member':
+                $translated_text = '%d חבר';
+                break;
+            case '%s Members':
+                $translated_text = '%s חברים';
+                break;
+            case '%s Member':
+                $translated_text = '%s חבר';
+                break;
+
+            // טקסטי מצב/זמן בפעילויות
+            case 'Active %s':
+                $translated_text = 'פעילה %s';
+                break;
+            case '%s ago':
+                $translated_text = 'לפני %s';
+                break;
+            case '%d hours ago':
+                $translated_text = 'לפני %d שעות';
+                break;
+            case '%d hour ago':
+                $translated_text = 'לפני שעה';
+                break;
+            case '%d minutes ago':
+                $translated_text = 'לפני %d דקות';
+                break;
+            case '%d minute ago':
+                $translated_text = 'לפני דקה';
+                break;
+            case 'hour':
+                $translated_text = 'שעה';
+                break;
+            case 'hours':
+                $translated_text = 'שעות';
+                break;
+            case 'minute':
+                $translated_text = 'דקה';
+                break;
+            case 'minutes':
+                $translated_text = 'דקות';
+                break;
+            case 'day':
+                $translated_text = 'יום';
+                break;
+            case 'days':
+                $translated_text = 'ימים';
+                break;
+            case 'week':
+                $translated_text = 'שבוע';
+                break;
+            case 'weeks':
+                $translated_text = 'שבועות';
+                break;
+            case 'month':
+                $translated_text = 'חודש';
+                break;
+            case 'months':
+                $translated_text = 'חודשים';
+                break;
+            case 'year':
+                $translated_text = 'שנה';
+                break;
+            case 'years':
+                $translated_text = 'שנים';
+                break;
+            case '%d days ago':
+                $translated_text = 'לפני %d ימים';
+                break;
+            case '%d day ago':
+                $translated_text = 'לפני יום';
+                break;
+            case '%d weeks ago':
+                $translated_text = 'לפני %d שבועות';
+                break;
+            case '%d week ago':
+                $translated_text = 'לפני שבוע';
+                break;
+            case 'a week ago':
+                $translated_text = 'לפני שבוע';
+                break;
+            case 'a day ago':
+                $translated_text = 'לפני יום';
+                break;
+
+            // שדות טופס והרשמה
             case 'Username':
                 $translated_text = 'שם משתמש';
                 break;
@@ -100,7 +231,44 @@ function hp_bp_tweaks_translate_text( $translated_text, $text, $domain ) {
     return $translated_text;
 }
 add_filter( 'gettext', 'hp_bp_tweaks_translate_text', 20, 3 );
-add_filter( 'ngettext', 'hp_bp_tweaks_translate_text', 20, 3 );
+
+/**
+ * Translate plural strings in BuddyPress (ngettext).
+ */
+function hp_bp_tweaks_translate_plural_text( $translated, $single, $plural, $number, $domain ) {
+    if ( 'buddypress' === $domain ) {
+        // "Member" / "Members"
+        if ( $single === 'Member' && $plural === 'Members' ) {
+            return $number === 1 ? 'חבר' : 'חברים';
+        }
+        // "hour" / "hours"
+        if ( $single === 'hour' && $plural === 'hours' ) {
+            return $number === 1 ? 'שעה' : 'שעות';
+        }
+        // "minute" / "minutes"
+        if ( $single === 'minute' && $plural === 'minutes' ) {
+            return $number === 1 ? 'דקה' : 'דקות';
+        }
+        // "day" / "days"
+        if ( $single === 'day' && $plural === 'days' ) {
+            return $number === 1 ? 'יום' : 'ימים';
+        }
+        // "week" / "weeks"
+        if ( $single === 'week' && $plural === 'weeks' ) {
+            return $number === 1 ? 'שבוע' : 'שבועות';
+        }
+        // "month" / "months"
+        if ( $single === 'month' && $plural === 'months' ) {
+            return $number === 1 ? 'חודש' : 'חודשים';
+        }
+        // "year" / "years"
+        if ( $single === 'year' && $plural === 'years' ) {
+            return $number === 1 ? 'שנה' : 'שנים';
+        }
+    }
+    return $translated;
+}
+add_filter( 'ngettext', 'hp_bp_tweaks_translate_plural_text', 20, 5 );
 
 
 /**
@@ -230,6 +398,171 @@ function hp_bp_tweaks_modify_bp_nav() {
     }
 }
 add_action( 'bp_setup_nav', 'hp_bp_tweaks_modify_bp_nav', 99 );
+
+
+/**
+ * הוספת לשונית "פוסטים של הקבוצה" בעמודי קבוצה בבאדיפרס.
+ * הלשונית מוצגת ראשונה בסרגל הניווט של הקבוצה ומציגה גריד פוסטים
+ * בפורמט של דף הבית, כולל שורת יוצר בכל כרטיס.
+ */
+function hp_bp_tweaks_register_group_posts_tab() {
+    if ( ! function_exists( 'bp_is_groups_component' ) || ! bp_is_groups_component() ) {
+        return;
+    }
+
+    if ( ! function_exists( 'groups_get_current_group' ) ) {
+        return;
+    }
+
+    $group = groups_get_current_group();
+    if ( empty( $group ) || empty( $group->id ) ) {
+        return;
+    }
+
+    $group_link = bp_get_group_permalink( $group );
+
+    bp_core_new_subnav_item(
+        [
+            'name'            => __( 'פוסטים של הקבוצה', 'homer-patuach-bp-tweaks' ),
+            'slug'            => 'group-posts',
+            'parent_url'      => $group_link,
+            'parent_slug'     => bp_get_current_group_slug(),
+            'screen_function' => 'hp_bp_tweaks_group_posts_screen',
+            'position'        => 5,
+            'item_css_id'     => 'group-posts',
+        ],
+        'groups'
+    );
+}
+add_action( 'bp_groups_setup_nav', 'hp_bp_tweaks_register_group_posts_tab', 5 );
+
+/**
+ * רידיירקט של עמוד הבית של קבוצה אל לשונית "פוסטים של הקבוצה".
+ * כך כל קישור המוביל לשורש הקבוצה ינחית על הפוסטים ולא על "פעילות".
+ * אבל אם לוחצים על "פעילות" במפורש, זה יעבוד.
+ */
+function hp_bp_tweaks_redirect_group_root_to_group_posts() {
+    // בדוק אם זה AJAX request - אל תריץ רידיירקט
+    if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+        return;
+    }
+    
+    // בדוק אם זה admin request - אל תריץ רידיירקט
+    if ( is_admin() ) {
+        return;
+    }
+    
+    if ( ! function_exists( 'bp_is_group' ) || ! bp_is_group() ) {
+        return;
+    }
+
+    // אל תיצור לולאה כאשר כבר נמצאים בלשונית הפוסטים של הקבוצה
+    if ( function_exists( 'bp_is_current_action' ) && bp_is_current_action( 'group-posts' ) ) {
+        return;
+    }
+
+    // אם כבר בלשונית "פעילות" (home) - בדוק אם זה קליק מפורש על "פעילות"
+    if ( function_exists( 'bp_is_group_home' ) && bp_is_group_home() ) {
+        // בדוק אם יש action=home או activity ב-URL - זה אומר שזה קליק מפורש על "פעילות"
+        $current_url = ( is_ssl() ? 'https://' : 'http://' ) . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        if ( strpos( $current_url, 'action=home' ) !== false || strpos( $current_url, '/activity' ) !== false ) {
+            return; // זה קליק מפורש על "פעילות", תן לו לעבוד
+        }
+        
+        // בדוק את ה-referer - רק אם הוא מאותו דומיין
+        $referer = wp_get_referer();
+        if ( $referer ) {
+            $referer_host = parse_url( $referer, PHP_URL_HOST );
+            $current_host = $_SERVER['HTTP_HOST'];
+            if ( $referer_host === $current_host ) {
+                if ( strpos( $referer, '/activity' ) !== false || strpos( $referer, 'action=home' ) !== false || strpos( $referer, '#item-nav' ) !== false ) {
+                    return; // זה קליק על "פעילות", תן לו לעבוד
+                }
+            }
+        }
+        
+        // בדוק אם יש query parameter שמציין שזה קליק על "פעילות"
+        if ( isset( $_GET['action'] ) && $_GET['action'] === 'home' ) {
+            return; // זה קליק מפורש על "פעילות"
+        }
+        
+        // אחרת, זה כנראה קליק על הקבוצה - רדיירקט לפוסטים
+        if ( ! function_exists( 'groups_get_current_group' ) ) {
+            return;
+        }
+
+        $group = groups_get_current_group();
+        if ( empty( $group ) || empty( $group->id ) ) {
+            return;
+        }
+
+        $url = trailingslashit( bp_get_group_permalink( $group ) . 'group-posts' );
+        
+        // ודא שלא נוצר לולאה - בדוק שה-URL שונה מה-URL הנוכחי
+        if ( $url !== $current_url ) {
+            bp_core_redirect( $url );
+        }
+    }
+}
+add_action( 'bp_template_redirect', 'hp_bp_tweaks_redirect_group_root_to_group_posts', 9 );
+
+/**
+ * Callback למסך "פוסטים של הקבוצה".
+ */
+function hp_bp_tweaks_group_posts_screen() {
+    add_action( 'bp_template_content', 'hp_bp_tweaks_group_posts_screen_content' );
+    bp_core_load_template( apply_filters( 'bp_groups_template_group_home', 'groups/single/home' ) );
+}
+
+/**
+ * התוכן בפועל של לשונית "פוסטים של הקבוצה".
+ */
+function hp_bp_tweaks_group_posts_screen_content() {
+    $group = groups_get_current_group();
+    $group_name = '';
+    if ( $group && ! empty( $group->name ) ) {
+        $group_name = esc_html( $group->name );
+    }
+    
+    echo '<div class="hpg-group-posts-wrapper">';
+    if ( $group_name ) {
+        echo '<h2 class="hpg-group-posts-title">פוסטים של הקבוצה: ' . $group_name . '</h2>';
+    } else {
+        echo '<h2 class="hpg-group-posts-title">פוסטים של הקבוצה</h2>';
+    }
+
+    if ( function_exists( 'hpg_render_group_members_posts_grid' ) ) {
+        echo hpg_render_group_members_posts_grid();
+    } else {
+        echo '<p>לא נמצא גריד הפוסטים (התוסף Homer Patuach Grid כבוי?).</p>';
+    }
+
+    echo '</div>';
+}
+
+/**
+ * הוסף את שם הקבוצה גם בעמוד החברים.
+ */
+function hp_bp_tweaks_add_group_name_to_members_page() {
+    if ( ! function_exists( 'bp_is_groups_component' ) || ! bp_is_groups_component() ) {
+        return;
+    }
+    
+    if ( ! function_exists( 'bp_is_current_action' ) || ! bp_is_current_action( 'members' ) ) {
+        return;
+    }
+    
+    $group = groups_get_current_group();
+    if ( ! $group || empty( $group->name ) ) {
+        return;
+    }
+    
+    $group_name = esc_html( $group->name );
+    echo '<div class="hpg-group-name-header" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px;">';
+    echo '<h2 style="margin: 0; font-size: 1.5rem; color: #333;">' . $group_name . '</h2>';
+    echo '</div>';
+}
+add_action( 'bp_before_group_members_content', 'hp_bp_tweaks_add_group_name_to_members_page', 5 );
 
 /**
  * Redirect כל כניסה לעמוד השורש של משתמש BuddyPress אל לשונית "הפוסטים שלי".
@@ -1147,6 +1480,15 @@ function hpg_display_user_reputation_stats() {
             <span class="hpg-stat-label">📝 פוסטים</span>
         </div>
     </div>
+
+    <?php
+    // Display earned badges
+    if ( function_exists( 'hpg_display_earned_badges' ) ) {
+        echo '<div style="margin-top: 15px;">';
+        echo hpg_display_earned_badges( $user_id );
+        echo '</div>';
+    }
+    ?>
     <?php
 }
 add_action( 'bp_after_member_header', 'hpg_display_user_reputation_stats' );
@@ -1202,7 +1544,7 @@ function hpg_add_target_blank_to_links( $html ) {
 /**
  * מחזיר טקסט ביו גולמי לפי סדר עדיפויות: xProfile("קצת עליי"/"ביו") ואז WP user description.
  */
-function hpg_get_user_bio_raw( $user_id ) {
+function hpg_get_user_bio_raw_OLD( $user_id ) {
     $text = '';
     if ( function_exists( 'bp_xprofile_get_field_id_from_name' ) ) {
         foreach ( array( 'קצת עליי', 'ביו' ) as $name ) {
@@ -1293,6 +1635,66 @@ function hpg_localize_profile_edit_texts() {
     }
 }
 add_action( 'wp_footer', 'hpg_localize_profile_edit_texts', 20 );
+
+/**
+ * מציג באדג'ים של משתמש ברשימת חברי קבוצה בתחתית הכרטיס.
+ */
+function hpg_show_badges_in_group_members_list() {
+    if ( ! function_exists( 'hpg_display_earned_badges' ) ) {
+        return;
+    }
+    if ( ! function_exists( 'bp_get_member_user_id' ) ) {
+        return;
+    }
+
+    $user_id = (int) bp_get_member_user_id();
+    if ( ! $user_id ) {
+        return;
+    }
+
+    $badges_html = hpg_display_earned_badges( $user_id );
+    if ( empty( $badges_html ) ) {
+        return;
+    }
+
+    // עטיפה לשורה תחתונה עם באדג'ים
+    // נשתמש ב-hook מאוחר מאוד כדי שהכפתור כבר יהיה שם
+    echo '<div class="hpg-member-badges-wrapper" style="margin-top: auto; order: 999;">';
+    echo '<div class="hpg-member-badges">' . $badges_html . '</div>';
+    echo '</div>';
+}
+// priority מאוד גבוה כדי שירוץ אחרי כל התוכן (כולל הכפתור)
+add_action( 'bp_group_members_list_item', 'hpg_show_badges_in_group_members_list', 999 );
+
+/**
+ * משנה קישורי שמות חברים בקבוצה כך שיובילו ל"הפוסטים שלי" במקום "פעילות".
+ */
+function hp_bp_tweaks_fix_group_member_name_link( $html, $user_id ) {
+    if ( ! function_exists( 'bp_core_get_user_domain' ) || ! $user_id ) {
+        return $html;
+    }
+
+    // רק ברשימת חברי קבוצה
+    if ( ! function_exists( 'bp_is_groups_component' ) || ! bp_is_groups_component() ) {
+        return $html;
+    }
+
+    if ( ! function_exists( 'bp_is_current_action' ) || ! bp_is_current_action( 'members' ) ) {
+        return $html;
+    }
+
+    $my_posts_url = trailingslashit( rtrim( bp_core_get_user_domain( $user_id ), '/' ) . '/my-posts' );
+
+    // החלף href בקישור
+    if ( strpos( $html, '<a' ) !== false ) {
+        $html = preg_replace( '/href=["\'][^"\']*["\']/i', 'href="' . esc_url( $my_posts_url ) . '"', $html );
+    } else {
+        $html = '<a href="' . esc_url( $my_posts_url ) . '">' . $html . '</a>';
+    }
+
+    return $html;
+}
+add_filter( 'bp_get_member_name', 'hp_bp_tweaks_fix_group_member_name_link', 10, 2 );
 
 /**
  * =================================================================
@@ -1524,4 +1926,50 @@ function hp_bp_tweaks_add_settings_link($links) {
     array_unshift($links, $settings_link); // Add to the beginning of the links array
     return $links;
 }
-add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'hp_bp_tweaks_add_settings_link'); 
+add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'hp_bp_tweaks_add_settings_link');
+
+/**
+ * מחזיר טקסט ביו גולמי לפי סדר עדיפויות: xProfile("קצת עליי"/"ביו") ואז WP user description.
+ * גרסה משופרת עם חיפוש חכם יותר.
+ */
+function hpg_get_user_bio_raw( $user_id ) {
+    $text = '';
+    
+    // 1. Try specific names via BP API
+    if ( function_exists( 'bp_xprofile_get_field_id_from_name' ) ) {
+        // Expanded list of potential field names
+        $field_names = array( 'קצת עליי', 'ביו', 'Bio', 'About', 'About Me', 'תיאור', 'Description' );
+        foreach ( $field_names as $name ) {
+            $fid = bp_xprofile_get_field_id_from_name( $name );
+            if ( $fid ) {
+                $text = xprofile_get_field_data( $fid, $user_id );
+                if ( ! empty( $text ) ) return (string) $text;
+            }
+        }
+        
+        // 2. Fallback: Search in Base group (ID 1) for any textarea/textbox that looks like a bio
+        // This helps if there are encoding issues with the Hebrew name lookup or slight variations
+        global $wpdb;
+        $bp = buddypress();
+        if ( isset( $bp->profile->table_name_fields ) ) {
+            $table = $bp->profile->table_name_fields;
+            // Search for fields in group 1 that might be the bio
+            $sql = "SELECT id FROM {$table} WHERE group_id = 1 AND type IN ('textarea', 'textbox') AND (name LIKE '%Bio%' OR name LIKE '%About%' OR name LIKE '%קצת עליי%' OR name LIKE '%תיאור%')";
+            $results = $wpdb->get_results( $sql );
+            
+            if ( $results ) {
+                foreach ( $results as $field ) {
+                    $text = xprofile_get_field_data( $field->id, $user_id );
+                    if ( ! empty( $text ) ) return (string) $text;
+                }
+            }
+        }
+    }
+    
+    // 3. Fallback to WP description
+    if ( empty( $text ) ) {
+        $text = get_user_meta( $user_id, 'description', true );
+    }
+    
+    return (string) $text;
+} 
