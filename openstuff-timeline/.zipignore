@@ -1,0 +1,16 @@
+# Exclude from plugin ZIP - do not include in distribution
+node_modules/
+src/
+.git/
+.gitignore
+*.zip
+.env
+.env.*
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+.npmrc
+package.json
+package-lock.json
+webpack.config.js

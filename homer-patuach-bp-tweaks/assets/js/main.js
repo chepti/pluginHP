@@ -1,5 +1,8 @@
 jQuery(document).ready(function($) {
     'use strict';
+    
+    // הסרנו את no-ajax class כדי לאפשר ל-BuddyPress לטפל ב-pagination בעצמו
+    // $('.bp-pagination[data-bp-pagination="mlpage"]').addClass('no-ajax');
 
     const $menu = $('.hp-bp-user-menu');
     const $trigger = $menu.find('.hp-bp-profile-trigger');
@@ -28,6 +31,34 @@ jQuery(document).ready(function($) {
             $trigger.attr('aria-expanded', 'false');
         }
     });
+
+    // --- תפריט מובייל [hp_mobile_nav]: המבורגר + דרור ---
+    var $navWrap = $('#hp-mobile-nav-wrap');
+    var $navToggle = $navWrap.find('.hp-mobile-nav-toggle');
+    var $navDrawer = $('#hp-mobile-nav-drawer');
+    var $navOverlay = $('#hp-mobile-nav-overlay');
+    if ($navWrap.length && $navToggle.length) {
+        $navToggle.on('click', function() {
+            var isOpen = $navWrap.hasClass('is-open');
+            $navWrap.toggleClass('is-open', !isOpen);
+            $navToggle.attr('aria-expanded', !isOpen);
+            $navOverlay.attr('aria-hidden', isOpen);   /* פתוח = overlay גלוי */
+            $navDrawer.attr('aria-hidden', isOpen);
+            $('body').toggleClass('hp-mobile-nav-body-open', !isOpen);
+        });
+        function closeMobileNav() {
+            $navWrap.removeClass('is-open');
+            $navToggle.attr('aria-expanded', 'false');
+            $navOverlay.attr('aria-hidden', 'true');
+            $navDrawer.attr('aria-hidden', 'true');
+            $('body').removeClass('hp-mobile-nav-body-open');
+        }
+        $navOverlay.on('click', closeMobileNav);
+        $navDrawer.find('a').on('click', closeMobileNav);
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape' && $navWrap.hasClass('is-open')) closeMobileNav();
+        });
+    }
 
     // Handle "Add Post" popup trigger from dropdown
     const $popupTrigger = $('.hpg-open-popup-button');
@@ -100,7 +131,9 @@ jQuery(document).ready(function($) {
             'Joined': 'הצטרף',
             'Add Friend': 'הוסף כחבר',
             'Friends': 'חברים',
-            'Friend': 'חבר'
+            'Friend': 'חבר',
+            'My Groups': 'הקבוצות שלי',
+            'All Groups': 'כל הקבוצות'
         };
 
         // תרגום טקסטים ישירים - רק טקסט, לא קישורים
@@ -174,25 +207,66 @@ jQuery(document).ready(function($) {
         // תרגום "X Members" / "X Member"
         $('a, span, li').each(function() {
             const $el = $(this);
-            let text = $el.text();
-            // דפוס: מספר + " Members" או " Member"
-            text = text.replace(/(\d+)\s+Members?/gi, function(match, num) {
-                return num === '1' ? num + ' חבר' : num + ' חברים';
-            });
-            if (text !== $el.text()) {
-                $el.text(text);
+            const el = this;
+            
+            // בדוק שהאלמנט תקין
+            if (!$el.length || !el || !el.parentNode || el.parentNode.nodeType !== 1) {
+                return;
+            }
+            
+            // בדוק שהאלמנט לא בתוך script או style
+            if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || 
+                $(el).closest('script, style').length > 0) {
+                return;
+            }
+            
+            try {
+                let text = $el.text();
+                // דפוס: מספר + " Members" או " Member"
+                let newText = text.replace(/(\d+)\s+Members?/gi, function(match, num) {
+                    return num === '1' ? num + ' חבר' : num + ' חברים';
+                });
+                // דפוס: "My Groups X" -> "הקבוצות שלי X" (עם עטיפה למספר)
+                newText = newText.replace(/My\s+Groups\s+(\d+)/gi, 'הקבוצות שלי <span class="hp-group-count-badge">$1</span>');
+                // דפוס: "All Groups X" -> "כל הקבוצות X" (עם עטיפה למספר)
+                newText = newText.replace(/All\s+Groups\s+(\d+)/gi, 'כל הקבוצות <span class="hp-group-count-badge">$1</span>');
+                if (newText !== text && el.parentNode && el.parentNode.nodeType === 1) {
+                    $el.text(newText);
+                }
+            } catch(e) {
+                // דלג בשקט על שגיאות
             }
         });
 
         // תרגום זמן - כולל שבועות, ימים, שעות, דקות
-        $('*').each(function() {
+        // רק אלמנטים ספציפיים - לא כל האלמנטים כדי למנוע בעיות
+        $('span, div, p, li, td, th, a, h1, h2, h3, h4, h5, h6').each(function() {
             const $el = $(this);
+            const el = this;
+            
             // בדוק שהאלמנט קיים וניתן לעדכון
-            if (!$el.length || $el.length === 0 || !$el[0] || !$el[0].parentNode) {
+            if (!$el.length || !el || !el.parentNode || el.parentNode.nodeType !== 1) {
                 return;
             }
             
-            let html = $el.html();
+            // בדוק שהאלמנט לא בתוך script או style
+            if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || 
+                $(el).closest('script, style').length > 0) {
+                return;
+            }
+            
+            // בדוק שהאלמנט לא בתוך modal שלא צריך לעדכן
+            if ($(el).closest('.hpg-modal-overlay, .hpg-group-modal-overlay').length > 0) {
+                return;
+            }
+            
+            let html;
+            try {
+                html = $el.html();
+            } catch(e) {
+                return; // אם לא ניתן לקרוא את ה-HTML, דלג
+            }
+            
             if (!html || typeof html !== 'string' || (html.indexOf('hour') === -1 && html.indexOf('minute') === -1 && 
                 html.indexOf('week') === -1 && html.indexOf('day') === -1 && 
                 html.indexOf('month') === -1 && html.indexOf('year') === -1)) {
@@ -270,13 +344,17 @@ jQuery(document).ready(function($) {
             html = html.replace(/a\s+week\s+ago/gi, 'לפני שבוע');
             html = html.replace(/a\s+day\s+ago/gi, 'לפני יום');
             
-            if (html !== $el.html()) {
-                try {
-                    $el.html(html);
-                } catch (e) {
-                    // אם יש שגיאה, דלג על האלמנט הזה
-                    console.warn('Error updating element:', e);
+            try {
+                const currentHtml = $el.html();
+                if (html !== currentHtml) {
+                    // בדוק שהאלמנט עדיין קיים לפני עדכון
+                    if (el.parentNode && el.parentNode.nodeType === 1) {
+                        $el.html(html);
+                    }
                 }
+            } catch (e) {
+                // אם יש שגיאה, דלג על האלמנט הזה בשקט
+                // console.warn('Error updating element:', e);
             }
         });
     }
@@ -287,6 +365,125 @@ jQuery(document).ready(function($) {
     $(document).ajaxComplete(function() {
         setTimeout(translateGroupStrings, 100);
     });
+
+    /**
+     * ===============================================
+     * Wrap Group Count Numbers - עטיפת מספרים ברקע עגול
+     * ===============================================
+     */
+    function wrapGroupCountNumbers() {
+        // רק בעמודי קבוצות
+        if (!$('body').hasClass('groups')) {
+            return;
+        }
+
+        // מצא את כל הטקסטים שמכילים "הקבוצות שלי" או "כל הקבוצות" עם מספר
+        $('a, span, li, button, div').each(function() {
+            const $el = $(this);
+            const text = $el.text();
+            
+            // אם כבר יש span עם class, דלג
+            if ($el.find('.hp-group-count-badge').length > 0) {
+                return;
+            }
+            
+            // דפוס: "הקבוצות שלי X" או "כל הקבוצות X" (X הוא מספר)
+            const pattern1 = /(הקבוצות שלי)\s+(\d+)/;
+            const pattern2 = /(כל הקבוצות)\s+(\d+)/;
+            
+            let newHtml = $el.html();
+            let updated = false;
+            
+            if (pattern1.test(text)) {
+                newHtml = newHtml.replace(/(הקבוצות שלי)\s+(\d+)/g, '$1 <span class="hp-group-count-badge">$2</span>');
+                updated = true;
+            }
+            
+            if (pattern2.test(text)) {
+                newHtml = newHtml.replace(/(כל הקבוצות)\s+(\d+)/g, '$1 <span class="hp-group-count-badge">$2</span>');
+                updated = true;
+            }
+            
+            if (updated && newHtml !== $el.html()) {
+                $el.html(newHtml);
+            }
+        });
+    }
+
+    // הרץ עטיפת מספרים בהתחלה ואחרי טעינה דינמית
+    wrapGroupCountNumbers();
+    $(document).ajaxComplete(function() {
+        setTimeout(wrapGroupCountNumbers, 150);
+    });
+    // גם אחרי שינוי DOM
+    setTimeout(wrapGroupCountNumbers, 500);
+
+    /**
+     * ===============================================
+     * Fix Group Name Links - שינוי קישור שם הקבוצה ל-group-posts
+     * ===============================================
+     */
+    function fixGroupNameLinks() {
+        // רק ברשימת הקבוצות (לא בעמוד קבוצה בודדת)
+        if (!$('body').hasClass('groups')) {
+            return;
+        }
+        
+        // רק אם זה לא עמוד קבוצה בודדת
+        if (window.location.href.indexOf('/groups/') !== -1 && 
+            window.location.href.match(/\/groups\/[^\/]+\/?$/)) {
+            // זה עמוד קבוצה בודדת, לא רשימה
+            return;
+        }
+
+        // מצא את כל הקישורים לשמות קבוצות ברשימה
+        $('#groups-list a, #groups-dir-list a, .item-list a, .groups-list a').each(function() {
+            const $link = $(this);
+            const href = $link.attr('href');
+            
+            // בדוק אם זה קישור לקבוצה (מכיל /groups/ ושם קבוצה)
+            if (href && href.indexOf('/groups/') !== -1) {
+                // בדוק אם זה לא כבר group-posts או members
+                if (href.indexOf('/group-posts') === -1 && 
+                    href.indexOf('/members') === -1 &&
+                    href.indexOf('/admin') === -1 &&
+                    href.indexOf('/settings') === -1 &&
+                    href.indexOf('/send-invites') === -1) {
+                    
+                    // נסה להוסיף /group-posts/ - אם לא עובד, ננסה /members/
+                    // קודם נבדוק אם יש כבר / בסוף
+                    let newHref = href.replace(/\/$/, '') + '/group-posts/';
+                    
+                    // אם הקישור הוא לשם הקבוצה (לא לטאב אחר), שנה אותו
+                    // בדוק אם הקישור הוא לשם הקבוצה עצמו (לא לטאב)
+                    const groupSlugMatch = href.match(/\/groups\/([^\/]+)\/?$/);
+                    if (groupSlugMatch) {
+                        // זה קישור לשם הקבוצה - שנה ל-group-posts
+                        $link.attr('href', newHref);
+                    } else {
+                        // בדוק אם זה קישור בתוך רשימת קבוצות (item-title או שם קבוצה)
+                        const $parent = $link.closest('li.item, .group-item, .item-list-item');
+                        if ($parent.length > 0) {
+                            // בדוק אם הקישור הוא על שם הקבוצה (בתוך item-title או list-title)
+                            const $title = $link.closest('.item-title, .list-title, h3, h4, h5');
+                            if ($title.length > 0) {
+                                // זה כנראה קישור על שם הקבוצה - שנה ל-group-posts
+                                $link.attr('href', newHref);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // הרץ תיקון קישורים בהתחלה ואחרי טעינה דינמית
+    fixGroupNameLinks();
+    $(document).ajaxComplete(function() {
+        setTimeout(fixGroupNameLinks, 200);
+    });
+    // גם אחרי שינוי DOM
+    setTimeout(fixGroupNameLinks, 600);
 
     /**
      * ===============================================
@@ -308,21 +505,11 @@ jQuery(document).ready(function($) {
                 'flex-direction': 'column'
             });
             
-            // הסתר רק באדג'ים שלא בתוך wrapper (אגרסיבי מאוד)
+            // הסתר רק באדג'ים כפולים שלא בתוך wrapper (display:none בלבד – מונע שכבת אטימות)
             $card.find('.hpg-member-badges, .hpg-badge-circle, .hpg-profile-badges-header, .hpg-badges-profile').each(function() {
                 const $badge = $(this);
-                // רק אם זה לא בתוך wrapper - הסתר אותו
                 if (!$badge.closest('.hpg-member-badges-wrapper').length) {
-                    $badge.css({
-                        'display': 'none',
-                        'visibility': 'hidden',
-                        'position': 'absolute',
-                        'left': '-9999px',
-                        'opacity': '0',
-                        'width': '0',
-                        'height': '0',
-                        'overflow': 'hidden'
-                    });
+                    $badge.css('display', 'none');
                 } else {
                     // אם זה בתוך wrapper - ודא שהוא מוצג
                     $badge.css({
@@ -559,23 +746,33 @@ jQuery(document).ready(function($) {
 
     // הרץ תיקון קישורים
     fixMemberNameLinks();
-    // גם אחרי AJAX (DOMNodeInserted הוא deprecated ויכול לגרום לבעיות)
+    
+    // גם אחרי AJAX של BuddyPress
     $(document).ajaxComplete(function() {
+        setTimeout(fixMemberNameLinks, 200);
+    });
+    
+    // גם אחרי ש-BuddyPress טוען תוכן חדש
+    $(document).on('bp-ajax-loaded', function() {
         setTimeout(fixMemberNameLinks, 200);
     });
 
     /**
      * ===============================================
-     * Fix Pagination Links
+     * Fix Pagination Links - גרסה מפושטת שלא חוסמת AJAX
      * ===============================================
      */
     function fixPaginationLinks() {
-        // רק בעמודי קבוצה
-        if (!$('body').hasClass('bp-group') && !$('body').hasClass('groups')) {
+        // רק בעמודי קבוצה - בדוק גם לפי URL
+        const isGroupPage = $('body').hasClass('bp-group') || 
+                           $('body').hasClass('groups') ||
+                           window.location.pathname.indexOf('/groups/') !== -1;
+        
+        if (!isGroupPage) {
             return;
         }
 
-        // תיקון pagination של פוסטים
+        // תיקון pagination של פוסטים - רק תיקון URL, לא חסימה
         $('.hpg-group-posts-pagination a, .hpg-group-posts-pagination .page-numbers').each(function() {
             const $link = $(this);
             let href = $link.attr('href');
@@ -596,113 +793,52 @@ jQuery(document).ready(function($) {
                 }
             }
         });
-
-        // תיקון pagination של חברים (BuddyPress)
-        $('.pagination a, .bp-pagination a, .page-numbers a, nav.pagination a').each(function() {
-            const $link = $(this);
-            let href = $link.attr('href');
-            if (!href || href === '#') return;
-
-            // אם זה קישור pagination (מכיל מספר או prev/next)
-            const isPagination = $link.text().match(/^\d+$/) || $link.text().indexOf('←') !== -1 || $link.text().indexOf('→') !== -1 || $link.text().indexOf('&laquo;') !== -1 || $link.text().indexOf('&raquo;') !== -1;
-            
-            if (isPagination || href.indexOf('members_page=') !== -1 || href.indexOf('paged=') !== -1 || href.indexOf('page=') !== -1) {
-                // אם זה קישור יחסי, הוסף את ה-base URL
-                if (href.indexOf('http') !== 0) {
-                    const currentPath = window.location.pathname;
-                    const currentSearch = window.location.search;
-                    
-                    // בנה URL מלא
-                    if (href.indexOf('?') === 0) {
-                        // זה query string בלבד
-                        href = currentPath + href;
-                    } else if (href.indexOf('/') === 0) {
-                        // זה path מלא - השאר כמו שזה
-                    } else {
-                        // זה קישור יחסי - הוסף ל-path הנוכחי
-                        href = currentPath + (currentPath.endsWith('/') ? '' : '/') + href;
-                    }
-                    
-                    $link.attr('href', href);
-                }
-                
-                // ודא שהקישור עובד - הוסף event handler
-                $link.off('click.pagination-fix').on('click.pagination-fix', function(e) {
-                    const finalHref = $(this).attr('href');
-                    if (finalHref && finalHref !== '#' && finalHref.indexOf('javascript:') !== 0) {
-                        window.location.href = finalHref;
-                        e.preventDefault();
-                        return false;
-                    }
-                });
-            }
-        });
     }
-
-    // הרץ תיקון pagination
+    
+    // הרץ תיקון pagination - רק לפוסטים, לא לחברים
     fixPaginationLinks();
-    // גם אחרי AJAX (DOMNodeInserted הוא deprecated ויכול לגרום לבעיות)
+    
+    // גם אחרי AJAX של BuddyPress
     $(document).ajaxComplete(function() {
         setTimeout(fixPaginationLinks, 200);
     });
+    
+    // גם אחרי ש-BuddyPress טוען תוכן חדש
+    $(document).on('bp-ajax-loaded', function() {
+        setTimeout(fixPaginationLinks, 200);
+    });
+    
+    // גם אחרי טעינה מלאה
+    $(window).on('load', function() {
+        setTimeout(fixPaginationLinks, 300);
+    });
+
+    /**
+     * הוספת אופציית "מיון לפי פוסטים" בתפריט מיון חברי קבוצה (למנהלים)
+     */
+    (function injectPostCountSortOption() {
+        const $select = $('#groups_members-order-by');
+        if (!$select.length) return;
+        if ($select.find('option[value="post_count"]').length) return;
+        $select.append('<option value="post_count">מיון לפי פוסטים</option>');
+    })();
 
     /**
      * ===============================================
-     * Fix Built-in Filtering (Sorting)
+     * סינון מיון חברי קבוצה – ניווט בדף מלא (במקום AJAX שלא עובד)
      * ===============================================
      */
-    function fixBuiltInFiltering() {
-        // רק בעמודי קבוצה
-        if (!$('body').hasClass('bp-group') && !$('body').hasClass('groups')) {
-            return;
+    $(document).on('change', '#groups_members-order-by', function() {
+        const val = $(this).val();
+        if (!val) return;
+        const url = new URL(window.location.href);
+        url.searchParams.set('members_order_by', val);
+        url.searchParams.set('type', val);
+        url.searchParams.delete('mlpage');
+        if ($('#group-members-search').length && $('#group-members-search').val()) {
+            url.searchParams.set('members_search', $('#group-members-search').val());
         }
-
-        // תיקון dropdown של סינון/מיון
-        $('#members-order-select, select[name="members_orderby"], select.members-order-select').each(function() {
-            const $select = $(this);
-            
-            // ודא שהאירוע change עובד
-            $select.off('change.filter-fix').on('change.filter-fix', function() {
-                const selectedValue = $(this).val();
-                const form = $(this).closest('form');
-                
-                if (form.length > 0) {
-                    // שלח את הטופס
-                    form.submit();
-                } else {
-                    // אם אין טופס, בנה URL עם הפרמטר
-                    const currentUrl = window.location.href.split('?')[0];
-                    const params = new URLSearchParams(window.location.search);
-                    params.set('members_orderby', selectedValue);
-                    window.location.href = currentUrl + '?' + params.toString();
-                }
-            });
-        });
-
-        // תיקון חיפוש חברים
-        $('#members_search, input[name="members_search"]').each(function() {
-            const $input = $(this);
-            const $form = $input.closest('form');
-            
-            if ($form.length > 0) {
-                // ודא שהטופס נשלח נכון
-                $form.off('submit.filter-fix').on('submit.filter-fix', function(e) {
-                    // ודא שה-URL נכון
-                    const action = $form.attr('action');
-                    if (!action || action === '') {
-                        const currentUrl = window.location.href.split('?')[0];
-                        $form.attr('action', currentUrl);
-                    }
-                });
-            }
-        });
-    }
-
-    // הרץ תיקון סינון
-    fixBuiltInFiltering();
-    // גם אחרי AJAX (DOMNodeInserted הוא deprecated ויכול לגרום לבעיות)
-    $(document).ajaxComplete(function() {
-        setTimeout(fixBuiltInFiltering, 200);
+        window.location.href = url.toString();
     });
 
     /**
@@ -790,5 +926,6 @@ jQuery(document).ready(function($) {
             });
         });
     }
+
 
 }); 

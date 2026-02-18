@@ -1,0 +1,474 @@
+/* OpenStuff Timeline - Editor styles, RTL */
+.ost-timeline-editor-block {
+	direction: rtl;
+	min-height: 400px;
+}
+
+.ost-editor-loading,
+.ost-editor-empty {
+	padding: 2rem;
+	text-align: center;
+	direction: rtl;
+}
+
+.ost-timeline-editor {
+	direction: rtl;
+	display: flex;
+	flex-direction: column;
+	min-height: 500px;
+}
+
+.ost-editor-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 0.5rem 0;
+	margin-bottom: 1rem;
+	border-bottom: 1px solid #ddd;
+}
+
+.ost-editor-toolbar select {
+	min-width: 200px;
+	padding: 0.4rem 0.8rem;
+}
+
+.ost-zoom-toggle,
+.ost-sort-topics-btn {
+	padding: 0.4rem 0.8rem;
+	cursor: pointer;
+	border: 1px solid #ccc;
+	background: #fff;
+	border-radius: 4px;
+}
+
+.ost-sort-topics-btn.active {
+	background: #2271b1;
+	color: #fff;
+	border-color: #2271b1;
+}
+
+.ost-topic-header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-bottom: 0.25rem;
+}
+
+/* ידית גרירה לסידור נושאים - 6 נקודות */
+.ost-topic-drag-handle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 24px;
+	cursor: grab;
+	padding: 2px;
+	border-radius: 4px;
+	background: transparent;
+	transition: background 0.15s;
+}
+
+.ost-topic-drag-handle:hover {
+	background: rgba(0, 0, 0, 0.06);
+}
+
+.ost-topic-drag-handle:active,
+.ost-topic-drag-handle.ost-dragging {
+	cursor: grabbing;
+}
+
+.ost-grip-dots {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	grid-template-rows: 1fr 1fr 1fr;
+	gap: 2px;
+	width: 10px;
+	height: 14px;
+}
+
+.ost-grip-dot {
+	width: 2px;
+	height: 2px;
+	background: #666;
+	border-radius: 50%;
+}
+
+.ost-topic-sort-mode .ost-topic-label {
+	flex: 1;
+}
+
+.ost-editor-layout {
+	display: flex;
+	flex: 1;
+	gap: 1.5rem;
+	min-height: 0;
+}
+
+/* המחסן - Left panel (visually right in RTL) */
+.ost-warehouse {
+	width: 320px;
+	flex-shrink: 0;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	background: #fafafa;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.ost-warehouse-title {
+	margin: 0;
+	padding: 1rem;
+	font-size: 1.1rem;
+	border-bottom: 1px solid #e0e0e0;
+	background: #f0f0f0;
+}
+
+.ost-warehouse-filters {
+	padding: 0.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.ost-search-input,
+.ost-content-filter {
+	padding: 0.5rem;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+}
+
+.ost-warehouse-cards {
+	flex: 1;
+	min-height: 0;
+	max-height: 60vh;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 0.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.ost-post-card-wrapper {
+	position: relative;
+	display: flex;
+	align-items: stretch;
+	gap: 0;
+}
+
+.ost-post-card-wrapper:hover .ost-card-actions {
+	opacity: 1;
+}
+
+.ost-post-card {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.6rem;
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	cursor: grab;
+	transition: box-shadow 0.2s;
+}
+
+.ost-card-actions {
+	position: relative;
+	display: flex;
+	align-items: center;
+	opacity: 0.7;
+	transition: opacity 0.2s;
+}
+
+.ost-card-action-btn {
+	width: 28px;
+	height: 100%;
+	min-height: 44px;
+	padding: 0;
+	background: #f0f0f0;
+	border: 1px solid #e0e0e0;
+	border-right: none;
+	border-radius: 6px 0 0 6px;
+	cursor: pointer;
+	font-size: 1.2rem;
+	line-height: 1;
+}
+
+.ost-card-action-btn:hover {
+	background: #e8e8e8;
+}
+
+.ost-card-action-menu {
+	position: absolute;
+	top: 100%;
+	right: 0;
+	margin-top: 2px;
+	background: #fff;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+	z-index: 100;
+	min-width: 180px;
+	display: flex;
+	flex-direction: column;
+	padding: 0.25rem 0;
+}
+
+.ost-card-action-menu button {
+	display: block;
+	width: 100%;
+	padding: 0.5rem 1rem;
+	text-align: right;
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 0.9rem;
+	transition: background 0.2s;
+}
+
+.ost-card-action-menu button:hover {
+	background: #f0f0f0;
+}
+
+.ost-post-card:hover {
+	box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.ost-post-card.ost-draggable:active {
+	cursor: grabbing;
+}
+
+.ost-post-card.ost-dragging {
+	opacity: 0.4;
+}
+
+.ost-post-card.ost-drag-overlay {
+	box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+	cursor: grabbing;
+}
+
+.ost-topic-segment.ost-topic-over {
+	background: #e8f4f8;
+	box-shadow: inset 0 0 0 2px #2271b1;
+}
+
+.ost-pin-pending-card {
+	border-style: dashed;
+}
+
+.ost-pin-approve-btn {
+	margin-right: auto;
+	padding: 0.2rem 0.5rem;
+	background: #00a32a;
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.ost-card-thumb {
+	width: 48px;
+	height: 48px;
+	flex-shrink: 0;
+	background: #eee;
+	border-radius: 4px;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ost-card-thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.ost-card-icon {
+	font-size: 1.5rem;
+}
+
+.ost-card-title {
+	flex: 1;
+	font-size: 0.9rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ost-card-type {
+	font-size: 1.2rem;
+}
+
+.ost-warehouse-over {
+	background: #e8f4f8;
+	box-shadow: inset 0 0 0 2px #2271b1;
+}
+
+.ost-warehouse-drop-hint {
+	margin: 0 0 0.5rem;
+	padding: 0.5rem;
+	background: #2271b1;
+	color: #fff;
+	border-radius: 4px;
+	font-size: 0.9rem;
+	text-align: center;
+}
+
+.ost-draggable-pin {
+	cursor: grab;
+}
+
+.ost-draggable-pin:active {
+	cursor: grabbing;
+}
+
+.ost-no-posts {
+	margin: 0;
+	color: #666;
+	font-size: 0.9rem;
+}
+
+.ost-for-later-section {
+	margin-top: 1rem;
+	padding-top: 1rem;
+	border-top: 1px dashed #ccc;
+}
+
+.ost-for-later-title {
+	margin: 0 0 0.5rem;
+	font-size: 0.85rem;
+	color: #666;
+}
+
+.ost-for-later-card {
+	cursor: default;
+	opacity: 0.85;
+}
+
+.ost-restore-btn {
+	padding: 0.2rem 0.5rem;
+	background: #f0f0f0;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 1rem;
+}
+
+/* Spine - ציר עם נושאים ברשימה אנכית (לא קנבן) */
+.ost-spine-area {
+	flex: 1;
+	min-width: 0;
+	overflow: auto;
+}
+
+.ost-spine {
+	position: relative;
+	min-height: 300px;
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	border-right: 4px solid #333;
+	margin-right: 1rem;
+	padding-right: 1rem;
+}
+
+.ost-topic-segment {
+	position: relative;
+	padding: 1rem;
+	margin-bottom: 0.5rem;
+	border-right: 4px solid #E8F4F8;
+	border-radius: 4px;
+	background: #f9f9f9;
+}
+
+.ost-topic-label {
+	font-weight: 600;
+	margin-left: 0.5rem;
+}
+
+/* פריטים בפריסת wrap - ארוזים יעיל (לא רשימה אנכית) */
+.ost-topic-pins {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-top: 0.5rem;
+}
+
+.ost-pin-card {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.4rem 0.6rem;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	font-size: 0.85rem;
+	width: fit-content;
+	max-width: 100%;
+}
+
+.ost-pin-card[data-status="pending"] {
+	border-style: dashed;
+}
+
+.ost-pin-thumb {
+	width: 32px;
+	height: 32px;
+	background: #eee;
+	border-radius: 4px;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ost-pin-thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.ost-pin-pending {
+	margin-right: auto;
+}
+
+.ost-spine-empty {
+	padding: 2rem;
+	text-align: center;
+	color: #666;
+}
+
+.ost-add-topic-form,
+.ost-add-topic-inline {
+	display: flex;
+	gap: 0.5rem;
+	margin: 0.5rem 0;
+	align-items: center;
+}
+
+.ost-add-topic-form input,
+.ost-add-topic-inline input {
+	flex: 1;
+	padding: 0.5rem;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+}
+
+.ost-add-topic-form button,
+.ost-add-topic-inline button {
+	padding: 0.5rem 1rem;
+	background: #2271b1;
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.ost-add-topic-form button:disabled,
+.ost-add-topic-inline button:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}

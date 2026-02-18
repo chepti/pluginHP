@@ -1,42 +1,30 @@
 /* Homer Patuach - BuddyPress Tweaks - Main Stylesheet */
 
 /* --- General & Fonts --- */
-body.buddypress,
-.buddypress-wrap {
+body.buddypress, .buddypress-wrap {
     font-family: 'Rubik', sans-serif !important;
 }
-
-#buddypress button,
-#buddypress a,
-#buddypress input,
-#buddypress textarea,
-#buddypress select {
+#buddypress button, #buddypress a, #buddypress input, #buddypress textarea, #buddypress select {
     font-family: 'Rubik', sans-serif !important;
 }
 
 
 /* --- Custom User Bar (now Shortcode) --- */
 .hp-bp-user-menu-container {
-    display: inline-block;
-    /* Allows it to sit inside the header nicely */
+    display: inline-block; /* Allows it to sit inside the header nicely */
     position: relative;
-    line-height: 1;
-    /* Prevents extra vertical space */
-    vertical-align: middle;
-    /* Aligns items nicely in a row */
+    line-height: 1; /* Prevents extra vertical space */
+    vertical-align: middle; /* Aligns items nicely in a row */
 }
 
 /* Style for the logged-out login icon */
 .hp-bp-user-menu-container.hp-bp-logged-out {
-    margin-top: 5px;
-    /* Adjust vertical alignment */
+    margin-top: 5px; /* Adjust vertical alignment */
 }
-
 .hp-bp-login-link {
     color: #555;
     transition: color 0.2s;
 }
-
 .hp-bp-login-link:hover {
     color: #FB7A5F;
 }
@@ -45,8 +33,7 @@ body.buddypress,
 .astra-advanced-headers-wrap .ast-header-html {
     display: flex;
     align-items: center;
-    gap: 15px;
-    /* Space between items */
+    gap: 15px; /* Space between items */
 }
 
 .hp-bp-user-bar {
@@ -54,14 +41,12 @@ body.buddypress,
     border-bottom: 1px solid #e9ebee;
     padding: 5px 0;
 }
-
 .hp-bp-user-bar-inner {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
     display: flex;
-    justify-content: flex-end;
-    /* Aligns to left in RTL */
+    justify-content: flex-end; /* Aligns to left in RTL */
 }
 
 /* Logged-out state */
@@ -70,14 +55,12 @@ body.buddypress,
     align-items: center;
     gap: 15px;
 }
-
 .hp-bp-user-bar .hp-bp-user-links a {
     text-decoration: none;
     color: #555;
     font-weight: 500;
     font-size: 14px;
 }
-
 .hp-bp-user-bar .hp-bp-user-links a.button-register {
     background-color: #7699f2;
     color: white;
@@ -85,7 +68,6 @@ body.buddypress,
     border-radius: 20px;
     transition: opacity 0.2s;
 }
-
 .hp-bp-user-bar .hp-bp-user-links a.button-register:hover {
     opacity: 0.9;
 }
@@ -95,7 +77,6 @@ body.buddypress,
 .hp-bp-user-menu {
     position: relative;
 }
-
 .hp-bp-profile-trigger {
     background: none;
     border: none;
@@ -104,7 +85,6 @@ body.buddypress,
     cursor: pointer;
     display: block;
 }
-
 .hp-bp-profile-trigger .avatar {
     display: block;
     border-radius: 50%;
@@ -114,7 +94,6 @@ body.buddypress,
     height: 40px;
     object-fit: cover;
 }
-
 .hp-bp-profile-trigger:hover .avatar,
 .hp-bp-profile-trigger[aria-expanded="true"] .avatar {
     border-color: #7699f2;
@@ -122,14 +101,13 @@ body.buddypress,
 
 .hp-bp-dropdown-menu {
     position: absolute;
-    top: calc(100% + 15px);
-    /* Increased spacing a bit */
+    top: calc(100% + 15px); /* Increased spacing a bit */
     left: 0;
     right: auto;
     background: white;
     border: 1px solid #e9ebee;
     border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     width: 200px;
     z-index: 1000;
     display: flex;
@@ -140,13 +118,11 @@ body.buddypress,
     transform: translateY(-10px);
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
 }
-
 .hp-bp-dropdown-menu[aria-hidden="false"] {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
 }
-
 .hp-bp-dropdown-menu a {
     padding: 10px 20px;
     color: #333;
@@ -155,11 +131,9 @@ body.buddypress,
     display: block;
     transition: background-color 0.2s;
 }
-
 .hp-bp-dropdown-menu a:hover {
     background-color: #f5f5f5;
 }
-
 .hp-bp-dropdown-menu a.logout-link {
     border-top: 1px solid #e9ebee;
     color: #d9534f;
@@ -171,8 +145,8 @@ body.buddypress,
     background-color: #e9ebee;
     background-size: cover;
     background-position: center;
-    min-height: 180px !important;
-    /* היה 220px - צמצום מרווח עליון */
+    min-height: 180px !important; /* היה 220px - צמצום מרווח עליון */
+    position: relative; /* Allows badges to be positioned absolutely */
 }
 
 #buddypress #item-header {
@@ -187,417 +161,143 @@ body.buddypress,
 #buddypress #item-header-avatar {
     float: right;
     margin-left: 20px;
-    margin-top: -80px;
-    /* Pull the avatar up */
+    margin-top: -80px; /* Pull the avatar up */
     border: 4px solid white;
     background-color: white;
     border-radius: 50%;
 }
 
 #buddypress #item-header-content {
-    padding-top: 0;
-    /* פחות רווח כדי להצמיד לבאנר */
+    padding-top: 0; /* פחות רווח כדי להצמיד לבאנר */
     text-align: right;
 }
 
 #buddypress #item-header-content h2 a {
     color: white !important;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3) !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3) !important;
     font-size: 2rem;
 }
 
 /* --- BIO בתוך הבאנר --- */
 .hpg-profile-bio {
     color: #ffffff;
-    max-width: 600px;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 15px 20px;
-    border-radius: 12px;
-    margin-top: 15px;
+    max-width: 800px;
+    background: rgba(0,0,0,0.25);
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin-top: 8px;
     display: inline-block;
-    line-height: 1.6;
-    font-size: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    line-height: 1.5;
 }
-
-.hpg-profile-bio p {
-    margin: 0;
-}
-
-.hpg-profile-bio a {
-    color: #fff;
-    text-decoration: underline;
-    word-break: break-word;
-}
-
-.hpg-profile-bio a:hover {
-    text-decoration: none;
-}
+.hpg-profile-bio p { margin: 0; }
+.hpg-profile-bio a { color: #fff; text-decoration: underline; word-break: break-word; }
+.hpg-profile-bio a:hover { text-decoration: none; }
 
 /* --- ניקוי ממשק עריכת פרופיל קדמי --- */
-#buddypress .bp-user #profile-edit-form .field-visibility-settings,
-#buddypress .bp-user #profile-edit-form .field-visibility-settings-notoggle,
-#buddypress .bp-user #profile-edit-form .clear-value,
-#buddypress .bp-user #profile-edit-form .description,
-#buddypress .bp-user #profile-edit-form legend,
+#buddypress .bp-user #profile-edit-form .field-visibility-settings, 
+#buddypress .bp-user #profile-edit-form .field-visibility-settings-notoggle, 
+#buddypress .bp-user #profile-edit-form .clear-value, 
+#buddypress .bp-user #profile-edit-form .description, 
+#buddypress .bp-user #profile-edit-form legend, 
 #buddypress .bp-user #profile-edit-form .bp-help-text {
-    display: none !important;
-    /* הסתרת טקסטי עזרה, תיאור ושינויי ניראות */
+    display: none !important; /* הסתרת טקסטי עזרה, תיאור ושינויי ניראות */
 }
 
-#buddypress .bp-user #profile-edit-form label,
+#buddypress .bp-user #profile-edit-form label, 
 #buddypress .bp-user #profile-edit-form h2 {
     font-weight: 600;
 }
 
 /* כותרות קבוצה (Base) – תרגום/הסתרה ויזואלית */
 #buddypress .bp-user #profile-edit-form .bp-profile-group h2 {
-    font-size: 0;
-    /* הסתר טקסט מקורי */
+    font-size: 0; /* הסתר טקסט מקורי */
     position: relative;
 }
-
 #buddypress .bp-user #profile-edit-form .bp-profile-group h2:after {
-    content: 'עריכת פרופיל';
-    /* טקסט חלופי בעברית */
+    content: 'עריכת פרופיל'; /* טקסט חלופי בעברית */
     font-size: 20px;
 }
-
-.hpg-profile-bio br {
-    display: block;
-}
+.hpg-profile-bio br { display: block; }
 
 /* מקם את כפתורי החברות מתחת לביו כשקיים */
-#buddypress #item-header-content .generic-button,
-#buddypress #item-header-content .bp-profile-buttons,
+#buddypress #item-header-content .generic-button, 
+#buddypress #item-header-content .bp-profile-buttons, 
 #buddypress #item-header-content .bp-legacy .generic-button {
     display: inline-flex;
     gap: 8px;
     margin-top: 10px;
 }
 
+/* עיצוב מעוגל ונעים לכפתורי פרופיל */
+#buddypress #item-header-content .generic-button a,
+#buddypress #item-header-content .bp-profile-buttons a,
+#buddypress #item-header-content .bp-legacy .generic-button a,
+#buddypress #item-header-content .generic-button button,
+#buddypress #item-header-content .bp-profile-buttons button {
+    border-radius: 25px !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    transition: all 0.3s ease !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #333 !important;
+    text-decoration: none !important;
+}
+
+#buddypress #item-header-content .generic-button a:hover,
+#buddypress #item-header-content .bp-profile-buttons a:hover,
+#buddypress #item-header-content .bp-legacy .generic-button a:hover,
+#buddypress #item-header-content .generic-button button:hover,
+#buddypress #item-header-content .bp-profile-buttons button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    background: rgba(255, 255, 255, 1) !important;
+}
+
+/* כפתור הוסף כחבר - צבע מיוחד */
+#buddypress #item-header-content .generic-button a.friendship-button,
+#buddypress #item-header-content .generic-button a[data-bp-action="add-friend"] {
+    background: linear-gradient(135deg, #7699f2, #5a7fd8) !important;
+    color: white !important;
+}
+
+#buddypress #item-header-content .generic-button a.friendship-button:hover,
+#buddypress #item-header-content .generic-button a[data-bp-action="add-friend"]:hover {
+    background: linear-gradient(135deg, #5a7fd8, #4a6fc8) !important;
+}
+
+/* כפתור הודעה פרטית */
+#buddypress #item-header-content .generic-button a[href*="messages/compose"],
+#buddypress #item-header-content .generic-button a.send-message {
+    background: linear-gradient(135deg, #FB8255, #FB6965) !important;
+    color: white !important;
+}
+
+#buddypress #item-header-content .generic-button a[href*="messages/compose"]:hover,
+#buddypress #item-header-content .generic-button a.send-message:hover {
+    background: linear-gradient(135deg, #FB6965, #e85a4f) !important;
+}
+
 /* --- BP General Styles --- */
-#buddypress #item-nav ul li a,
-#buddypress .bp-navs ul li a {
+#buddypress #item-nav ul li a, #buddypress .bp-navs ul li a {
     border-radius: 8px 8px 0 0 !important;
     font-weight: 500;
     transition: all 0.2s ease-in-out;
-    pointer-events: auto !important;
-    z-index: 10 !important;
-    position: relative !important;
 }
-
-#buddypress #item-nav ul li,
-#buddypress .bp-navs ul li {
-    pointer-events: auto !important;
-    z-index: 10 !important;
-    position: relative !important;
-}
-
-#buddypress #item-nav ul li.current a,
-#buddypress .bp-navs ul li.current a {
-    background-color: #7699f2 !important;
-    /* Use main theme color */
+#buddypress #item-nav ul li.current a, #buddypress .bp-navs ul li.current a {
+    background-color: #7699f2 !important; /* Use main theme color */
     color: white !important;
     font-weight: 700;
 }
-
 #buddypress #item-nav ul li a:hover {
-    background-color: #e9ebee;
-}
-
-/* ודא שאין אלמנט שמכסה את הלשוניות */
-#buddypress #item-nav,
-#buddypress .bp-navs {
-    position: relative !important;
-    z-index: 100 !important;
-    pointer-events: auto !important;
-}
-
-#buddypress #item-nav::before,
-#buddypress .bp-navs::before {
-    display: none !important;
-}
-
-/* ודא שהלשוניות לחיצות - הסר כל overlay */
-#buddypress #item-nav *,
-#buddypress .bp-navs * {
-    pointer-events: auto !important;
-}
-
-/* ודא שאין overlay שמכסה */
-#buddypress #item-nav::after,
-#buddypress .bp-navs::after {
-    display: none !important;
-    content: none !important;
-}
-
-/* --- Group Members Grid --- */
-#buddypress #group-members-list,
-#buddypress #members-list,
-.bp-list #members-list {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
-    gap: 20px !important;
-    list-style: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-#buddypress #group-members-list li,
-#buddypress #members-list li,
-.bp-list #members-list li {
-    width: 100% !important;
-    float: none !important;
-    box-sizing: border-box;
-    margin: 0 !important;
-    display: flex;
-    flex-direction: column;
-    background: #fff;
-    border: 1px solid #e7e7e7;
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-#buddypress #group-members-list li:hover,
-#buddypress #members-list li:hover,
-.bp-list #members-list li:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-@media (max-width: 1024px) {
-    #buddypress #group-members-list,
-    #buddypress #members-list,
-    .bp-list #members-list {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
-    }
-}
-
-@media (max-width: 768px) {
-    #buddypress #group-members-list,
-    #buddypress #members-list,
-    .bp-list #members-list {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
-        gap: 15px !important;
-    }
-}
-
-@media (max-width: 480px) {
-    #buddypress #group-members-list,
-    #buddypress #members-list,
-    .bp-list #members-list {
-        grid-template-columns: 1fr !important;
-    }
-}
-
-/* --- Member Card Layout --- */
-#buddypress #group-members-list li,
-#buddypress #members-list li,
-.bp-list #members-list li {
-    position: relative !important;
-    min-height: 280px !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-/* ודא שכל התוכן בתוך הכרטיס */
-#buddypress #group-members-list li > *,
-#buddypress #members-list li > *,
-.bp-list #members-list li > * {
-    flex-shrink: 0;
-}
-
-/* רק ה-wrapper צריך להיות בתחתית */
-#buddypress #group-members-list li > .hpg-member-badges-wrapper,
-#buddypress #members-list li > .hpg-member-badges-wrapper,
-.bp-list #members-list li > .hpg-member-badges-wrapper {
-    flex-shrink: 0;
-    margin-top: auto !important;
-}
-
-/* הסתר באדג'ים מהמיקום המקורי (אם יש) - כל הבאדג'ים שלא ב-wrapper */
-#buddypress #group-members-list li .hpg-profile-badges-header,
-#buddypress #members-list li .hpg-profile-badges-header,
-.bp-list #members-list li .hpg-profile-badges-header {
-    display: none !important;
-}
-
-/* הסתר כל הבאדג'ים שלא בתוך wrapper */
-#buddypress #group-members-list li > .hpg-member-badges,
-#buddypress #members-list li > .hpg-member-badges,
-.bp-list #members-list li > .hpg-member-badges {
-    display: none !important;
-}
-
-/* הסתר באדג'ים שמופיעים ישירות ב-li - רק אלה שלא בתוך wrapper */
-#buddypress #group-members-list li .hpg-member-badges:not(.hpg-member-badges-wrapper .hpg-member-badges),
-#buddypress #members-list li .hpg-member-badges:not(.hpg-member-badges-wrapper .hpg-member-badges),
-.bp-list #members-list li .hpg-member-badges:not(.hpg-member-badges-wrapper .hpg-member-badges),
-#buddypress #group-members-list li .hpg-badge-circle:not(.hpg-member-badges-wrapper .hpg-badge-circle),
-#buddypress #members-list li .hpg-badge-circle:not(.hpg-member-badges-wrapper .hpg-badge-circle),
-.bp-list #members-list li .hpg-badge-circle:not(.hpg-member-badges-wrapper .hpg-badge-circle) {
-    display: none !important;
-    visibility: hidden !important;
-    position: absolute !important;
-    left: -9999px !important;
-    opacity: 0 !important;
-    width: 0 !important;
-    height: 0 !important;
-    overflow: hidden !important;
-    pointer-events: none !important;
-}
-
-/* הסתר באדג'ים שמופיעים לפני התוכן (בחלק העליון) - רק אם לא בתוך wrapper */
-#buddypress #group-members-list li > *:first-child .hpg-badge-circle:not(.hpg-member-badges-wrapper .hpg-badge-circle),
-#buddypress #members-list li > *:first-child .hpg-badge-circle:not(.hpg-member-badges-wrapper .hpg-badge-circle),
-.bp-list #members-list li > *:first-child .hpg-badge-circle:not(.hpg-member-badges-wrapper .hpg-badge-circle) {
-    display: none !important;
-}
-
-/* שורה תחתונה עם באדג'ים וכפתור - ודא שזה מוצג */
-#buddypress #group-members-list li .hpg-member-badges-wrapper,
-#buddypress #members-list li .hpg-member-badges-wrapper,
-.bp-list #members-list li .hpg-member-badges-wrapper {
-    margin-top: auto !important;
-    margin-bottom: 0 !important;
-    padding-top: 12px !important;
-    border-top: 1px solid #e7e7e7 !important;
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 8px !important;
-    width: 100% !important;
-    order: 999 !important;
-}
-
-/* ודא שהבאדג'ים שבתוך wrapper מוצגים - חשוב מאוד! */
-#buddypress #group-members-list li .hpg-member-badges-wrapper .hpg-member-badges,
-#buddypress #members-list li .hpg-member-badges-wrapper .hpg-member-badges,
-.bp-list #members-list li .hpg-member-badges-wrapper .hpg-member-badges {
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    display: flex !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    gap: 6px !important;
-    flex: 1 !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: relative !important;
-    left: auto !important;
-    width: auto !important;
-    height: auto !important;
-    overflow: visible !important;
-    pointer-events: auto !important;
-}
-
-/* ודא שהבאדג'ים עצמם שבתוך wrapper מוצגים */
-#buddypress #group-members-list li .hpg-member-badges-wrapper .hpg-badge-circle,
-#buddypress #members-list li .hpg-member-badges-wrapper .hpg-badge-circle,
-.bp-list #members-list li .hpg-member-badges-wrapper .hpg-badge-circle {
-    display: inline-block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: relative !important;
-    left: auto !important;
-    width: auto !important;
-    height: auto !important;
-    overflow: visible !important;
-    pointer-events: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    display: flex !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    gap: 6px !important;
-    flex: 1 !important;
-}
-
-/* באדג'ים קטנים יותר בכרטיסי חברים - רק אלה שבתוך wrapper */
-#buddypress #group-members-list li .hpg-member-badges-wrapper .hpg-member-badges .hpg-badge-circle,
-#buddypress #members-list li .hpg-member-badges-wrapper .hpg-member-badges .hpg-badge-circle,
-.bp-list #members-list li .hpg-member-badges-wrapper .hpg-member-badges .hpg-badge-circle {
-    width: 50px !important;
-    display: inline-block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    height: 50px !important;
-    min-width: 50px !important;
-    min-height: 50px !important;
-}
-
-#buddypress #group-members-list li .hpg-member-badges .hpg-badge-emoji,
-#buddypress #members-list li .hpg-member-badges .hpg-badge-emoji,
-.bp-list #members-list li .hpg-member-badges .hpg-badge-emoji {
-    font-size: 18px !important;
-    margin-bottom: 1px !important;
-}
-
-#buddypress #group-members-list li .hpg-member-badges .hpg-badge-label,
-#buddypress #members-list li .hpg-member-badges .hpg-badge-label,
-.bp-list #members-list li .hpg-member-badges .hpg-badge-label {
-    font-size: 9px !important;
-    line-height: 1.1 !important;
-}
-
-/* כפתור "הוסף כחבר" קטן יותר - בתוך ה-wrapper */
-#buddypress #group-members-list li .hpg-member-badges-wrapper .generic-button,
-#buddypress #members-list li .hpg-member-badges-wrapper .generic-button,
-.bp-list #members-list li .hpg-member-badges-wrapper .generic-button,
-#buddypress #group-members-list li .hpg-member-badges-wrapper .button,
-#buddypress #members-list li .hpg-member-badges-wrapper .button,
-.bp-list #members-list li .hpg-member-badges-wrapper .button {
-    padding: 6px 12px !important;
-    font-size: 12px !important;
-    line-height: 1.4 !important;
-    min-height: auto !important;
-    margin: 0 !important;
-    flex-shrink: 0;
-}
-
-/* כפתור "הוסף כחבר" קטן יותר - גם מחוץ ל-wrapper (fallback) */
-#buddypress #group-members-list li .generic-button:not(.hpg-member-badges-wrapper .generic-button),
-#buddypress #members-list li .generic-button:not(.hpg-member-badges-wrapper .generic-button),
-.bp-list #members-list li .generic-button:not(.hpg-member-badges-wrapper .generic-button),
-#buddypress #group-members-list li .button:not(.hpg-member-badges-wrapper .button),
-#buddypress #members-list li .button:not(.hpg-member-badges-wrapper .button),
-.bp-list #members-list li .button:not(.hpg-member-badges-wrapper .button) {
-    padding: 6px 12px !important;
-    font-size: 12px !important;
-    line-height: 1.4 !important;
-    min-height: auto !important;
-    margin: 0 !important;
-}
-
-/* העבר כפתור לתוך ה-wrapper אם הוא לא שם */
-#buddypress #group-members-list li,
-#buddypress #members-list li,
-.bp-list #members-list li {
-    position: relative;
-}
-
-/* ודא שהכפתור בתוך ה-wrapper */
-#buddypress #group-members-list li .hpg-member-badges-wrapper .generic-button,
-#buddypress #members-list li .hpg-member-badges-wrapper .generic-button,
-.bp-list #members-list li .hpg-member-badges-wrapper .generic-button {
-    order: 2;
+     background-color: #e9ebee;
 }
 
 #buddypress #item-header-content h2 a {
-    color: white !important;
-    /* White text for better visibility on cover image */
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5) !important;
+    color: white !important; /* White text for better visibility on cover image */
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5) !important;
 }
 
 
@@ -611,7 +311,6 @@ body.buddypress,
     padding: 12px 20px;
     margin-bottom: 20px;
 }
-
 .buddypress-wrap form .label,
 .buddypress-wrap form label {
     font-weight: 600 !important;
@@ -619,7 +318,6 @@ body.buddypress,
     display: block;
     margin-bottom: 8px;
 }
-
 .buddypress-wrap form input[type="text"],
 .buddypress-wrap form input[type="email"],
 .buddypress-wrap form input[type="password"],
@@ -630,7 +328,6 @@ body.buddypress,
     transition: all 0.2s ease !important;
     width: 100%;
 }
-
 .buddypress-wrap form input:focus,
 .buddypress-wrap form textarea:focus {
     border-color: #7699f2 !important;
@@ -649,7 +346,6 @@ body.buddypress,
     transition: opacity 0.2s;
     margin-top: 1.5rem !important;
 }
-
 .buddypress-wrap form .submit input[type="submit"]:hover {
     opacity: 0.9;
 }
@@ -662,14 +358,12 @@ body.buddypress,
     padding: 30px;
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
     direction: rtl;
 }
-
 #hp-bp-custom-register-form .form-row {
     margin-bottom: 20px;
 }
-
 #hp-bp-custom-register-form label {
     font-weight: 600;
     color: #333;
@@ -677,7 +371,6 @@ body.buddypress,
     margin-bottom: 8px;
     font-size: 16px;
 }
-
 #hp-bp-custom-register-form input[type="text"],
 #hp-bp-custom-register-form input[type="email"],
 #hp-bp-custom-register-form input[type="password"],
@@ -689,21 +382,18 @@ body.buddypress,
     transition: all 0.2s ease;
     font-size: 16px;
 }
-
 #hp-bp-custom-register-form input:focus,
 #hp-bp-custom-register-form textarea:focus {
     border-color: #7699f2;
     box-shadow: 0 0 0 3px rgba(118, 153, 242, 0.2);
     outline: none;
 }
-
 #hp-bp-custom-register-form .description {
     font-size: 13px;
     color: #666;
     margin-top: 5px;
     font-style: italic;
 }
-
 #hp-bp-custom-register-form .submit-row input[type="submit"] {
     width: 100%;
     padding: 15px;
@@ -716,22 +406,18 @@ body.buddypress,
     cursor: pointer;
     transition: opacity 0.2s;
 }
-
 #hp-bp-custom-register-form .submit-row input[type="submit"]:hover {
     opacity: 0.9;
 }
-
 #hp-bp-custom-register-form .login-link {
     text-align: center;
     margin-top: 25px;
     font-size: 14px;
 }
-
 #hp-bp-custom-register-form .login-link a {
     color: #7699f2;
     font-weight: 600;
 }
-
 .hp-bp-reg-errors {
     background: #ffebe9;
     border: 1px solid #ffc2ba;
@@ -741,7 +427,6 @@ body.buddypress,
     border-radius: 8px;
     margin-bottom: 25px;
 }
-
 .hp-bp-reg-errors p {
     margin: 0;
     padding: 5px 0;
@@ -762,7 +447,7 @@ body.buddypress,
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.25);
     z-index: 999;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -770,40 +455,34 @@ body.buddypress,
     line-height: 1.2;
     font-family: 'Rubik', sans-serif;
 }
-
 .hp-bp-floating-button:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     color: white;
 }
-
-.hp-bp-floating-button span {
-    font-weight: 700;
-    font-size: 14px;
+.hp-bp-floating-button .hp-bp-floating-plus {
+    font-weight: 300;
+    font-size: 36px;
+    line-height: 1;
 }
 
 /* BuddyPress Profile Header Tweaks */
 #buddypress #item-header-cover-image {
-    margin-bottom: 0;
-    /* Removes the grey bar under the cover image */
+    margin-bottom: 0; /* Removes the grey bar under the cover image */
+    position: relative; /* Allows badges to be positioned absolutely */
 }
 
 #buddypress #item-header-avatar img {
-    border-radius: 50% !important;
-    /* Makes the avatar a perfect circle */
-    width: 150px !important;
-    /* Ensure consistent size */
+    border-radius: 50% !important; /* Makes the avatar a perfect circle */
+    width: 150px !important; /* Ensure consistent size */
     height: 150px !important;
-    object-fit: cover;
-    /* Prevents the image from being squashed */
+    object-fit: cover; /* Prevents the image from being squashed */
 }
 
 #buddypress #item-header-content h2.user-nicename {
     font-size: 28px;
-    margin-top: -65px;
-    /* Pulls the name up closer to the avatar */
-    margin-right: 170px;
-    /* Adjusts horizontal position relative to avatar */
+    margin-top: -65px; /* Pulls the name up closer to the avatar */
+    margin-right: 170px; /* Adjusts horizontal position relative to avatar */
     color: #333;
     background: rgba(255, 255, 255, 0.7);
     padding: 5px 15px;
@@ -819,56 +498,46 @@ body.buddypress,
         display: block;
         text-align: center;
     }
-}
+} 
 
 /* --- Responsive Menu Fixes --- */
 @media (max-width: 768px) {
-
     /* Ensure our custom user bar stays visible and behaves */
     .hp-bp-user-bar {
-        padding: 5px 10px;
-        /* Reduce padding on mobile */
+        padding: 5px 10px; /* Reduce padding on mobile */
     }
 
     .hp-bp-user-bar-inner {
-        justify-content: flex-end;
-        /* Keep icon to the left (in RTL) */
+        justify-content: flex-end; /* Keep icon to the left (in RTL) */
         padding: 0;
     }
 
     /* Make sure the profile trigger (the account icon) is always visible */
     .hp-bp-profile-trigger {
         display: block !important;
-        order: 2;
-        /* Place it after the mobile menu toggle if one exists */
+        order: 2; /* Place it after the mobile menu toggle if one exists */
     }
 
     /* Position the dropdown menu correctly on mobile */
     .hp-bp-dropdown-menu {
         left: 0;
         right: auto;
-        width: 240px;
-        /* Give it a bit more space */
+        width: 240px; /* Give it a bit more space */
     }
 
     /* This is a common class for theme's mobile menu toggles. 
        We add some space to avoid overlap with our profile icon. */
     .main-header-menu-toggle {
-        margin-left: 15px;
-        /* Adjust as needed */
+        margin-left: 15px; /* Adjust as needed */
     }
 }
 
 /* --- Fixes --- */
 /* Hide the default BuddyPress/Theme profile icon in the header to prevent duplication */
-#wp-admin-bar-my-account,
-/* BuddyPress Default Admin Bar item */
-.header-account-icon
-
-/* Common theme class - adjust if needed */
-    {
+#wp-admin-bar-my-account, /* BuddyPress Default Admin Bar item */
+.header-account-icon /* Common theme class - adjust if needed */ {
     display: none !important;
-}
+} 
 
 .hp-bp-user-menu .logout-link {
     border-top: 1px solid #eee;
@@ -877,6 +546,173 @@ body.buddypress,
 /* Make sure dropdown is above content */
 .hp-bp-user-menu .hp-bp-dropdown-menu {
     z-index: 1000;
+}
+
+/*
+=========================================
+  תפריט מובייל – המבורגר + דרור [hp_mobile_nav]
+=========================================
+*/
+.hp-mobile-nav-wrap {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .hp-mobile-nav-wrap {
+        display: block;
+        position: relative;
+        z-index: 1001;
+    }
+
+    .hp-mobile-nav-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: #7699f2;
+        border-radius: 4px;
+        transition: background 0.2s, color 0.2s;
+        box-shadow: none !important;
+    }
+
+    .hp-mobile-nav-toggle:hover,
+    .hp-mobile-nav-toggle:focus {
+        background: rgba(118, 153, 242, 0.12);
+        color: #5a7dd4;
+    }
+
+    .hp-mobile-nav-icon {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 5px;
+        width: 22px;
+        height: 18px;
+    }
+
+    .hp-mobile-nav-icon span {
+        display: block;
+        width: 100%;
+        height: 2px;
+        background: currentColor;
+        border-radius: 1px;
+        transition: transform 0.25s, opacity 0.25s;
+    }
+
+    .hp-mobile-nav-wrap.is-open .hp-mobile-nav-icon span:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+    }
+
+    .hp-mobile-nav-wrap.is-open .hp-mobile-nav-icon span:nth-child(2) {
+        opacity: 0;
+    }
+
+    .hp-mobile-nav-wrap.is-open .hp-mobile-nav-icon span:nth-child(3) {
+        transform: translateY(-7px) rotate(-45deg);
+    }
+
+    .hp-mobile-nav-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.25s, visibility 0.25s;
+        z-index: 100002;
+    }
+
+    .hp-mobile-nav-wrap.is-open .hp-mobile-nav-overlay {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* מגירה מתחת לפס האדמין של וורדפרס כשמחוברים */
+    .hp-mobile-nav-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: min(280px, 85vw);
+        max-width: 280px;
+        height: 100vh;
+        background: #fff;
+        box-shadow: -2px 0 12px rgba(0,0,0,0.15);
+        z-index: 100003;
+        transform: translateX(100%);
+        transition: transform 0.25s ease, top 0.2s ease, height 0.2s ease;
+        overflow-y: auto;
+        padding: 20px 0;
+    }
+
+    body.admin-bar .hp-mobile-nav-drawer {
+        top: 46px;
+        height: calc(100vh - 46px);
+    }
+
+    body.rtl .hp-mobile-nav-drawer {
+        right: auto;
+        left: 0;
+        transform: translateX(-100%);
+        box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+    }
+
+    body.admin-bar .hp-mobile-nav-overlay {
+        top: 46px;
+        height: calc(100vh - 46px);
+    }
+
+    .hp-mobile-nav-wrap.is-open .hp-mobile-nav-drawer {
+        transform: translateX(0);
+    }
+
+    body.rtl .hp-mobile-nav-wrap.is-open .hp-mobile-nav-drawer {
+        transform: translateX(0);
+    }
+
+    .hp-mobile-nav-inner {
+        padding: 0 16px;
+    }
+
+    .hp-mobile-nav-menu {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .hp-mobile-nav-menu li {
+        margin: 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .hp-mobile-nav-menu li:last-child {
+        border-bottom: none;
+    }
+
+    .hp-mobile-nav-menu a {
+        display: block;
+        padding: 14px 12px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+        text-decoration: none;
+        transition: background 0.2s, color 0.2s;
+    }
+
+    .hp-mobile-nav-menu a:hover,
+    .hp-mobile-nav-menu a:focus {
+        background: #f5f5f5;
+        color: #111;
+    }
+
+    body.hp-mobile-nav-body-open {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+    }
 }
 
 /*
@@ -892,7 +728,17 @@ body.buddypress,
     padding: 20px 15px;
     margin: 25px 0;
     border: 1px solid #e7e7e7;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.hpg-stats-row {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+    width: 100%;
+    flex-wrap: wrap;
 }
 
 .hpg-stat-item {
@@ -902,6 +748,7 @@ body.buddypress,
     gap: 8px;
     flex: 1;
     text-align: center;
+    min-width: 80px;
 }
 
 .hpg-stat-value {
@@ -912,9 +759,172 @@ body.buddypress,
 }
 
 .hpg-stat-label {
-    font-size: 14px;
+    font-size: 13px;
     color: #7f8c8d;
     font-weight: 500;
+    line-height: 1.3;
+}
+
+/*
+=========================================
+  Badges on Cover Image
+=========================================
+*/
+.hpg-cover-badges-wrapper {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Ensure badges are positioned relative to cover image */
+#buddypress #cover-image-container .hpg-cover-badges-wrapper,
+#buddypress #item-header-cover-image .hpg-cover-badges-wrapper {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+}
+
+/* If badges are in header content, move them to cover */
+#buddypress #item-header-content .hpg-cover-badges-wrapper {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+}
+
+.hpg-cover-badges-wrapper .hpg-badges-list,
+.hpg-cover-badges-wrapper .hpg-badges-profile {
+    margin: 0 !important;
+    gap: 10px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+}
+
+.hpg-cover-badges-wrapper .hpg-badge-circle {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 70px !important;
+    height: 70px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 232, 217, 0.95) 100%) !important;
+    border: 3px solid #ff6b35 !important;
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4) !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    backdrop-filter: blur(5px) !important;
+    flex-shrink: 0 !important;
+}
+
+.hpg-cover-badges-wrapper .hpg-badge-circle:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 16px rgba(255, 107, 53, 0.5);
+}
+
+.hpg-cover-badges-wrapper .hpg-badge-emoji {
+    font-size: 1.6rem;
+    line-height: 1;
+    margin-bottom: 2px;
+}
+
+.hpg-cover-badges-wrapper .hpg-badge-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #ff6b35;
+    text-align: center;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+/* Override any conflicting styles */
+.hpg-cover-badges-wrapper * {
+    box-sizing: border-box;
+}
+
+/* RTL Support */
+body.rtl .hpg-cover-badges-wrapper {
+    left: auto;
+    right: 20px;
+}
+
+/* Mobile adjustments */
+@media screen and (max-width: 768px) {
+    .hpg-cover-badges-wrapper {
+        top: 10px;
+        left: 10px;
+        gap: 8px;
+    }
+    
+    .hpg-cover-badges-wrapper .hpg-badge-circle {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .hpg-cover-badges-wrapper .hpg-badge-emoji {
+        font-size: 1.4rem;
+    }
+    
+    .hpg-cover-badges-wrapper .hpg-badge-label {
+        font-size: 0.6rem;
+    }
+    
+    body.rtl .hpg-cover-badges-wrapper {
+        right: 10px;
+    }
+}
+
+/* Mobile: Horizontal scroll for stats */
+@media screen and (max-width: 768px) {
+    .hpg-user-stats-container {
+        padding: 15px 10px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #ddd transparent;
+        justify-content: flex-start;
+    }
+    
+    .hpg-user-stats-container::-webkit-scrollbar {
+        height: 4px;
+    }
+    
+    .hpg-user-stats-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .hpg-user-stats-container::-webkit-scrollbar-thumb {
+        background-color: #ddd;
+        border-radius: 2px;
+    }
+    
+    .hpg-stats-row {
+        flex-wrap: nowrap;
+        min-width: max-content;
+    }
+    
+    .hpg-stat-item {
+        flex: 0 0 auto;
+        min-width: 90px;
+        padding: 0 8px;
+    }
+    
+    .hpg-stat-value {
+        font-size: 22px;
+    }
+    
+    .hpg-stat-label {
+        font-size: 12px;
+    }
 }
 
 /*
@@ -939,8 +949,7 @@ body.buddypress,
 }
 
 .hpg-profile-bio-container a {
-    color: #FB7A5F;
-    /* A color that matches the theme */
+    color: #FB7A5F; /* A color that matches the theme */
     font-weight: 600;
     text-decoration: none;
     border-bottom: 2px solid rgba(251, 122, 95, 0.3);
@@ -969,8 +978,7 @@ body.buddypress,
     border-radius: 8px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    /* Puts space between info and button */
+    justify-content: space-between; /* Puts space between info and button */
     gap: 20px;
 }
 
@@ -992,13 +1000,11 @@ body.buddypress,
     font-size: 18px;
     font-weight: 600;
 }
-
 .hpg-author-name a {
     text-decoration: none;
     color: #333;
     transition: color 0.2s;
 }
-
 .hpg-author-name a:hover {
     color: #FB7A5F;
 }
@@ -1011,68 +1017,671 @@ body.buddypress,
 }
 
 /* No changes needed for follow button, it will be pushed to the end by justify-content */
-/* Profile badges - white circles at top */
-/* Profile badges - white circles at top */
-.hpg-profile-badges-header,
-.hpg-badges-profile {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    z-index: 100;
-    display: flex;
-    gap: 12px;
+
+/* =================================================================
+ * הוספת חברים ישירות לקבוצה - Add Members to Group
+ * =================================================================
+ */
+.hp-add-members-box {
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    text-align: right;
 }
 
-.hpg-badge-circle {
-    background: white !important;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1) !important;
-    border: 2px solid #ff6b35 !important;
-    width: 85px !important;
-    height: 85px !important;
-    border-radius: 50% !important;
-    display: flex !important;
+.hp-add-members-title {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+}
+
+.hp-add-members-desc {
+    margin: 0 0 15px 0;
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.hp-add-members-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.hp-add-members-tab {
+    padding: 8px 16px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.hp-add-members-tab:hover {
+    background: #f0f0f0;
+}
+
+.hp-add-members-tab.active {
+    background: #2271b1;
+    color: #fff;
+    border-color: #2271b1;
+}
+
+.hp-add-members-tab-content {
+    display: none;
+}
+
+.hp-add-members-tab-content.active {
+    display: block;
+}
+
+.hp-add-single-member label,
+.hp-import-emails label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.hp-member-search-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.hp-member-search-results {
+    margin-top: 10px;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.hp-member-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.hp-member-list li {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.hp-member-list li:last-child {
+    border-bottom: none;
+}
+
+.hp-member-list li.hp-is-member {
+    color: #888;
+}
+
+.hp-member-list .hp-user-name {
+    font-weight: 500;
+}
+
+.hp-member-list .hp-user-email {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.hp-member-search-status,
+.hp-import-status {
+    margin-top: 10px;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 5px;
+}
+
+.hp-member-search-status.error,
+.hp-import-status.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.hp-member-search-status.success,
+.hp-import-status.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.hp-emails-textarea {
+    width: 100%;
+    max-width: 500px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+    direction: ltr;
+}
+
+#hp-import-emails-btn {
+    margin-top: 10px;
+}
+
+.hp-no-results {
+    margin: 0;
+    color: #888;
+}
+
+/* =================================================================
+ * כפתור מיון לפי פוסטים – ליד כפתור הפעמון בדף פוסטים של הקבוצה
+ * =================================================================
+ */
+.hpg-sort-by-posts-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #5a9bd5, #4a8bc2);
+    color: #fff !important;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hpg-sort-by-posts-btn:hover {
+    transform: scale(1.03);
+    box-shadow: 0 2px 8px rgba(90, 155, 213, 0.4);
+    color: #fff !important;
+}
+.hpg-sort-by-posts-btn .hpg-sort-posts-svg {
+    flex-shrink: 0;
+}
+
+/* =================================================================
+ * GROUP INVITE LINK SYSTEM - קבוצות עם קישור ייחודי
+ * =================================================================
+ */
+
+/* הודעה במקום כפתור ההצטרפות */
+.hp-invite-link-message {
+    padding: 15px;
+    margin: 15px 0;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.hp-invite-link-message p {
+    margin: 0;
+    color: #856404;
+}
+
+.hp-invite-link-message strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+/* טופס הצטרפות דרך קישור ייחודי */
+.hp-invite-link-join-form {
+    padding: 20px;
+    max-width: 500px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.hp-invite-link-join-form h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.hp-invite-link-join-form p {
+    margin-bottom: 15px;
+}
+
+/* הודעות הצלחה ושגיאה */
+.hp-join-success {
+    padding: 15px;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.hp-join-success p {
+    margin: 0;
+    color: #155724;
+}
+
+.hp-join-error {
+    padding: 15px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.hp-join-error p {
+    margin: 0;
+    color: #721c24;
+}
+
+.hp-invite-link-error,
+.hp-invite-link-login,
+.hp-invite-link-already-member {
+    padding: 20px;
+    text-align: center;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.hp-invite-link-error p,
+.hp-invite-link-login p,
+.hp-invite-link-already-member p {
+    margin-bottom: 15px;
+}
+
+/* עיצוב כפתור העתקה בהגדרות הקבוצה */
+#hp-invite-link-input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+#hp-copy-invite-link {
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+#hp-copy-invite-link:hover {
+    background: #0073aa;
+    color: #fff;
+}
+
+/*
+=========================================
+  עמוד חברי קבוצה – גריד, באדג'ים קומפקטיים, ספירות
+=========================================
+*/
+
+/* גריד אחיד: 4 עמודות בדסקטופ, 2 במובייל – מונע שורה ראשונה "חסרה" ואחרונה עם כרטיס בודד מפוזר */
+body.bp-group #group-members-list,
+body.groups #group-members-list,
+body.group-members #group-members-list,
+body.bp-group #members-list,
+body.groups #members-list,
+body.group-members #members-list {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+body.bp-group #group-members-list li,
+body.groups #group-members-list li,
+body.group-members #group-members-list li,
+body.bp-group #members-list li,
+body.groups #members-list li,
+body.group-members #members-list li {
+    display: flex;
     flex-direction: column;
+    margin: 0;
+    padding: 16px;
+    background: #fff;
+    border: 1px solid #e7e7e7;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* מבנה הכרטיס: אווטאר למעלה (קטן), שם ומטה – מונע חיתוך ודחיסה */
+body.bp-group #members-list li .list-wrap,
+body.groups #members-list li .list-wrap,
+body.bp-group #group-members-list li .list-wrap,
+body.groups #group-members-list li .list-wrap {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+}
+
+/* אווטאר קטן – במקום 150px */
+body.bp-group #members-list .item-avatar img,
+body.groups #members-list .item-avatar img,
+body.bp-group #group-members-list .item-avatar img,
+body.groups #group-members-list .item-avatar img {
+    width: 64px !important;
+    height: 64px !important;
+    max-width: 64px !important;
+    max-height: 64px !important;
+    min-width: 64px !important;
+    min-height: 64px !important;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+body.bp-group #members-list .item-avatar,
+body.groups #members-list .item-avatar,
+body.bp-group #group-members-list .item-avatar,
+body.groups #group-members-list .item-avatar {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 10px;
+}
+
+/* שם – לא לחתוך, לעטוף שורות */
+body.bp-group #members-list .list-title.member-name,
+body.groups #members-list .list-title.member-name,
+body.bp-group #group-members-list .list-title.member-name,
+body.groups #group-members-list .list-title.member-name,
+body.bp-group #members-list .member-name a,
+body.groups #members-list .member-name a,
+body.bp-group #group-members-list .member-name a,
+body.groups #group-members-list .member-name a {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-wrap: break-word;
+    word-break: normal;
+    text-align: center;
+    line-height: 1.35;
+    font-size: 14px;
+    width: 100%;
+    min-width: 0;
+}
+
+body.bp-group #members-list .item,
+body.groups #members-list .item,
+body.bp-group #group-members-list .item,
+body.groups #group-members-list .item {
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+}
+
+body.bp-group #members-list .item-block,
+body.groups #members-list .item-block,
+body.bp-group #group-members-list .item-block,
+body.groups #group-members-list .item-block {
+    width: 100%;
+    min-width: 0;
+}
+
+body.bp-group #members-list .item-meta,
+body.groups #members-list .item-meta,
+body.bp-group #group-members-list .item-meta,
+body.groups #group-members-list .item-meta {
+    font-size: 11px;
+    color: #777;
+    text-align: center;
+}
+
+/* תחתית כרטיס: באדג'ים יחד בשורה מלאה, מתחת – מימין ספירות ומשמאל כפתור "הוסף כחבר" */
+.hpg-member-badges-wrapper.hpg-member-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    margin-top: auto;
+    order: 999;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+    width: 100%;
+}
+
+/* באדג'ים – שורה מלאה (גם כשיש רבים, נשארים ביחד בבלוק אחד), מתחתיהם ספירות וכפתור */
+.hpg-member-footer .hpg-member-badges:not(:empty) {
+    width: 100%;
+    flex: 0 0 100%;
+}
+
+.hpg-member-footer .hpg-member-badges:empty {
+    display: none !important;
+}
+
+.hpg-member-badges.hpg-badges-compact-inline,
+.hpg-member-footer .hpg-member-badges,
+.hpg-member-footer .hpg-badges-list {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 4px 6px !important;
+    align-items: center !important;
+}
+
+/* שורת ספירות וכפתור – מיקום קבוע: ספירות ימין (RTL: start), כפתור שמאל (RTL: end) */
+.hpg-member-footer .hpg-member-stats-inline {
+    flex-shrink: 0;
+}
+
+.hpg-member-footer .generic-button {
+    flex-shrink: 0;
+}
+
+.hpg-member-footer .hpg-badge-circle {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    width: auto !important;
+    min-width: auto !important;
+    height: 24px !important;
+    padding: 0 6px !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255, 107, 53, 0.4) !important;
+    background: rgba(255, 232, 217, 0.6) !important;
+    font-size: 0 !important;
+}
+
+.hpg-member-footer .hpg-badge-circle .hpg-badge-emoji {
+    font-size: 12px !important;
+    line-height: 1 !important;
+    margin: 0 4px 0 0 !important;
+}
+
+.hpg-member-footer .hpg-badge-circle .hpg-badge-label {
+    font-size: 10px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+}
+
+/* ספירות פוסטים ותגובות */
+.hpg-member-stats-inline {
+    font-size: 11px;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* ביטול שקיפות/שכבת אטימות – במיוחד בקבוצות קישור הזמנה */
+body.bp-group #members-list,
+body.groups #members-list,
+body.group-members #members-list,
+body.bp-group #group-members-list,
+body.groups #group-members-list,
+body.group-members #group-members-list {
+    opacity: 1 !important;
+}
+
+body.bp-group #members-list li,
+body.groups #members-list li,
+body.group-members #members-list li,
+body.bp-group #group-members-list li,
+body.groups #group-members-list li,
+body.group-members #group-members-list li {
+    opacity: 1 !important;
+}
+
+.hpg-member-footer {
+    opacity: 1 !important;
+}
+
+/* הסרת שכבת overlay/loading שמתעכבת (בקבוצות קישור הזמנה לעתים לא מסתירה) */
+body.bp-group .bp-list.loading::before,
+body.groups .bp-list.loading::before,
+body.group-members .bp-list.loading::before,
+body.bp-group .bp-list.loading::after,
+body.groups .bp-list.loading::after,
+body.group-members .bp-list.loading::after,
+body.group-members [data-bp-list].loading::before,
+body.groups [data-bp-list].loading::before {
+    display: none !important;
+    pointer-events: none !important;
+}
+
+body.bp-group .item-list.members-group-list.loading,
+body.groups .item-list.members-group-list.loading,
+body.group-members .item-list.members-group-list.loading {
+    opacity: 1 !important;
+}
+
+.hpg-member-stats-inline .hpg-stat-sep {
+    margin: 0 2px;
+    color: #aaa;
+}
+
+/* הצגת כל החברים – מסתירים רק קישורי עמודים, שומרים "מציג X מתוך Y" */
+body.bp-group .bp-pagination[data-bp-pagination="mlpage"] .bp-pagination-links,
+body.groups .bp-pagination[data-bp-pagination="mlpage"] .bp-pagination-links,
+body.group-members .bp-pagination[data-bp-pagination="mlpage"] .bp-pagination-links {
+    display: none !important;
+}
+
+/* רספונסיב: 2 עמודות במסך צר */
+@media screen and (max-width: 768px) {
+    body.bp-group #group-members-list,
+    body.groups #group-members-list,
+    body.group-members #group-members-list,
+    body.bp-group #members-list,
+    body.groups #members-list,
+    body.group-members #members-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+}
+
+/* מרכוז כרטיס בודד בשורה האחרונה (כשהספירה 4n+1 או 2n+1) */
+body.bp-group #members-list li:last-child:nth-child(4n+1),
+body.groups #members-list li:last-child:nth-child(4n+1),
+body.group-members #members-list li:last-child:nth-child(4n+1),
+body.bp-group #group-members-list li:last-child:nth-child(4n+1),
+body.groups #group-members-list li:last-child:nth-child(4n+1),
+body.group-members #group-members-list li:last-child:nth-child(4n+1) {
+    grid-column: 2 / 3;
+}
+
+@media screen and (max-width: 768px) {
+    body.bp-group #members-list li:last-child:nth-child(2n+1),
+    body.groups #members-list li:last-child:nth-child(2n+1),
+    body.group-members #members-list li:last-child:nth-child(2n+1),
+    body.bp-group #group-members-list li:last-child:nth-child(2n+1),
+    body.groups #group-members-list li:last-child:nth-child(2n+1),
+    body.group-members #group-members-list li:last-child:nth-child(2n+1) {
+        grid-column: 1 / -1;
+        justify-self: center;
+        max-width: 50%; /* רוחב כרטיס אחד, ממורכז */
+    }
+}
+
+/* =================================================================
+ * GROUP AVATAR WITH COLOR - תמונות ראשיות עגולות עם צבע
+ * =================================================================
+ */
+
+/* עטיפה לתמונת הקבוצה עם צבע - עגול */
+body.groups .hp-group-avatar-wrapper {
+    display: inline-block;
+    position: relative;
+    border-radius: 50% !important; /* עגול ולא ריבוע */
+    padding: 4px;
+    background: var(--group-color, #f0f0f0);
+    margin-left: 15px; /* RTL: margin-left = ימין */
+    width: 68px; /* 60px תמונה + 4px padding מכל צד */
+    height: 68px;
+    box-sizing: border-box;
+}
+
+/* תמונת הקבוצה עצמה - עגולה */
+body.groups .hp-group-avatar-wrapper img {
+    display: block;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    background: #fff;
+}
+
+/* מיקום התמונה ברשימת הקבוצות - מצד ימין של שם הקבוצה */
+body.groups #groups-list li.item,
+body.groups #groups-dir-list li.item,
+body.groups .item-list li.item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* מיקום התמונה ברשימת הקבוצות - מצד ימין של שם הקבוצה */
+body.groups #groups-list li.item .item-avatar,
+body.groups #groups-dir-list li.item .item-avatar,
+body.groups .item-list li.item .item-avatar {
+    order: -1; /* RTL: מצד ימין */
+    flex-shrink: 0;
+}
+
+/* אם יש wrapper, הוא צריך להיות בתוך item-avatar */
+body.groups .item-avatar .hp-group-avatar-wrapper {
+    margin: 0;
+}
+
+/* תמיכה גם בתצוגה הישנה של BuddyPress */
+body.groups .groups-list .item-avatar,
+body.groups .group-item .item-avatar {
+    order: -1;
+    flex-shrink: 0;
+}
+
+body.groups .groups-list .item-avatar .hp-group-avatar-wrapper,
+body.groups .group-item .item-avatar .hp-group-avatar-wrapper {
+    margin: 0;
+}
+
+/* =================================================================
+ * GROUP COUNT BADGE - עיגול רקע למספרים בכותרת
+ * =================================================================
+ */
+
+/* עיגול רקע למספרים בכותרת הקבוצות */
+body.groups .hp-group-count-badge {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0 !important;
-    transition: transform 0.2s ease;
-    text-align: center;
-}
-
-.hpg-badge-circle:hover {
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15) !important;
-    transform: translateY(-3px) scale(1.05) !important;
-}
-
-.hpg-badge-emoji {
-    font-size: 28px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    margin-right: 8px; /* RTL: margin-right = שמאל */
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 600;
     line-height: 1;
-    margin-bottom: 2px;
-    display: block;
+    vertical-align: middle;
 }
 
-.hpg-badge-label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #ff6b35;
-    text-align: center;
-    line-height: 1.1;
-    max-width: 90%;
-    display: block;
-}
-
-/* Fix Profile Avatar Circle */
-#buddypress #item-header-avatar,
-#buddypress #item-header-avatar img.avatar {
-    border-radius: 50% !important;
-    width: 150px !important;
-    height: 150px !important;
-    object-fit: cover;
-    background: white;
-}
-
-#buddypress #item-header-avatar {
-    padding: 5px;
-    background: white;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
+/* עיגול רקע למספרים בכפתורים */
+body.groups a .hp-group-count-badge,
+body.groups button .hp-group-count-badge {
+    background-color: rgba(255, 255, 255, 0.3);
+    color: inherit;
+} 

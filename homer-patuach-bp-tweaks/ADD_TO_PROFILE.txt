@@ -1,0 +1,12 @@
+
+// Add this code after line 1153 in homer-patuach-bp-tweaks.php
+// (after the </div> that closes hpg-user-stats-container)
+
+    <?php
+    // Display earned badges
+    if ( function_exists( 'hpg_display_earned_badges' ) ) {
+        echo '<div style="margin-top: 15px;">';
+        echo hpg_display_earned_badges( $user_id );
+        echo '</div>';
+    }
+    ?>

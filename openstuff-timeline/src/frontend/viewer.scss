@@ -1,0 +1,334 @@
+/* OpenStuff Timeline Viewer - RTL, קו ימין, עיגולים צבעוניים */
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;500;600;700&display=swap');
+
+.ost-timeline-viewer {
+	direction: rtl;
+	padding: 1rem 0;
+	font-family: 'Rubik', sans-serif;
+	font-weight: 500;
+
+	&.ost-timeline-expanded {
+		.ost-timeline-scroll {
+			height: 90vh;
+			overflow: hidden;
+			display: flex;
+			flex-direction: column;
+		}
+		.ost-spine {
+			flex: 1;
+			min-height: 0;
+			display: flex;
+			flex-direction: row;
+		}
+		.ost-spine-content {
+			display: flex;
+			flex-direction: column;
+			flex: 1;
+			min-height: 0;
+			overflow-y: auto;
+		}
+	}
+}
+
+.ost-viewer-title {
+	margin: 0 0 1rem;
+	font-size: 1.5rem;
+	font-weight: 600;
+}
+
+.ost-viewer-loading,
+.ost-viewer-error {
+	padding: 2rem;
+	text-align: center;
+	direction: rtl;
+}
+
+.ost-timeline-scroll {
+	transition: height 0.3s ease;
+}
+
+/* ציר - קו אנכי מימין, מחבר בין נקודות הצבע */
+.ost-spine {
+	position: relative;
+	display: flex;
+	flex-direction: row;
+	align-items: stretch;
+}
+
+.ost-spine-content {
+	flex: 1;
+	min-width: 0;
+	padding-right: 1rem;
+}
+
+.ost-spine-line {
+	width: 4px;
+	background: #333;
+	border-radius: 2px;
+	flex-shrink: 0;
+	align-self: stretch;
+	margin-left: 0;
+}
+
+/* נושא */
+.ost-topic-wrapper {
+	margin-bottom: 0.5rem;
+	transition: flex 0.3s ease;
+
+	&.ost-topic-wrapper-expanded {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	&.ost-topic-wrapper-tail {
+		flex: 0 0 auto;
+		max-height: 4rem;
+		overflow: hidden;
+	}
+}
+
+.ost-topic-segment {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+
+	&.ost-topic-tail {
+		.ost-topic-content {
+			display: none;
+		}
+		.ost-topic-trigger {
+			padding: 0.25rem 0;
+		}
+	}
+}
+
+.ost-topic-trigger {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	width: 100%;
+	padding: 0.5rem 0;
+	background: none;
+	border: none;
+	cursor: pointer;
+	text-align: right;
+	font-size: 1.15rem;
+	font-family: inherit;
+	font-weight: 600;
+	color: inherit;
+	transition: background 0.2s;
+	/* נקודה צמודה לקו הציר (ימין) */
+	position: relative;
+
+	&:hover {
+		background: rgba(0, 0, 0, 0.04);
+	}
+
+	&[aria-expanded="true"] {
+		font-weight: 700;
+	}
+}
+
+/* עיגול צבעוני על הציר - מחובר לקו */
+.ost-topic-dot {
+	display: inline-block;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+	border: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+.ost-topic-label {
+	flex: 1;
+}
+
+.ost-topic-content {
+	margin-right: 2rem;
+}
+
+/* מצב הרחבה - רשימה */
+.ost-topic-expanded .ost-topic-content {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+.ost-topic-toolbar {
+	margin-bottom: 0.5rem;
+}
+
+.ost-drag-mode-btn {
+	padding: 0.35rem 0.75rem;
+	font-size: 0.85rem;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	background: #fff;
+	cursor: pointer;
+	transition: all 0.2s;
+
+	&.active {
+		background: #e8f4f8;
+		border-color: #0a7ea4;
+	}
+}
+
+.ost-topic-pins {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 0.5rem;
+
+	&.ost-topic-pins-list {
+		flex-direction: column;
+		flex-wrap: nowrap;
+		align-items: flex-start;
+		gap: 0.75rem;
+		overflow-y: auto;
+		flex: 1;
+		min-height: 0;
+	}
+}
+
+.ost-topic-more {
+	font-size: 0.85rem;
+	color: #666;
+	align-self: center;
+}
+
+/* כרטיס פריט - פינות 40px, עיגול תמונה + אייקון סוג */
+.ost-pin-wrapper,
+.ost-pin-sortable-wrapper {
+	display: inline-block;
+}
+
+.ost-pin-sortable-wrapper {
+	cursor: grab;
+	&:active {
+		cursor: grabbing;
+	}
+}
+
+.ost-pin-card {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.5rem 0.75rem;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 40px;
+	font-size: 0.9rem;
+	text-decoration: none;
+	color: inherit;
+	transition: box-shadow 0.2s, transform 0.2s;
+	width: fit-content;
+	max-width: 100%;
+
+	&:hover {
+		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+	}
+
+	&.ost-pin-card-expanded {
+		border-radius: 40px;
+		width: fit-content;
+		max-width: 100%;
+		padding: 0.6rem 1rem;
+	}
+
+	&.ost-pin-dragging {
+		opacity: 0.9;
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+	}
+}
+
+/* עיגול תמונה ראשית */
+.ost-pin-thumb-main {
+	width: 48px;
+	height: 48px;
+	min-width: 48px;
+	min-height: 48px;
+	background: #eee;
+	border-radius: 50%;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ost-pin-thumb-main img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.ost-pin-icon {
+	font-size: 1.25rem;
+}
+
+.ost-pin-body {
+	flex: 1;
+	min-width: 0;
+}
+
+.ost-pin-title {
+	display: block;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* עיגול אייקון סוג תוכן - בצד הנגדי */
+.ost-pin-type-circle {
+	width: 36px;
+	height: 36px;
+	min-width: 36px;
+	min-height: 36px;
+	background: #f0f0f0;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1rem;
+}
+
+/* מטא במצב הרחבה - שם תורם ותגיות במשקל 300 */
+.ost-pin-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: 0.25rem;
+	font-size: 0.8rem;
+	font-weight: 300;
+	color: #666;
+}
+
+.ost-pin-author::before {
+	content: "מאת: ";
+}
+
+.ost-tag-icon {
+	flex-shrink: 0;
+	opacity: 0.8;
+	vertical-align: middle;
+	margin-left: 0.2rem;
+}
+
+.ost-timeline-expanded .ost-topic-wrapper-expanded {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-height: 400px;
+}
+
+.ost-timeline-expanded .ost-topic-wrapper-expanded .ost-topic-segment {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
