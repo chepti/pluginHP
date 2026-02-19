@@ -93,6 +93,22 @@ function hpg_get_badge_definitions() {
             'type' => 'role',
             'manual' => false,
             'required_capability' => 'edit_others_posts'
+        ],
+        'timeline_editor' => [
+            'name' => 'עורך ציר שנתי',
+            'emoji' => '📅',
+            'description' => 'עורך ציר זמן שנתי',
+            'threshold' => 0,
+            'type' => 'manual',
+            'manual' => true
+        ],
+        'super_timeline_editor' => [
+            'name' => 'עורך על של צירים',
+            'emoji' => '📆',
+            'description' => 'עורך 5 צירי זמן או יותר',
+            'threshold' => 5,
+            'type' => 'timelines_edited',
+            'manual' => false
         ]
     ];
 }
@@ -163,6 +179,10 @@ function hpg_user_has_badge( $user_id, $badge_key ) {
         case 'tags_added':
             $current_value = function_exists( 'hpg_get_user_total_tags_added' ) ? hpg_get_user_total_tags_added( $user_id ) : 0;
             break;
+        case 'timelines_edited':
+            $current_value = class_exists( 'OST_Editor_Registration' ) && method_exists( 'OST_Editor_Registration', 'get_user_timelines_edited_count' )
+                ? OST_Editor_Registration::get_user_timelines_edited_count( $user_id ) : 0;
+            break;
     }
     
     return $current_value >= $badge['threshold'];
@@ -218,6 +238,10 @@ function hpg_get_badge_progress( $user_id, $badge_key ) {
             break;
         case 'tags_added':
             $current_value = function_exists( 'hpg_get_user_total_tags_added' ) ? hpg_get_user_total_tags_added( $user_id ) : 0;
+            break;
+        case 'timelines_edited':
+            $current_value = class_exists( 'OST_Editor_Registration' ) && method_exists( 'OST_Editor_Registration', 'get_user_timelines_edited_count' )
+                ? OST_Editor_Registration::get_user_timelines_edited_count( $user_id ) : 0;
             break;
     }
     

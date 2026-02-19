@@ -2,7 +2,7 @@
  * Timeline Viewer - תצוגת ציר זמן ציבורית
  * קו מצד ימין, עיגולים צבעוניים לנושאים, מצב הרחבה עם גרירה
  */
-import { useState, useEffect, useCallback } from '@wordpress/element';
+import { useState, useEffect, useLayoutEffect, useCallback } from '@wordpress/element';
 import {
 	DndContext,
 	closestCenter,
@@ -168,6 +168,18 @@ function PinCard( {
 	return <div className="ost-pin-wrapper">{ content }</div>;
 }
 
+function useMobile() {
+	const [ isMobile, setIsMobile ] = useState( false );
+	useLayoutEffect( () => {
+		const mq = window.matchMedia( '(max-width: 768px)' );
+		setIsMobile( mq.matches ); /* עדכון התחלתי - קריטי למובייל */
+		const handler = () => setIsMobile( mq.matches );
+		mq.addEventListener( 'change', handler );
+		return () => mq.removeEventListener( 'change', handler );
+	}, [] );
+	return isMobile;
+}
+
 function TopicSegment( {
 	topic,
 	topicIndex,
@@ -179,6 +191,7 @@ function TopicSegment( {
 	onReorder,
 	canEdit,
 	isTail,
+	isMobile,
 } ) {
 	const pins = [ ...( topic.pins || [] ) ].sort( ( a, b ) => a.position_order - b.position_order );
 	const [ localPins, setLocalPins ] = useState( pins );
@@ -221,8 +234,13 @@ function TopicSegment( {
 					aria-hidden
 				/>
 				<span className="ost-topic-label">{ topic.title }</span>
+				{ isMobile && pins.length > 0 && (
+					<span className="ost-topic-count" aria-label={ `${ pins.length } פריטים` }>
+						( { pins.length } )
+					</span>
+				) }
 			</button>
-			{ ! isTail && (
+			{ ! isTail && ( ! isMobile || isExpanded ) && (
 			<div className="ost-topic-content">
 				{ isExpanded ? (
 					<>
@@ -294,6 +312,7 @@ export default function TimelineViewer( { timelineId, fetchFn } ) {
 	const [ loading, setLoading ] = useState( true );
 	const [ expandedTopic, setExpandedTopic ] = useState( null );
 	const [ dragMode, setDragMode ] = useState( false );
+	const isMobile = useMobile();
 	const fetchApi = getFetchFn( fetchFn );
 
 	/* גרירה מותאמת רק בעורך בלוקים, לא בתצוגה ציבורית */
@@ -312,6 +331,13 @@ export default function TimelineViewer( { timelineId, fetchFn } ) {
 		postFetch( `/topic/${ topicId }/reorder-pins`, { pin_ids: pinIds } ).catch( () => {} );
 	}, [] );
 
+	const handleLike = useCallback( () => {
+		if ( ! timelineId ) return;
+		postFetch( `/timeline/${ timelineId }/like`, {} )
+			.then( ( res ) => res?.likes != null && setTimeline( ( t ) => ( t ? { ...t, likes: res.likes } : t ) ) )
+			.catch( () => {} );
+	}, [ timelineId ] );
+
 	if ( loading ) {
 		return <div className="ost-viewer-loading" dir="rtl">טוען...</div>;
 	}
@@ -324,24 +350,33 @@ export default function TimelineViewer( { timelineId, fetchFn } ) {
 
 	return (
 		<div
-			className={ `ost-timeline-viewer ${ expandedTopic ? 'ost-timeline-expanded' : '' }` }
+			className={ `ost-timeline-viewer ${ expandedTopic && ! isMobile ? 'ost-timeline-expanded' : '' } ${ isMobile ? 'ost-mobile-continuous' : '' }` }
 			dir="rtl"
 		>
-			<h2 className="ost-viewer-title">{ timeline.title }</h2>
-			<div
-				className="ost-timeline-scroll"
-				style={ expandedTopic ? { height: '90vh', overflow: 'auto' } : {} }
-			>
+			<div className="ost-viewer-header">
+				<h2 className="ost-viewer-title">{ timeline.title }</h2>
+				<div className="ost-viewer-meta">
+					<span className="ost-meta-item ost-views" title="צפיות">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 10c-2.48 0-4.5-2.02-4.5-4.5S9.52 5.5 12 5.5s4.5 2.02 4.5 4.5-2.02 4.5-4.5 4.5zm0-7c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5 2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5z"/></svg>
+						{ timeline.views ?? 0 }
+					</span>
+					<button type="button" className="ost-meta-item ost-like-btn" onClick={ handleLike } title="לייק">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+						<span className="ost-like-count">{ timeline.likes ?? 0 }</span>
+					</button>
+				</div>
+			</div>
+			<div className="ost-timeline-scroll">
 				<div className="ost-spine">
 					<div className="ost-spine-line" aria-hidden />
 					<div className="ost-spine-content">
 					{ topics.map( ( topic, idx ) => {
 						const isExpanded = topic.id === expandedTopic;
-						const showTail = expandedTopic && (
+						const showTail = ! isMobile && expandedTopic && (
 							( expandedIdx > 0 && idx === expandedIdx - 1 ) ||
 							( expandedIdx >= 0 && expandedIdx < topics.length - 1 && idx === expandedIdx + 1 )
 						);
-						const hideContent = expandedTopic && ! isExpanded && ! showTail;
+						const hideContent = ! isMobile && expandedTopic && ! isExpanded && ! showTail;
 						if ( hideContent ) return null;
 						return (
 							<div
@@ -359,6 +394,7 @@ export default function TimelineViewer( { timelineId, fetchFn } ) {
 									onReorder={ canEdit ? handleReorder : undefined }
 									canEdit={ canEdit }
 									isTail={ showTail }
+									isMobile={ isMobile }
 								/>
 							</div>
 						);

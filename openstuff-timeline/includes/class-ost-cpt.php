@@ -20,22 +20,26 @@ class OST_CPT {
 	}
 
 	/**
-	 * One-time: move all published timelines to draft (until editor publishes).
+	 * מיגרציה חד-פעמית: צירים בלי תמונה ראשית → טיוטה, עם תמונה ראשית → פורסם.
+	 * לא תרוץ שוב אחרי הביצוע.
 	 */
 	public function maybe_move_timelines_to_draft() {
-		if ( get_option( 'ost_timelines_moved_to_draft', '' ) === OST_VERSION ) {
+		if ( get_option( 'ost_timeline_status_migration_done', false ) ) {
 			return;
 		}
 		$posts = get_posts( array(
 			'post_type'      => 'os_timeline',
-			'post_status'    => 'publish',
+			'post_status'    => 'any',
 			'posts_per_page' => -1,
-			'fields'         => 'ids',
 		) );
-		foreach ( $posts as $id ) {
-			wp_update_post( array( 'ID' => $id, 'post_status' => 'draft' ) );
+		foreach ( $posts as $post ) {
+			$thumb_id = (int) get_post_thumbnail_id( $post->ID );
+			$status   = $thumb_id > 0 ? 'publish' : 'draft';
+			if ( $post->post_status !== $status ) {
+				wp_update_post( array( 'ID' => $post->ID, 'post_status' => $status ) );
+			}
 		}
-		update_option( 'ost_timelines_moved_to_draft', OST_VERSION );
+		update_option( 'ost_timeline_status_migration_done', true );
 	}
 
 	public function register_timeline_cpt() {

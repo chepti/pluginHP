@@ -29,6 +29,13 @@ class OST_REST {
 			'args'                => array( 'id' => array( 'validate_callback' => function( $v ) { return is_numeric( $v ); } ) ),
 		) );
 
+		register_rest_route( OST_REST_NAMESPACE, '/timeline/(?P<id>\d+)/like', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'like_timeline' ),
+			'permission_callback' => '__return_true',
+			'args'                => array( 'id' => array( 'validate_callback' => function( $v ) { return is_numeric( $v ); } ) ),
+		) );
+
 		register_rest_route( OST_REST_NAMESPACE, '/pin', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'create_pin' ),
@@ -175,9 +182,14 @@ class OST_REST {
 				),
 			) );
 			foreach ( $pin_posts as $pin ) {
-				$status = get_post_meta( $pin->ID, 'ost_status', true ) ?: 'pending';
+				$status  = get_post_meta( $pin->ID, 'ost_status', true ) ?: 'approved';
+				$post_id = (int) get_post_meta( $pin->ID, 'ost_post_id', true );
+				$linked  = $post_id ? get_post( $post_id ) : null;
+				/* pending: מוסתר מהציבור, חוץ מפוסטים מפורסמים (תוכן מאושר למאגר) */
 				if ( $status === 'pending' && ! current_user_can( 'manage_options' ) ) {
-					continue;
+					if ( ! $linked || $linked->post_status !== 'publish' ) {
+						continue;
+					}
 				}
 				$pins[] = $this->format_pin( $pin );
 			}
@@ -196,6 +208,9 @@ class OST_REST {
 
 		usort( $formatted_topics, function( $a, $b ) { return $a['order'] - $b['order']; } );
 
+		$views = (int) get_post_meta( $post->ID, '_hpg_view_count', true );
+		$likes = (int) get_post_meta( $post->ID, '_hpg_like_count', true );
+
 		return rest_ensure_response( array(
 			'id'            => $post->ID,
 			'title'         => $post->post_title,
@@ -203,7 +218,20 @@ class OST_REST {
 			'grade_level_id'=> (int) get_post_meta( $post->ID, 'ost_grade_level_id', true ),
 			'academic_year' => get_post_meta( $post->ID, 'ost_academic_year', true ),
 			'topics'        => $formatted_topics,
+			'views'         => $views,
+			'likes'         => $likes,
 		) );
+	}
+
+	public function like_timeline( $request ) {
+		$id   = (int) $request['id'];
+		$post = get_post( $id );
+		if ( ! $post || $post->post_type !== 'os_timeline' ) {
+			return new WP_Error( 'not_found', __( 'ציר לא נמצא', 'openstuff-timeline' ), array( 'status' => 404 ) );
+		}
+		$count = (int) get_post_meta( $id, '_hpg_like_count', true );
+		update_post_meta( $id, '_hpg_like_count', $count + 1 );
+		return rest_ensure_response( array( 'likes' => $count + 1 ) );
 	}
 
 	public function create_pin( $request ) {

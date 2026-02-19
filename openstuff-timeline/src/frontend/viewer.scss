@@ -9,31 +9,78 @@
 
 	&.ost-timeline-expanded {
 		.ost-timeline-scroll {
-			height: 90vh;
-			overflow: hidden;
+			max-height: 90vh;
+			overflow-y: auto;
 			display: flex;
 			flex-direction: column;
 		}
 		.ost-spine {
-			flex: 1;
-			min-height: 0;
 			display: flex;
 			flex-direction: row;
+			flex: 0 1 auto;
 		}
 		.ost-spine-content {
 			display: flex;
 			flex-direction: column;
 			flex: 1;
-			min-height: 0;
-			overflow-y: auto;
+			min-width: 0;
 		}
 	}
 }
 
+.ost-viewer-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	margin-bottom: 1rem;
+}
+
 .ost-viewer-title {
-	margin: 0 0 1rem;
+	margin: 0;
 	font-size: 1.5rem;
 	font-weight: 600;
+	flex: 1;
+	min-width: 0;
+}
+
+.ost-viewer-meta {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	flex-shrink: 0;
+}
+
+.ost-meta-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	font-size: 0.9rem;
+	color: #666;
+	font-weight: 500;
+
+	svg {
+		opacity: 0.8;
+	}
+}
+
+.ost-like-btn {
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 0.25rem 0;
+	font-family: inherit;
+	color: inherit;
+	transition: color 0.2s;
+
+	&:hover {
+		color: #e74c3c;
+
+		svg {
+			fill: #e74c3c;
+		}
+	}
 }
 
 .ost-viewer-loading,
@@ -76,8 +123,7 @@
 	transition: flex 0.3s ease;
 
 	&.ost-topic-wrapper-expanded {
-		flex: 1;
-		min-height: 0;
+		flex: 0 1 auto;
 		display: flex;
 		flex-direction: column;
 	}
@@ -147,14 +193,19 @@
 	flex: 1;
 }
 
+.ost-topic-count {
+	font-size: 0.85em;
+	font-weight: 500;
+	color: #666;
+	flex-shrink: 0;
+}
+
 .ost-topic-content {
 	margin-right: 2rem;
 }
 
-/* מצב הרחבה - רשימה */
+/* מצב הרחבה - רשימה, גובה לפי תוכן */
 .ost-topic-expanded .ost-topic-content {
-	flex: 1;
-	min-height: 0;
 	display: flex;
 	flex-direction: column;
 }
@@ -189,9 +240,6 @@
 		flex-wrap: nowrap;
 		align-items: flex-start;
 		gap: 0.75rem;
-		overflow-y: auto;
-		flex: 1;
-		min-height: 0;
 	}
 }
 
@@ -320,17 +368,14 @@
 }
 
 .ost-timeline-expanded .ost-topic-wrapper-expanded {
-	flex: 1;
+	flex: 0 1 auto;
 	display: flex;
 	flex-direction: column;
-	min-height: 400px;
 }
 
 .ost-timeline-expanded .ost-topic-wrapper-expanded .ost-topic-segment {
-	flex: 1;
 	display: flex;
 	flex-direction: column;
-	min-height: 0;
 }
 
 /* ===== התאמות מובייל ===== */
@@ -351,6 +396,12 @@
 	.ost-topic-content {
 		margin-right: 0;
 		margin-left: 0;
+	}
+
+	.ost-topic-pins.ost-topic-pins-grid {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
 	}
 
 	.ost-topic-trigger {
@@ -392,12 +443,14 @@
 		text-overflow: unset;
 	}
 
-	.ost-timeline-expanded .ost-topic-wrapper-expanded {
-		min-height: 250px;
+	/* מובייל: גלילה רציפה - ללא פאנל, התוכן זורם עם העמוד */
+	.ost-mobile-continuous .ost-timeline-scroll {
+		height: auto !important;
+		overflow: visible;
 	}
 
-	.ost-timeline-expanded .ost-timeline-scroll {
-		height: 85vh !important;
+	.ost-mobile-continuous.ost-timeline-viewer {
+		display: block;
 	}
 }
 
