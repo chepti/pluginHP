@@ -3,7 +3,7 @@
  * Plugin Name:       OpenStuff Academic Year Timeline
  * Plugin URI:        https://openstuff.co.il/
  * Description:       ציר זמן שנתי מבוסס Gutenberg - ארגון חומרי למידה לפי נושאים עם גרירה ושחרור.
- * Version:           1.0.11
+ * Version:           1.0.15
  * Author:            Chepti
  * Author URI:        https://openstuff.co.il/
  * License:           GPL-2.0+
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OST_VERSION', '1.0.11' );
+define( 'OST_VERSION', '1.0.15' );
 define( 'OST_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OST_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'OST_REST_NAMESPACE', 'os-timeline/v1' );

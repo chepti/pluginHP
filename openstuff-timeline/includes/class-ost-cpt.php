@@ -16,6 +16,26 @@ class OST_CPT {
 		add_action( 'init', array( $this, 'register_topic_cpt' ) );
 		add_action( 'init', array( $this, 'register_pin_cpt' ) );
 		add_action( 'init', array( $this, 'maybe_auto_create_timelines' ), 20 );
+		add_action( 'init', array( $this, 'maybe_move_timelines_to_draft' ), 25 );
+	}
+
+	/**
+	 * One-time: move all published timelines to draft (until editor publishes).
+	 */
+	public function maybe_move_timelines_to_draft() {
+		if ( get_option( 'ost_timelines_moved_to_draft', '' ) === OST_VERSION ) {
+			return;
+		}
+		$posts = get_posts( array(
+			'post_type'      => 'os_timeline',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+		) );
+		foreach ( $posts as $id ) {
+			wp_update_post( array( 'ID' => $id, 'post_status' => 'draft' ) );
+		}
+		update_option( 'ost_timelines_moved_to_draft', OST_VERSION );
 	}
 
 	public function register_timeline_cpt() {
@@ -43,7 +63,7 @@ class OST_CPT {
 			'capability_type'     => 'post',
 			'hierarchical'        => false,
 			'menu_icon'           => 'dashicons-calendar-alt',
-			'supports'            => array( 'title', 'thumbnail' ),
+			'supports'            => array( 'title', 'thumbnail', 'editor' ),
 			'has_archive'         => true,
 			'rewrite'             => array( 'slug' => 'timelines' ),
 		);
@@ -251,7 +271,7 @@ class OST_CPT {
 		$id = wp_insert_post( array(
 			'post_type'   => 'os_timeline',
 			'post_title'  => $title,
-			'post_status' => 'publish',
+			'post_status' => 'draft',
 		) );
 		if ( $id && ! is_wp_error( $id ) ) {
 			update_post_meta( $id, 'ost_subject_id', $subject_id );

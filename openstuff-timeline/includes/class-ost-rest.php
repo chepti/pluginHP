@@ -125,9 +125,13 @@ class OST_REST {
 	}
 
 	public function get_timelines( $request ) {
+		$statuses = array( 'publish' );
+		if ( current_user_can( 'edit_posts' ) ) {
+			$statuses[] = 'draft';
+		}
 		$posts = get_posts( array(
 			'post_type'      => 'os_timeline',
-			'post_status'    => 'publish',
+			'post_status'    => $statuses,
 			'posts_per_page' => -1,
 			'orderby'        => 'title',
 			'order'          => 'ASC',
