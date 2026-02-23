@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - BuddyPress Tweaks
  * Plugin URI:        https://example.com/
  * Description:       Custom styles and functionality for BuddyPress pages with community badges system.
- * Version:           3.0.1
+ * Version:           3.0.7
  * Author:            chepti
  * Author URI:        https://example.com/
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_BP_TWEAKS_VERSION', '3.0.1' );
+define( 'HP_BP_TWEAKS_VERSION', '3.0.7' );
 define( 'HP_BP_TWEAKS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 define( 'HP_BP_TWEAKS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
@@ -39,6 +39,16 @@ if ( file_exists( HP_BP_TWEAKS_PLUGIN_DIR . 'includes/admin-columns.php' ) ) {
 // Include group add members (הוספת חברים ישירות לקבוצה)
 if ( file_exists( HP_BP_TWEAKS_PLUGIN_DIR . 'includes/group-add-members.php' ) ) {
     require_once HP_BP_TWEAKS_PLUGIN_DIR . 'includes/group-add-members.php';
+}
+
+// Include group members table (הצגת חברים בטבלה עם מיון – למנהלים)
+if ( file_exists( HP_BP_TWEAKS_PLUGIN_DIR . 'includes/group-members-table.php' ) ) {
+    require_once HP_BP_TWEAKS_PLUGIN_DIR . 'includes/group-members-table.php';
+}
+
+// Include group folders (תיקיות בתוך פוסטים של הקבוצה)
+if ( file_exists( HP_BP_TWEAKS_PLUGIN_DIR . 'includes/group-folders.php' ) ) {
+    require_once HP_BP_TWEAKS_PLUGIN_DIR . 'includes/group-folders.php';
 }
 /**
  * Enqueue custom stylesheet for the theme.
@@ -625,18 +635,95 @@ function hp_bp_tweaks_group_posts_screen_content() {
                 ? sprintf( __( '%s פוסטים ממתינים לאישור – לחץ לפתיחה', 'homer-patuach-bp-tweaks' ), number_format_i18n( $pending_count ) )
                 : __( 'בדיקת פוסטים – אין ממתינים כרגע; לחץ לפתיחה', 'homer-patuach-bp-tweaks' );
 
-            $members_sort_url = trailingslashit( bp_get_group_permalink( $group ) ) . 'members/?members_order_by=post_count';
-            echo '<div class="hpg-group-bell-wrapper" style="margin-bottom: 20px; text-align: left; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">';
+            echo '<div class="hpg-group-bell-wrapper" style="margin-bottom: 20px; text-align: left;">';
             echo '<a href="#" class="hpg-group-approval-bell hpg-shortcode-bell' . esc_attr( $has_pending_class ) . '" data-group-id="' . esc_attr( $group->id ) . '" title="' . esc_attr( $title ) . '">';
             echo '<svg class="hpg-bell-svg" xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 0 24 24" width="22px" fill="#ffffff"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.21 1.79-4 4-4s4 1.79 4 4v6z"/></svg>';
             echo '<span class="hpg-pending-count hpg-group-pending-count">' . esc_html( $pending_count ) . '</span>';
             echo '</a>';
-            echo '<a href="' . esc_url( $members_sort_url ) . '" class="hpg-sort-by-posts-btn" title="' . esc_attr__( 'מיון החברים לפי כמות הפוסטים', 'homer-patuach-bp-tweaks' ) . '">';
-            echo '<svg class="hpg-sort-posts-svg" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 24 24" width="20px" fill="currentColor"><path d="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z"/></svg>';
-            echo '<span>' . esc_html__( 'מיון לפי פוסטים', 'homer-patuach-bp-tweaks' ) . '</span>';
-            echo '</a>';
             echo '</div>';
         }
+    }
+
+    // תיקיות – למנהלים: יצירה ומחיקה; לחברי קבוצה: כפתור + להגשת פוסט
+    if ( $group && ! empty( $group->id ) && function_exists( 'hpg_get_group_folders' ) ) {
+        $user_id     = get_current_user_id();
+        $is_mod      = false;
+        $is_member   = false;
+        if ( $user_id && function_exists( 'groups_is_user_member' ) ) {
+            $is_member = groups_is_user_member( $user_id, $group->id );
+        }
+        if ( $user_id ) {
+            if ( function_exists( 'groups_is_user_admin' ) && groups_is_user_admin( $user_id, $group->id ) ) {
+                $is_mod = true;
+            }
+            if ( ! $is_mod && function_exists( 'groups_is_user_mod' ) && groups_is_user_mod( $user_id, $group->id ) ) {
+                $is_mod = true;
+            }
+            if ( ! $is_mod && current_user_can( 'edit_others_posts' ) ) {
+                $is_mod = true;
+            }
+        }
+
+        $folders = hpg_get_group_folders( $group->id );
+        $current_folder = isset( $_GET['hpg_folder'] ) ? sanitize_text_field( wp_unslash( $_GET['hpg_folder'] ) ) : '';
+
+        echo '<div class="hpg-group-folders-section" style="margin-bottom: 24px;">';
+        echo '<h3 class="hpg-group-folders-title" style="margin: 0 0 12px 0; font-size: 1.1rem;">תיקיות להגשת פוסטים</h3>';
+
+        if ( ! empty( $folders ) ) {
+            $base_url = bp_get_group_permalink( $group ) . 'group-posts/';
+            echo '<div class="hpg-group-folders-filter-bar" style="margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">';
+            echo '<span class="hpg-folders-filter-label" style="font-weight: 500; color: #666;">' . esc_html__( 'הצג:', 'homer-patuach-bp-tweaks' ) . '</span>';
+            $all_active = empty( $current_folder );
+            echo '<a href="' . esc_url( $base_url ) . '" class="hpg-folder-filter-btn' . ( $all_active ? ' hpg-folder-filter-active' : '' ) . '" data-folder-id="">' . esc_html__( 'הכל', 'homer-patuach-bp-tweaks' ) . '</a>';
+            foreach ( $folders as $f ) {
+                $fid   = isset( $f['id'] ) ? $f['id'] : '';
+                $fname = isset( $f['name'] ) ? esc_html( $f['name'] ) : '';
+                if ( ! $fid || ! $fname ) {
+                    continue;
+                }
+                $url = add_query_arg( 'hpg_folder', $fid, $base_url );
+                $active = $current_folder === $fid;
+                echo '<a href="' . esc_url( $url ) . '" class="hpg-folder-filter-btn' . ( $active ? ' hpg-folder-filter-active' : '' ) . '" data-folder-id="' . esc_attr( $fid ) . '">' . $fname . '</a>';
+            }
+            echo '</div>';
+        }
+
+        if ( $is_mod ) {
+            echo '<div class="hpg-group-folders-create" style="margin-bottom: 12px;">';
+            echo '<input type="text" class="hpg-group-folder-name-input" placeholder="' . esc_attr__( 'שם התיקייה (למשל: שיעור 12.3)', 'homer-patuach-bp-tweaks' ) . '" style="margin-left: 8px; padding: 6px 10px; max-width: 220px;">';
+            echo '<button type="button" class="hpg-group-folder-create-btn" data-group-id="' . esc_attr( $group->id ) . '">' . esc_html__( 'יצירת תיקייה', 'homer-patuach-bp-tweaks' ) . '</button>';
+            echo '</div>';
+        }
+
+        if ( ! empty( $folders ) ) {
+            echo '<div class="hpg-group-folders-grid">';
+            foreach ( $folders as $f ) {
+                $fid   = isset( $f['id'] ) ? $f['id'] : '';
+                $fname = isset( $f['name'] ) ? esc_html( $f['name'] ) : '';
+                if ( ! $fid || ! $fname ) {
+                    continue;
+                }
+                $folder_filter_url = add_query_arg( 'hpg_folder', $fid, bp_get_group_permalink( $group ) . 'group-posts/' );
+                echo '<div class="hpg-group-folder-card" data-folder-id="' . esc_attr( $fid ) . '" data-group-id="' . esc_attr( $group->id ) . '">';
+                echo '<a href="' . esc_url( $folder_filter_url ) . '" class="hpg-group-folder-name hpg-folder-card-filter-link" title="' . esc_attr__( 'הצג פוסטים בתיקייה זו', 'homer-patuach-bp-tweaks' ) . '">' . $fname . '</a>';
+                if ( $is_member ) {
+                    echo '<a href="#" class="hpg-group-folder-add-btn hpg-open-popup-button" data-folder-id="' . esc_attr( $fid ) . '" data-group-id="' . esc_attr( $group->id ) . '" title="' . esc_attr__( 'הוסף פוסט לתיקייה', 'homer-patuach-bp-tweaks' ) . '">';
+                    echo '<span class="hpg-folder-plus">+</span>';
+                    echo '</a>';
+                }
+                if ( $is_mod ) {
+                    echo '<button type="button" class="hpg-group-folder-delete-btn" data-folder-id="' . esc_attr( $fid ) . '" data-group-id="' . esc_attr( $group->id ) . '" title="' . esc_attr__( 'מחק תיקייה', 'homer-patuach-bp-tweaks' ) . '">&times;</button>';
+                }
+                echo '</div>';
+            }
+            echo '</div>';
+        } elseif ( $is_mod ) {
+            echo '<p class="hpg-group-folders-empty" style="color: #666; margin: 8px 0;">' . esc_html__( 'עדיין אין תיקיות. צור תיקייה ראשונה למעלה.', 'homer-patuach-bp-tweaks' ) . '</p>';
+        } else {
+            echo '<p class="hpg-group-folders-empty" style="color: #666; margin: 8px 0;">' . esc_html__( 'אין תיקיות כרגע.', 'homer-patuach-bp-tweaks' ) . '</p>';
+        }
+        echo '</div>';
     }
 
     if ( function_exists( 'hpg_render_group_members_posts_grid' ) ) {
@@ -649,24 +736,22 @@ function hp_bp_tweaks_group_posts_screen_content() {
 }
 
 /**
- * הוסף את שם הקבוצה גם בעמוד החברים.
+ * הוסף את שם הקבוצה בעמוד החברים.
+ * group-members-table.php רץ קודם (priority 3) ומציג header עם מתג טבלה למנהלים.
  */
 function hp_bp_tweaks_add_group_name_to_members_page() {
     if ( ! function_exists( 'bp_is_groups_component' ) || ! bp_is_groups_component() ) {
         return;
     }
-    
     if ( ! function_exists( 'bp_is_current_action' ) || ! bp_is_current_action( 'members' ) ) {
         return;
     }
-    
     $group = groups_get_current_group();
     if ( ! $group || empty( $group->name ) ) {
         return;
     }
-    
     $group_name = esc_html( $group->name );
-    echo '<div class="hpg-group-name-header" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px;">';
+    echo '<div class="hpg-group-members-header" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px;">';
     echo '<h2 style="margin: 0; font-size: 1.5rem; color: #333;">' . $group_name . '</h2>';
     echo '</div>';
 }
@@ -685,9 +770,44 @@ function hp_bp_tweaks_ajax_querystring_group_members( $query_string, $object ) {
     if ( strpos( $query_string, 'per_page=' ) === false ) {
         $query_string .= ( $query_string !== '' ? '&' : '' ) . 'per_page=999';
     }
+    // העברת members_order_by מה-URL ל־type כדי שהמיון יעבוד
+    if ( ! empty( $_REQUEST['members_order_by'] ) ) {
+        $orderby = sanitize_text_field( $_REQUEST['members_order_by'] );
+        $query_string = preg_replace( '/type=[^&]*/', 'type=' . $orderby, $query_string );
+        if ( strpos( $query_string, 'type=' ) === false ) {
+            $query_string .= ( $query_string !== '' ? '&' : '' ) . 'type=' . $orderby;
+        }
+    }
     return $query_string;
 }
 add_filter( 'bp_ajax_querystring', 'hp_bp_tweaks_ajax_querystring_group_members', 20, 2 );
+
+/**
+ * הוספת type (מיון) ל־args לפני parse – כך המיון יעבוד גם כש-bp_ajax_querystring
+ * לא מעביר את הפרמטר. תומך גם ב־bp_before_group_has_members_parse_args (שם אלטרנטיבי).
+ */
+function hp_bp_tweaks_group_members_inject_orderby( $args ) {
+    $orderby = '';
+    if ( ! empty( $_GET['members_order_by'] ) ) {
+        $orderby = sanitize_text_field( $_GET['members_order_by'] );
+    } elseif ( ! empty( $_GET['type'] ) ) {
+        $orderby = sanitize_text_field( $_GET['type'] );
+    } elseif ( ! empty( $_REQUEST['members_order_by'] ) ) {
+        $orderby = sanitize_text_field( $_REQUEST['members_order_by'] );
+    } elseif ( ! empty( $_REQUEST['type'] ) ) {
+        $orderby = sanitize_text_field( $_REQUEST['type'] );
+    }
+    if ( $orderby !== '' ) {
+        if ( is_array( $args ) ) {
+            $args['type'] = $orderby;
+        } elseif ( is_string( $args ) ) {
+            $args = rtrim( $args, '&' ) . ( $args !== '' ? '&' : '' ) . 'type=' . urlencode( $orderby );
+        }
+    }
+    return $args;
+}
+add_filter( 'bp_before_has_group_members_parse_args', 'hp_bp_tweaks_group_members_inject_orderby', 5 );
+add_filter( 'bp_before_group_has_members_parse_args', 'hp_bp_tweaks_group_members_inject_orderby', 5 );
 
 /**
  * תיקון ניווט ומיון ברשימת חברי קבוצה – במיוחד בקבוצות שהצטרפו אליהן דרך קישור.
@@ -707,8 +827,8 @@ function hp_bp_tweaks_fix_group_members_query_args( $args ) {
             $args['group_id'] = (int) $gid;
         }
     }
-    // וודא type (מיון): מ-members_order_by, type או orderby
-    $orderby = isset( $_REQUEST['members_order_by'] ) ? $_REQUEST['members_order_by'] : ( isset( $_REQUEST['type'] ) ? $_REQUEST['type'] : ( isset( $_REQUEST['orderby'] ) ? $_REQUEST['orderby'] : '' ) );
+    // וודא type (מיון): מ-members_order_by, type או orderby – דריסה סופית
+    $orderby = isset( $_GET['members_order_by'] ) ? $_GET['members_order_by'] : ( isset( $_GET['type'] ) ? $_GET['type'] : ( isset( $_REQUEST['members_order_by'] ) ? $_REQUEST['members_order_by'] : ( isset( $_REQUEST['type'] ) ? $_REQUEST['type'] : ( isset( $_REQUEST['orderby'] ) ? $_REQUEST['orderby'] : '' ) ) ) );
     if ( $orderby !== '' ) {
         $args['type'] = sanitize_text_field( $orderby );
     }
@@ -720,6 +840,7 @@ function hp_bp_tweaks_fix_group_members_query_args( $args ) {
     return $args;
 }
 add_filter( 'bp_after_has_group_members_parse_args', 'hp_bp_tweaks_fix_group_members_query_args', 999 );
+add_filter( 'bp_after_group_has_members_parse_args', 'hp_bp_tweaks_fix_group_members_query_args', 999 );
 
 /**
  * מיון חברי קבוצה לפי כמות פוסטים – בעת type=post_count מעבירים user_ids ממוינים.
@@ -2963,6 +3084,47 @@ function hp_bp_tweaks_enqueue_group_bell_assets() {
     );
 }
 add_action( 'wp_enqueue_scripts', 'hp_bp_tweaks_enqueue_group_bell_assets' );
+
+/**
+ * טעינת scripts לתיקיות קבוצה – בעמוד "פוסטים של הקבוצה".
+ */
+function hp_bp_tweaks_enqueue_group_folders_assets() {
+    if ( ! function_exists( 'bp_is_groups_component' ) || ! bp_is_groups_component() ) {
+        return;
+    }
+    if ( ! function_exists( 'bp_is_current_action' ) || ! bp_is_current_action( 'group-posts' ) ) {
+        return;
+    }
+
+    $group = groups_get_current_group();
+    if ( empty( $group ) || empty( $group->id ) ) {
+        return;
+    }
+
+    wp_enqueue_script(
+        'hp-bp-tweaks-group-folders-script',
+        HP_BP_TWEAKS_PLUGIN_DIR_URL . 'assets/js/group-folders.js',
+        ['jquery'],
+        HP_BP_TWEAKS_VERSION,
+        true
+    );
+
+    $group = groups_get_current_group();
+    $group_permalink = ( $group && ! empty( $group->id ) && function_exists( 'bp_get_group_permalink' ) )
+        ? bp_get_group_permalink( $group ) . 'group-posts/'
+        : '';
+
+    wp_localize_script(
+        'hp-bp-tweaks-group-folders-script',
+        'hpg_group_folders_globals',
+        [
+            'ajax_url'        => admin_url( 'admin-ajax.php' ),
+            'nonce'           => wp_create_nonce( 'hpg-group-folders-nonce' ),
+            'group_permalink' => $group_permalink,
+        ]
+    );
+}
+add_action( 'wp_enqueue_scripts', 'hp_bp_tweaks_enqueue_group_folders_assets', 15 );
 
 /**
  * =================================================================

@@ -74,23 +74,27 @@ class OST_CPT {
 
 		register_post_type( 'os_timeline', $args );
 
+		$timeline_meta_auth = function( $allowed, $meta_key, $post_id ) {
+			$post = get_post( $post_id );
+			return $post && $post->post_type === 'os_timeline' && current_user_can( 'edit_post', $post_id );
+		};
 		register_post_meta( 'os_timeline', 'ost_subject_id', array(
 			'show_in_rest'  => true,
 			'single'        => true,
 			'type'          => 'integer',
-			'auth_callback' => function() { return current_user_can( 'edit_posts' ); },
+			'auth_callback' => $timeline_meta_auth,
 		) );
 		register_post_meta( 'os_timeline', 'ost_grade_level_id', array(
 			'show_in_rest'  => true,
 			'single'        => true,
 			'type'          => 'integer',
-			'auth_callback' => function() { return current_user_can( 'edit_posts' ); },
+			'auth_callback' => $timeline_meta_auth,
 		) );
 		register_post_meta( 'os_timeline', 'ost_academic_year', array(
 			'show_in_rest'  => true,
 			'single'        => true,
 			'type'          => 'string',
-			'auth_callback' => function() { return current_user_can( 'edit_posts' ); },
+			'auth_callback' => $timeline_meta_auth,
 		) );
 	}
 

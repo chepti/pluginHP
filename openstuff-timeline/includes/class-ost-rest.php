@@ -57,7 +57,7 @@ class OST_REST {
 		register_rest_route( OST_REST_NAMESPACE, '/pin/(?P<id>\d+)/move', array(
 			'methods'             => 'PUT',
 			'callback'            => array( $this, 'update_pin' ),
-			'permission_callback' => function() { return current_user_can( 'edit_posts' ); },
+			'permission_callback' => array( 'OST_Contributor_Editing', 'rest_can_edit_timeline' ),
 			'args'                => array(
 				'id'       => array( 'validate_callback' => function( $v ) { return is_numeric( $v ); } ),
 				'topic_id' => array( 'required' => true, 'type' => 'integer' ),
@@ -67,14 +67,14 @@ class OST_REST {
 		register_rest_route( OST_REST_NAMESPACE, '/pin/(?P<id>\d+)/unpin', array(
 			'methods'             => 'DELETE',
 			'callback'            => array( $this, 'delete_pin' ),
-			'permission_callback' => function() { return current_user_can( 'edit_posts' ); },
+			'permission_callback' => array( 'OST_Contributor_Editing', 'rest_can_edit_timeline' ),
 			'args'                => array( 'id' => array( 'validate_callback' => function( $v ) { return is_numeric( $v ); } ) ),
 		) );
 
 		register_rest_route( OST_REST_NAMESPACE, '/topic/(?P<id>\d+)/reorder-pins', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'reorder_pins' ),
-			'permission_callback' => function() { return current_user_can( 'edit_posts' ); },
+			'permission_callback' => array( 'OST_Contributor_Editing', 'rest_can_edit_timeline' ),
 			'args'                => array(
 				'id'       => array( 'validate_callback' => function( $v ) { return is_numeric( $v ); } ),
 				'pin_ids'  => array( 'required' => true, 'type' => 'array' ),
@@ -84,13 +84,13 @@ class OST_REST {
 		register_rest_route( OST_REST_NAMESPACE, '/categories', array(
 			'methods'             => 'GET',
 			'callback'            => array( $this, 'get_categories' ),
-			'permission_callback' => function() { return current_user_can( 'edit_posts' ); },
+			'permission_callback' => function() { return is_user_logged_in(); },
 		) );
 
 		register_rest_route( OST_REST_NAMESPACE, '/topic', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'create_topic' ),
-			'permission_callback' => function() { return current_user_can( 'edit_posts' ); },
+			'permission_callback' => array( 'OST_Contributor_Editing', 'rest_can_edit_timeline' ),
 			'args'                => array(
 				'timeline_id' => array( 'required' => true, 'type' => 'integer' ),
 				'title'       => array( 'required' => true, 'type' => 'string' ),
@@ -102,7 +102,7 @@ class OST_REST {
 		register_rest_route( OST_REST_NAMESPACE, '/timeline/(?P<id>\d+)/reorder-topics', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'reorder_topics' ),
-			'permission_callback' => function() { return current_user_can( 'edit_posts' ); },
+			'permission_callback' => array( 'OST_Contributor_Editing', 'rest_can_edit_timeline' ),
 			'args'                => array(
 				'id'         => array( 'validate_callback' => function( $v ) { return is_numeric( $v ); } ),
 				'topic_ids'  => array( 'required' => true, 'type' => 'array' ),
@@ -119,10 +119,22 @@ class OST_REST {
 			),
 		) );
 
+		register_rest_route( OST_REST_NAMESPACE, '/create-timeline', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'create_or_get_timeline' ),
+			'permission_callback' => function() { return is_user_logged_in(); },
+			'args'                => array(
+				'subject_id' => array( 'required' => true, 'type' => 'integer' ),
+				'grade_id'   => array( 'required' => true, 'type' => 'integer' ),
+			),
+		) );
+
 		register_rest_route( OST_REST_NAMESPACE, '/posts', array(
 			'methods'             => 'GET',
 			'callback'            => array( $this, 'get_posts' ),
-			'permission_callback' => function() { return current_user_can( 'edit_posts' ); },
+			'permission_callback' => function( $request ) {
+				return OST_Contributor_Editing::rest_can_edit_timeline( $request );
+			},
 			'args'                => array(
 				'timeline' => array( 'required' => true, 'type' => 'integer' ),
 				'search'   => array( 'type' => 'string' ),
@@ -436,6 +448,57 @@ class OST_REST {
 			}
 		}
 		return rest_ensure_response( array( 'success' => true ) );
+	}
+
+	public function create_or_get_timeline( $request ) {
+		$subject_id = (int) $request['subject_id'];
+		$grade_id   = (int) $request['grade_id'];
+		if ( ! $subject_id || ! $grade_id ) {
+			return new WP_Error( 'invalid', __( 'נא לבחור תחום דעת וכיתה.', 'openstuff-timeline' ), array( 'status' => 400 ) );
+		}
+		$subject = get_term( $subject_id, 'subject' );
+		$grade   = get_term( $grade_id, 'class' );
+		if ( ! $subject || is_wp_error( $subject ) || ! $grade || is_wp_error( $grade ) ) {
+			return new WP_Error( 'invalid', __( 'תחום דעת או כיתה לא תקינים.', 'openstuff-timeline' ), array( 'status' => 400 ) );
+		}
+		$existing = get_posts( array(
+			'post_type'      => 'os_timeline',
+			'post_status'    => 'any',
+			'posts_per_page' => 1,
+			'meta_query'     => array(
+				'relation' => 'AND',
+				array( 'key' => 'ost_subject_id', 'value' => $subject_id ),
+				array( 'key' => 'ost_grade_level_id', 'value' => $grade_id ),
+			),
+		) );
+		if ( ! empty( $existing ) ) {
+			$timeline_id = $existing[0]->ID;
+		} else {
+			$title = sprintf(
+				/* translators: 1: subject name, 2: grade name */
+				__( '%1$s - %2$s', 'openstuff-timeline' ),
+				$subject->name,
+				$grade->name
+			);
+			$timeline_id = wp_insert_post( array(
+				'post_type'   => 'os_timeline',
+				'post_title'  => $title,
+				'post_status' => 'draft',
+			) );
+			if ( is_wp_error( $timeline_id ) ) {
+				return $timeline_id;
+			}
+			update_post_meta( $timeline_id, 'ost_subject_id', $subject_id );
+			update_post_meta( $timeline_id, 'ost_grade_level_id', $grade_id );
+			update_post_meta( $timeline_id, 'ost_academic_year', date( 'Y' ) );
+		}
+		if ( ! current_user_can( 'edit_post', $timeline_id ) ) {
+			return new WP_Error( 'forbidden', __( 'אין הרשאה לערוך ציר זה.', 'openstuff-timeline' ), array( 'status' => 403 ) );
+		}
+		return rest_ensure_response( array(
+			'id'       => $timeline_id,
+			'edit_url' => get_edit_post_link( $timeline_id, 'raw' ),
+		) );
 	}
 
 	public function get_posts( $request ) {

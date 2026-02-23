@@ -3,7 +3,7 @@
  * Plugin Name:       OpenStuff Academic Year Timeline
  * Plugin URI:        https://openstuff.co.il/
  * Description:       ציר זמן שנתי מבוסס Gutenberg - ארגון חומרי למידה לפי נושאים עם גרירה ושחרור.
- * Version:           1.0.21
+ * Version:           1.0.23
  * Author:            Chepti
  * Author URI:        https://openstuff.co.il/
  * License:           GPL-2.0+
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OST_VERSION', '1.0.21' );
+define( 'OST_VERSION', '1.0.23' );
 define( 'OST_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OST_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'OST_REST_NAMESPACE', 'os-timeline/v1' );
@@ -30,6 +30,7 @@ require_once OST_PLUGIN_DIR . 'includes/class-ost-block.php';
 require_once OST_PLUGIN_DIR . 'includes/class-ost-templates.php';
 require_once OST_PLUGIN_DIR . 'includes/class-ost-admin.php';
 require_once OST_PLUGIN_DIR . 'includes/class-ost-editor-registration.php';
+require_once OST_PLUGIN_DIR . 'includes/class-ost-contributor-editing.php';
 
 /**
  * Initialize the plugin
@@ -52,6 +53,9 @@ function ost_init() {
 
 	$editor_reg = new OST_Editor_Registration();
 	$editor_reg->register();
+
+	$contributor_editing = new OST_Contributor_Editing();
+	$contributor_editing->register();
 }
 add_action( 'init', 'ost_init', 5 );
 

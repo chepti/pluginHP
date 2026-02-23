@@ -12,9 +12,17 @@ get_header();
 <main id="primary" class="site-main ost-archive-timeline" dir="rtl">
 	<header class="ost-archive-header">
 		<h1 class="ost-archive-title"><?php post_type_archive_title(); ?></h1>
-		<button type="button" class="ost-editor-register-btn" id="ost-open-editor-form" aria-expanded="false" aria-controls="ost-editor-registration-form">
-			<?php esc_html_e( 'רוצה לערוך ציר? הירשם כאן', 'openstuff-timeline' ); ?>
-		</button>
+		<div class="ost-archive-actions">
+			<?php if ( is_user_logged_in() ) : ?>
+				<button type="button" class="ost-create-timeline-btn" id="ost-open-create-timeline" aria-expanded="false" aria-controls="ost-create-timeline-form">
+					<span class="dashicons dashicons-plus-alt2" aria-hidden="true"></span>
+					<?php esc_html_e( 'צור ציר חדש', 'openstuff-timeline' ); ?>
+				</button>
+			<?php endif; ?>
+			<button type="button" class="ost-editor-register-btn" id="ost-open-editor-form" aria-expanded="false" aria-controls="ost-editor-registration-form">
+				<?php esc_html_e( 'רוצה לערוך ציר? הירשם כאן', 'openstuff-timeline' ); ?>
+			</button>
+		</div>
 	</header>
 
 	<?php
@@ -123,6 +131,104 @@ get_header();
 		$form_grades = OST_Templates::get_terms_hierarchical( 'class' );
 	}
 	?>
+	<?php if ( is_user_logged_in() ) : ?>
+	<div id="ost-create-timeline-overlay" class="ost-editor-form-overlay" aria-hidden="true">
+		<div class="ost-editor-form-modal" role="dialog" aria-labelledby="ost-create-timeline-title" aria-modal="true">
+			<button type="button" class="ost-editor-form-close" id="ost-close-create-timeline" aria-label="<?php esc_attr_e( 'סגור', 'openstuff-timeline' ); ?>">&times;</button>
+			<h2 id="ost-create-timeline-title" class="ost-editor-form-title"><?php esc_html_e( 'צור ציר חדש', 'openstuff-timeline' ); ?></h2>
+			<p class="ost-editor-form-desc"><?php esc_html_e( 'בחר תחום דעת וכיתה – ייפתח עורך הציר (או ציר קיים אם כבר קיים).', 'openstuff-timeline' ); ?></p>
+			<form id="ost-create-timeline-form" class="ost-editor-registration-form">
+				<?php wp_nonce_field( 'wp_rest' ); ?>
+				<div class="ost-form-field">
+					<label for="ost-create-grade"><?php esc_html_e( 'כיתה', 'openstuff-timeline' ); ?> <span class="required">*</span></label>
+					<select id="ost-create-grade" name="grade_id" required>
+						<option value=""><?php esc_html_e( 'בחר כיתה', 'openstuff-timeline' ); ?></option>
+						<?php foreach ( $form_grades as $item ) : $t = $item['term']; $pad = str_repeat( '— ', $item['depth'] ); ?>
+							<option value="<?php echo esc_attr( $t->term_id ); ?>"><?php echo esc_html( $pad . $t->name ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+				<div class="ost-form-field">
+					<label for="ost-create-subject"><?php esc_html_e( 'תחום דעת', 'openstuff-timeline' ); ?> <span class="required">*</span></label>
+					<select id="ost-create-subject" name="subject_id" required>
+						<option value=""><?php esc_html_e( 'בחר תחום דעת', 'openstuff-timeline' ); ?></option>
+						<?php foreach ( $form_subjects as $item ) : $t = $item['term']; $pad = str_repeat( '— ', $item['depth'] ); ?>
+							<option value="<?php echo esc_attr( $t->term_id ); ?>"><?php echo esc_html( $pad . $t->name ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+				<div id="ost-create-message" class="ost-form-message" role="alert" aria-live="polite"></div>
+				<button type="submit" class="ost-form-submit"><?php esc_html_e( 'צור ולערוך', 'openstuff-timeline' ); ?></button>
+			</form>
+		</div>
+	</div>
+	<script>
+	window.ostData = window.ostData || { restUrl: '<?php echo esc_url( rest_url( OST_REST_NAMESPACE ) ); ?>', nonce: '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>' };
+	(function() {
+		var overlay = document.getElementById('ost-create-timeline-overlay');
+		var openBtn = document.getElementById('ost-open-create-timeline');
+		var closeBtn = document.getElementById('ost-close-create-timeline');
+		var form = document.getElementById('ost-create-timeline-form');
+		function openCreate() {
+			overlay.classList.add('ost-open');
+			overlay.setAttribute('aria-hidden', 'false');
+			openBtn.setAttribute('aria-expanded', 'true');
+			document.body.style.overflow = 'hidden';
+		}
+		function closeCreate() {
+			overlay.classList.remove('ost-open');
+			overlay.setAttribute('aria-hidden', 'true');
+			openBtn.setAttribute('aria-expanded', 'false');
+			document.body.style.overflow = '';
+		}
+		if (openBtn) openBtn.addEventListener('click', openCreate);
+		if (closeBtn) closeBtn.addEventListener('click', closeCreate);
+		overlay.addEventListener('click', function(e) { if (e.target === overlay) closeCreate(); });
+		document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeCreate(); });
+		if (form) {
+			form.addEventListener('submit', function(e) {
+				e.preventDefault();
+				var msgEl = document.getElementById('ost-create-message');
+				var gradeId = document.getElementById('ost-create-grade').value;
+				var subjectId = document.getElementById('ost-create-subject').value;
+				if (!gradeId || !subjectId) {
+					msgEl.textContent = '<?php echo esc_js( __( 'נא לבחור כיתה ותחום דעת.', 'openstuff-timeline' ) ); ?>';
+					msgEl.className = 'ost-form-message ost-error';
+					return;
+				}
+				msgEl.textContent = '<?php echo esc_js( __( 'טוען...', 'openstuff-timeline' ) ); ?>';
+				msgEl.className = 'ost-form-message ost-loading';
+				var base = (typeof ostData !== 'undefined' && ostData && ostData.restUrl) ? ostData.restUrl : '<?php echo esc_url( rest_url( OST_REST_NAMESPACE ) ); ?>';
+				var nonce = '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>';
+				fetch(base + '/create-timeline', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+					body: JSON.stringify({ subject_id: parseInt(subjectId,10), grade_id: parseInt(gradeId,10) }),
+					credentials: 'same-origin'
+				})
+				.then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+				.then(function(result) {
+					var res = result.data;
+					if (result.ok && res && res.edit_url) {
+						window.location.href = res.edit_url;
+					} else if (res && res.message) {
+						msgEl.textContent = res.message;
+						msgEl.className = 'ost-form-message ost-error';
+					} else {
+						msgEl.textContent = '<?php echo esc_js( __( 'שגיאה. נסה שוב.', 'openstuff-timeline' ) ); ?>';
+						msgEl.className = 'ost-form-message ost-error';
+					}
+				})
+				.catch(function() {
+					msgEl.textContent = '<?php echo esc_js( __( 'שגיאת רשת. נסה שוב.', 'openstuff-timeline' ) ); ?>';
+					msgEl.className = 'ost-form-message ost-error';
+				});
+			});
+		}
+	})();
+	</script>
+	<?php endif; ?>
+
 	<div id="ost-editor-registration-overlay" class="ost-editor-form-overlay" aria-hidden="true">
 		<div class="ost-editor-form-modal" role="dialog" aria-labelledby="ost-editor-form-title" aria-modal="true">
 			<button type="button" class="ost-editor-form-close" id="ost-close-editor-form" aria-label="<?php esc_attr_e( 'סגור', 'openstuff-timeline' ); ?>">&times;</button>

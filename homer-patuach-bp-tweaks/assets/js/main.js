@@ -1,8 +1,16 @@
 jQuery(document).ready(function($) {
     'use strict';
-    
-    // הסרנו את no-ajax class כדי לאפשר ל-BuddyPress לטפל ב-pagination בעצמו
-    // $('.bp-pagination[data-bp-pagination="mlpage"]').addClass('no-ajax');
+
+    // כפתור הצג כטבלה/כרטיסים – מאלץ טעינה מלאה (Nouveau חוטף קישורים ל-AJAX)
+    document.addEventListener('click', function(e) {
+        var el = $(e.target).closest('.hpg-view-toggle-btn')[0];
+        if (el && el.href && el.href !== '#' && el.href !== '') {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            window.location.href = el.href;
+        }
+    }, true);
 
     const $menu = $('.hp-bp-user-menu');
     const $trigger = $menu.find('.hp-bp-profile-trigger');
@@ -773,10 +781,20 @@ jQuery(document).ready(function($) {
         }
 
         // תיקון pagination של פוסטים - רק תיקון URL, לא חסימה
+        const urlParams = new URLSearchParams(window.location.search);
+        const hpgFolder = urlParams.get('hpg_folder');
+
         $('.hpg-group-posts-pagination a, .hpg-group-posts-pagination .page-numbers').each(function() {
             const $link = $(this);
             let href = $link.attr('href');
             if (!href) return;
+
+            // שמירת hpg_folder בקישורי pagination
+            if (hpgFolder && href.indexOf('hpg_folder=') === -1) {
+                const sep = href.indexOf('?') !== -1 ? '&' : '?';
+                href = href + sep + 'hpg_folder=' + encodeURIComponent(hpgFolder);
+                $link.attr('href', href);
+            }
 
             // אם זה קישור pagination, ודא שהוא כולל את ה-URL הנכון
             if (href.indexOf('paged=') !== -1 || href.indexOf('page=') !== -1) {
@@ -814,13 +832,19 @@ jQuery(document).ready(function($) {
     });
 
     /**
-     * הוספת אופציית "מיון לפי פוסטים" בתפריט מיון חברי קבוצה (למנהלים)
+     * הוספת אופציית "מיון לפי פוסטים" בתפריט מיון חברי קבוצה + סינכרון עם ה-URL
      */
     (function injectPostCountSortOption() {
         const $select = $('#groups_members-order-by');
         if (!$select.length) return;
-        if ($select.find('option[value="post_count"]').length) return;
-        $select.append('<option value="post_count">מיון לפי פוסטים</option>');
+        if ($select.find('option[value="post_count"]').length === 0) {
+            $select.append('<option value="post_count">מיון לפי פוסטים</option>');
+        }
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderBy = urlParams.get('members_order_by');
+        if (orderBy === 'post_count') {
+            $select.val('post_count');
+        }
     })();
 
     /**
@@ -927,5 +951,74 @@ jQuery(document).ready(function($) {
         });
     }
 
+    /**
+     * טבלת חברי קבוצה – מילוי ומיון לפי כותרות
+     */
+    (function initMembersTable() {
+        const $wrap = $('.hpg-members-table-wrapper');
+
+        if (!$wrap.length) return;
+
+        const raw = $wrap.attr('data-rows');
+        if (!raw) return;
+
+        let rows;
+        try {
+            rows = JSON.parse(raw);
+        } catch (e) {
+            return;
+        }
+
+        const $tbody = $wrap.find('tbody');
+        let sortCol = 'posts';
+        let sortAsc = false;
+
+        function render() {
+            const sorted = [...rows].sort(function (a, b) {
+                let va = a[sortCol];
+                let vb = b[sortCol];
+                if (sortCol === 'name') {
+                    va = (va || '').toLowerCase();
+                    vb = (vb || '').toLowerCase();
+                    return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+                }
+                if (sortCol === 'posts' || sortCol === 'comments') {
+                    va = parseInt(va, 10) || 0;
+                    vb = parseInt(vb, 10) || 0;
+                    return sortAsc ? va - vb : vb - va;
+                }
+                return sortAsc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+            });
+
+            $tbody.empty();
+            sorted.forEach(function (r) {
+                const name = $('<a>').attr('href', r.url).text(r.name || r.uid);
+                $tbody.append(
+                    $('<tr>').append(
+                        $('<td>').append(name),
+                        $('<td>').text(r.joined || ''),
+                        $('<td>').text(r.posts || '0'),
+                        $('<td>').text(r.comments || '0')
+                    )
+                );
+            });
+
+            $wrap.find('th').removeClass('hpg-sort-asc hpg-sort-desc');
+            $wrap.find('th[data-sort="' + sortCol + '"]').addClass(sortAsc ? 'hpg-sort-asc' : 'hpg-sort-desc');
+        }
+
+        $wrap.find('th.hpg-sortable').on('click', function () {
+            const col = $(this).attr('data-sort');
+            if (sortCol === col) {
+                sortAsc = !sortAsc;
+            } else {
+                sortCol = col;
+                sortAsc = col === 'name' || col === 'joined';
+            }
+            render();
+        });
+
+        render();
+    })();
 
 }); 

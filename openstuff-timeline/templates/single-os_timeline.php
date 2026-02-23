@@ -26,6 +26,18 @@ $timeline_id = get_the_ID();
 				</header>
 			<?php endif; ?>
 
+			<?php if ( is_user_logged_in() && current_user_can( 'edit_post', $timeline_id ) ) : ?>
+				<div class="ost-edit-timeline-bar">
+					<a href="<?php echo esc_url( get_edit_post_link( $timeline_id, 'raw' ) ); ?>" class="ost-edit-timeline-btn">
+						<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+						<?php esc_html_e( 'ערוך ציר', 'openstuff-timeline' ); ?>
+					</a>
+					<?php if ( ! current_user_can( 'publish_posts' ) ) : ?>
+						<span class="ost-edit-hint"><?php esc_html_e( 'השינויים יישמרו כממתינים לאישור עורך', 'openstuff-timeline' ); ?></span>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
+
 			<div class="ost-timeline-viewer-root" data-timeline-id="<?php echo esc_attr( $timeline_id ); ?>" dir="rtl"></div>
 		</div>
 	</article>

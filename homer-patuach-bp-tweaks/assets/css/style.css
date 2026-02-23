@@ -1173,30 +1173,72 @@ body.rtl .hpg-cover-badges-wrapper {
     color: #888;
 }
 
-/* =================================================================
- * כפתור מיון לפי פוסטים – ליד כפתור הפעמון בדף פוסטים של הקבוצה
- * =================================================================
- */
-.hpg-sort-by-posts-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, #5a9bd5, #4a8bc2);
+/* מיון חברי קבוצה – תפריט המיון (#groups_members-order-by) */
+
+/* טבלת חברי קבוצה – מסתיר את רשימת הכרטיסים כשמציגים טבלה */
+body.hpg-table-view .item-list.members-group-list,
+body.hpg-table-view #group-members-list,
+body.hpg-table-view [data-bp-list="group-members"],
+body.hpg-table-view .bp-list.members-group-list {
+    display: none !important;
+}
+
+/* עיצוב טבלת החברים */
+.hpg-members-table-wrapper {
+    margin: 20px 0;
+    overflow-x: auto;
+}
+.hpg-members-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.hpg-members-table th,
+.hpg-members-table td {
+    padding: 10px 14px;
+    text-align: right;
+    border-bottom: 1px solid #e0e0e0;
+}
+.hpg-members-table th {
+    background: #f5f5f5;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+}
+.hpg-members-table th:hover {
+    background: #eeeeee;
+}
+.hpg-members-table th.hpg-sortable .hpg-sort-icon::after {
+    content: ' ⇅';
+    opacity: 0.5;
+}
+.hpg-members-table th.hpg-sort-asc .hpg-sort-icon::after {
+    content: ' ↑';
+    opacity: 1;
+}
+.hpg-members-table th.hpg-sort-desc .hpg-sort-icon::after {
+    content: ' ↓';
+    opacity: 1;
+}
+.hpg-members-table td a {
+    color: #1976d2;
+    text-decoration: none;
+}
+.hpg-members-table td a:hover {
+    text-decoration: underline;
+}
+.hpg-view-toggle-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #5a9bd5;
     color: #fff !important;
+    border-radius: 6px;
     text-decoration: none;
     font-size: 14px;
-    font-weight: 500;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.hpg-sort-by-posts-btn:hover {
-    transform: scale(1.03);
-    box-shadow: 0 2px 8px rgba(90, 155, 213, 0.4);
+.hpg-view-toggle-btn:hover {
+    background: #4a8bc2;
     color: #fff !important;
-}
-.hpg-sort-by-posts-btn .hpg-sort-posts-svg {
-    flex-shrink: 0;
 }
 
 /* =================================================================
@@ -1684,4 +1726,140 @@ body.groups a .hp-group-count-badge,
 body.groups button .hp-group-count-badge {
     background-color: rgba(255, 255, 255, 0.3);
     color: inherit;
-} 
+}
+
+/* =================================================================
+ * GROUP FOLDERS - תיקיות להגשת פוסטים
+ * =================================================================
+ */
+.hpg-group-folders-section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid #e9ecef;
+}
+.hpg-group-folders-title {
+    color: #495057;
+    font-weight: 600;
+}
+.hpg-group-folders-create {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.hpg-group-folder-name-input {
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 14px;
+}
+.hpg-group-folder-create-btn {
+    background: linear-gradient(135deg, #FB7A5F 0%, #e85a3d 100%);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.hpg-group-folder-create-btn:hover {
+    opacity: 0.9;
+}
+.hpg-group-folders-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+.hpg-group-folder-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 10px 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.hpg-group-folder-name {
+    font-weight: 500;
+    color: #212529;
+}
+.hpg-group-folder-name.hpg-folder-card-filter-link {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.hpg-group-folder-name.hpg-folder-card-filter-link:hover {
+    color: #FB7A5F;
+}
+.hpg-group-folders-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.hpg-folders-filter-label {
+    font-weight: 500;
+    color: #666;
+}
+.hpg-folder-filter-btn {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    color: #495057;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.hpg-folder-filter-btn:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+    color: #212529;
+}
+.hpg-folder-filter-btn.hpg-folder-filter-active {
+    background: linear-gradient(135deg, #FB7A5F 0%, #e85a3d 100%);
+    border-color: transparent;
+    color: #fff;
+}
+.hpg-group-folder-add-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #FB7A5F 0%, #e85a3d 100%);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 1;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.hpg-group-folder-add-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(251, 122, 95, 0.4);
+    color: #fff;
+}
+.hpg-folder-plus {
+    display: block;
+    margin-top: -2px;
+}
+.hpg-group-folder-delete-btn {
+    background: transparent;
+    border: none;
+    color: #adb5bd;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+.hpg-group-folder-delete-btn:hover {
+    color: #dc3545;
+}

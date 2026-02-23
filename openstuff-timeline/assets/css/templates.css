@@ -28,6 +28,99 @@
 	margin-top: 1rem;
 }
 
+/* כפתור עריכה – לכל משתמש מחובר */
+.ost-edit-timeline-bar {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-bottom: 1rem;
+	padding: 0.5rem 0;
+	flex-wrap: wrap;
+}
+
+.ost-edit-timeline-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.4rem 0.9rem;
+	background: linear-gradient(135deg, #f5a962 0%, #e88b9a 100%);
+	color: #fff;
+	border-radius: 999px;
+	text-decoration: none;
+	font-size: 0.9rem;
+	font-weight: 500;
+	transition: opacity 0.2s, transform 0.15s;
+}
+
+.ost-edit-timeline-btn:hover {
+	color: #fff;
+	opacity: 0.95;
+	transform: translateY(-1px);
+}
+
+.ost-edit-timeline-btn .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+.ost-edit-hint {
+	font-size: 0.8rem;
+	color: #666;
+}
+
+/* Archive - כותרת ופעולות */
+.ost-archive-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-bottom: 1rem;
+}
+
+.ost-archive-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.ost-create-timeline-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.4rem 0.9rem;
+	background: linear-gradient(135deg, #f5a962 0%, #e88b9a 100%);
+	color: #fff;
+	border: none;
+	border-radius: 999px;
+	font-size: 0.9rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: opacity 0.2s, transform 0.15s;
+}
+
+.ost-create-timeline-btn:hover {
+	opacity: 0.95;
+	transform: translateY(-1px);
+	color: #fff;
+}
+
+.ost-create-timeline-btn .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+.ost-form-field select {
+	width: 100%;
+	max-width: 280px;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	font-size: 0.95rem;
+}
+
 /* Archive - מסננים - קומפקטי, גופן Rubik, שורה אחת */
 .ost-archive-filters {
 	margin-bottom: 1rem;

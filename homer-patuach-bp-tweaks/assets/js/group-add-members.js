@@ -5,12 +5,34 @@
 (function($) {
     'use strict';
 
+    if (window.hpAddMembersInitDone) {
+        return;
+    }
+
     var searchTimeout;
     var $box = $('#hp-add-members-box');
     if (!$box.length) return;
+    window.hpAddMembersInitDone = true;
 
     var groupId = parseInt($('#hp-add-members-group-id').val(), 10) || 0;
     var nonce = $('#hp-add-members-nonce').val() || '';
+    var ajaxUrl = $('#hp-add-members-ajax-url').val() ||
+        (typeof hpAddMembers !== 'undefined' && hpAddMembers.ajax_url) ||
+        (typeof ajaxurl !== 'undefined' ? ajaxurl : '') ||
+        '';
+    if (!ajaxUrl) {
+        $('#hp-member-search-status').addClass('error').text('שגיאה בהפעלת הסקריפט. רענן את הדף.');
+        return;
+    }
+
+    // העברת התיבה מתחת לתפריט הניהול – למניעת מיקום מבלבל
+    var $contentStart = $('#buddypress h2.bp-screen-title').filter(function() {
+        var t = $(this).text();
+        return t.indexOf('Manage') !== -1 || t.indexOf('ניהול') !== -1;
+    }).first();
+    if ($contentStart.length) {
+        $contentStart.parent().prepend($box);
+    }
 
     // טאבים
     $box.on('click', '.hp-add-members-tab', function() {
@@ -36,7 +58,7 @@
         }
 
         searchTimeout = setTimeout(function() {
-            $.post((typeof hpAddMembers !== 'undefined' ? hpAddMembers.ajax_url : '') || ajaxurl, {
+            $.post(ajaxUrl, {
                 action: 'hp_add_group_members_search',
                 nonce: nonce,
                 group_id: groupId,
@@ -78,7 +100,7 @@
         if (!userId) return;
         $btn.prop('disabled', true).text('...');
 
-        $.post((typeof hpAddMembers !== 'undefined' ? hpAddMembers.ajax_url : '') || ajaxurl, {
+        $.post(ajaxUrl, {
             action: 'hp_add_group_members_add_one',
             nonce: nonce,
             group_id: groupId,
@@ -113,7 +135,7 @@
         $btn.prop('disabled', true);
         $status.removeClass('error success').text('מעבד...');
 
-        $.post((typeof hpAddMembers !== 'undefined' ? hpAddMembers.ajax_url : '') || ajaxurl, {
+        $.post(ajaxUrl, {
             action: 'hp_add_group_members_import',
             nonce: nonce,
             group_id: groupId,

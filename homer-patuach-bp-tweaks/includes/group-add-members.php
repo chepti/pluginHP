@@ -38,6 +38,28 @@ function hp_bp_tweaks_can_add_group_members( $group_id = 0 ) {
 /**
  * מציג את טופס הוספת חברים בעמוד ניהול החברים
  */
+function hp_bp_tweaks_enqueue_add_members_assets() {
+    static $enqueued = false;
+    if ( $enqueued ) {
+        return;
+    }
+
+    wp_enqueue_script(
+        'hp-add-group-members',
+        HP_BP_TWEAKS_PLUGIN_DIR_URL . 'assets/js/group-add-members.js',
+        [ 'jquery' ],
+        HP_BP_TWEAKS_VERSION . '-' . time(),
+        true
+    );
+
+    wp_localize_script( 'hp-add-group-members', 'hpAddMembers', [
+        'ajax_url' => admin_url( 'admin-ajax.php' ),
+        'nonce'    => wp_create_nonce( 'hp_add_group_members' ),
+    ] );
+
+    $enqueued = true;
+}
+
 function hp_bp_tweaks_render_add_members_box() {
     if ( ! function_exists( 'bp_get_current_group_id' ) || ! bp_get_current_group_id() ) {
         return;
@@ -46,6 +68,7 @@ function hp_bp_tweaks_render_add_members_box() {
     if ( ! hp_bp_tweaks_can_add_group_members( $group_id ) ) {
         return;
     }
+    hp_bp_tweaks_enqueue_add_members_assets();
     $nonce = wp_create_nonce( 'hp_add_group_members' );
     ?>
     <div class="hp-add-members-box bp-widget" id="hp-add-members-box">
@@ -77,10 +100,196 @@ function hp_bp_tweaks_render_add_members_box() {
 
         <input type="hidden" id="hp-add-members-group-id" value="<?php echo (int) $group_id; ?>" />
         <input type="hidden" id="hp-add-members-nonce" value="<?php echo esc_attr( $nonce ); ?>" />
+        <input type="hidden" id="hp-add-members-ajax-url" value="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" />
     </div>
+    <script>
+    (function() {
+        if (window.hpAddMembersInitDone) return;
+        var box = document.getElementById('hp-add-members-box');
+        if (!box) return;
+
+        var groupIdInput = document.getElementById('hp-add-members-group-id');
+        var nonceInput = document.getElementById('hp-add-members-nonce');
+        var ajaxUrlInput = document.getElementById('hp-add-members-ajax-url');
+        var groupId = groupIdInput ? parseInt(groupIdInput.value, 10) || 0 : 0;
+        var nonce = nonceInput ? nonceInput.value : '';
+        var ajaxUrl = ajaxUrlInput ? ajaxUrlInput.value : '';
+        if (!ajaxUrl) return;
+
+        var searchInput = document.getElementById('hp-member-search');
+        var searchResults = document.getElementById('hp-member-search-results');
+        var searchStatus = document.getElementById('hp-member-search-status');
+        var importBtn = document.getElementById('hp-import-emails-btn');
+        var importStatus = document.getElementById('hp-import-status');
+        var emailsField = document.getElementById('hp-emails-list');
+        var searchTimeout = null;
+
+        function setStatus(el, message, cls) {
+            if (!el) return;
+            el.className = (el.className || '').replace(/\berror\b|\bsuccess\b/g, '').trim();
+            if (cls) el.className += (el.className ? ' ' : '') + cls;
+            el.textContent = message || '';
+        }
+
+        function post(data) {
+            return fetch(ajaxUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                credentials: 'same-origin',
+                body: new URLSearchParams(data).toString()
+            }).then(function(r) { return r.json(); });
+        }
+
+        box.addEventListener('click', function(e) {
+            var tabBtn = e.target.closest('.hp-add-members-tab');
+            if (tabBtn) {
+                var tab = tabBtn.getAttribute('data-tab');
+                box.querySelectorAll('.hp-add-members-tab').forEach(function(btn) { btn.classList.remove('active'); });
+                box.querySelectorAll('.hp-add-members-tab-content').forEach(function(content) { content.classList.remove('active'); });
+                tabBtn.classList.add('active');
+                var activeContent = box.querySelector('.hp-add-members-tab-content[data-tab-content="' + tab + '"]');
+                if (activeContent) activeContent.classList.add('active');
+                return;
+            }
+
+            var addBtn = e.target.closest('.hp-add-one-btn');
+            if (addBtn) {
+                var row = addBtn.closest('li');
+                var userId = row ? parseInt(row.getAttribute('data-user-id'), 10) || 0 : 0;
+                if (!userId) return;
+                addBtn.disabled = true;
+                addBtn.textContent = '...';
+                post({
+                    action: 'hp_add_group_members_add_one',
+                    nonce: nonce,
+                    group_id: groupId,
+                    user_id: userId
+                }).then(function(res) {
+                    if (res && res.success) {
+                        setStatus(searchStatus, (res.data && res.data.message) ? res.data.message : 'Added', 'success');
+                        if (row) {
+                            row.classList.add('hp-is-member');
+                            addBtn.remove();
+                        }
+                    } else {
+                        setStatus(searchStatus, (res && res.data && res.data.message) ? res.data.message : 'Error', 'error');
+                        addBtn.disabled = false;
+                        addBtn.textContent = 'הוסף';
+                    }
+                }).catch(function() {
+                    setStatus(searchStatus, 'Network error', 'error');
+                    addBtn.disabled = false;
+                    addBtn.textContent = 'הוסף';
+                });
+                return;
+            }
+
+            if (importBtn && (e.target === importBtn || e.target.closest('#hp-import-emails-btn'))) {
+                var emails = emailsField ? emailsField.value.trim() : '';
+                if (!emails) {
+                    setStatus(importStatus, 'יש להזין לפחות אימייל אחד.', 'error');
+                    return;
+                }
+                importBtn.disabled = true;
+                setStatus(importStatus, 'מעבד...', '');
+                post({
+                    action: 'hp_add_group_members_import',
+                    nonce: nonce,
+                    group_id: groupId,
+                    emails: emails
+                }).then(function(res) {
+                    if (res && res.success) {
+                        setStatus(importStatus, (res.data && res.data.message) ? res.data.message : 'Completed', 'success');
+                        if (emailsField) emailsField.value = '';
+                    } else {
+                        setStatus(importStatus, (res && res.data && res.data.message) ? res.data.message : 'Error', 'error');
+                    }
+                    importBtn.disabled = false;
+                }).catch(function() {
+                    setStatus(importStatus, 'Network error', 'error');
+                    importBtn.disabled = false;
+                });
+            }
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                var value = (searchInput.value || '').trim();
+                if (searchTimeout) clearTimeout(searchTimeout);
+                if (searchResults) searchResults.innerHTML = '';
+                setStatus(searchStatus, '', '');
+                if (value.length < 2) return;
+
+                searchTimeout = setTimeout(function() {
+                    post({
+                        action: 'hp_add_group_members_search',
+                        nonce: nonce,
+                        group_id: groupId,
+                        search: value
+                    }).then(function(res) {
+                        if (!searchResults) return;
+                        if (res && res.success && res.data && Array.isArray(res.data.users) && res.data.users.length) {
+                            var html = '<ul class="hp-member-list">';
+                            res.data.users.forEach(function(u) {
+                                var isMember = !!u.is_member;
+                                html += '<li class="' + (isMember ? 'hp-is-member' : '') + '" data-user-id="' + u.id + '">';
+                                html += '<span class="hp-user-name">' + (u.name || u.login || '') + '</span> ';
+                                html += '<span class="hp-user-email">' + (u.email || '') + '</span>';
+                                if (isMember) html += ' (כבר בקבוצה)';
+                                if (!isMember) html += ' <button type="button" class="button button-small hp-add-one-btn">הוסף</button>';
+                                html += '</li>';
+                            });
+                            html += '</ul>';
+                            searchResults.innerHTML = html;
+                        } else {
+                            searchResults.innerHTML = '<p class="hp-no-results">לא נמצאו משתמשים.</p>';
+                        }
+                    }).catch(function() {
+                        setStatus(searchStatus, 'שגיאה בחיפוש.', 'error');
+                    });
+                }, 300);
+            });
+        }
+
+        window.hpAddMembersInitDone = true;
+    })();
+    </script>
     <?php
 }
-add_action( 'bp_before_group_manage_members_content', 'hp_bp_tweaks_render_add_members_box', 5 );
+/**
+ * רישום ה-hook לפי template pack – Legacy משתמש ב-bp_before_group_manage_members_admin,
+ * Nouveau (כולל Astra + BP 14) מזריק דרך bp_template_content ו-bp_before_group_body.
+ */
+function hp_bp_tweaks_register_add_members_hook() {
+    if ( ! function_exists( 'bp_get_theme_package_id' ) ) {
+        add_action( 'bp_before_group_manage_members_admin', 'hp_bp_tweaks_render_add_members_box', 5 );
+        return;
+    }
+    $pack = bp_get_theme_package_id();
+    if ( 'nouveau' === $pack ) {
+        add_action( 'bp_template_content', 'hp_bp_tweaks_render_add_members_box_nouveau', 1 );
+        add_action( 'bp_before_group_body', 'hp_bp_tweaks_render_add_members_box_nouveau', 5 );
+    } else {
+        add_action( 'bp_before_group_manage_members_admin', 'hp_bp_tweaks_render_add_members_box', 5 );
+    }
+}
+add_action( 'bp_groups_setup_nav', 'hp_bp_tweaks_register_add_members_hook', 999 );
+
+/**
+ * Nouveau – מזריק את תיבת הוספת החברים רק בעמוד manage-members.
+ * משתמש ב-static כדי למנוע כפילות אם שני ה-hooks מפעילים.
+ */
+function hp_bp_tweaks_render_add_members_box_nouveau() {
+    if ( ! function_exists( 'bp_is_group_admin_screen' ) || ! bp_is_group_admin_screen( 'manage-members' ) ) {
+        return;
+    }
+    static $rendered = false;
+    if ( $rendered ) {
+        return;
+    }
+    $rendered = true;
+    hp_bp_tweaks_render_add_members_box();
+}
 
 /**
  * AJAX: חיפוש משתמשים לפי שם משתמש או אימייל
@@ -128,6 +337,28 @@ function hp_bp_tweaks_ajax_search_users() {
 add_action( 'wp_ajax_hp_add_group_members_search', 'hp_bp_tweaks_ajax_search_users' );
 
 /**
+ * Add a user to group with support for private/hidden groups.
+ */
+function hp_bp_tweaks_add_user_to_group( $group_id, $user_id ) {
+    $group_id = absint( $group_id );
+    $user_id  = absint( $user_id );
+
+    if ( ! $group_id || ! $user_id ) {
+        return false;
+    }
+
+    if ( function_exists( 'groups_add_member' ) ) {
+        return (bool) groups_add_member( $user_id, $group_id );
+    }
+
+    if ( function_exists( 'groups_join_group' ) ) {
+        return (bool) groups_join_group( $group_id, $user_id );
+    }
+
+    return false;
+}
+
+/**
  * AJAX: הוספת משתמש בודד לקבוצה
  */
 function hp_bp_tweaks_ajax_add_single_member() {
@@ -143,10 +374,10 @@ function hp_bp_tweaks_ajax_add_single_member() {
     if ( function_exists( 'groups_is_user_member' ) && groups_is_user_member( $user_id, $group_id ) ) {
         wp_send_json_error( [ 'message' => 'המשתמש כבר חבר בקבוצה.' ] );
     }
-    if ( ! function_exists( 'groups_join_group' ) ) {
+    if ( ! function_exists( 'groups_add_member' ) && ! function_exists( 'groups_join_group' ) ) {
         wp_send_json_error( [ 'message' => 'פונקציית BuddyPress לא זמינה.' ] );
     }
-    $joined = groups_join_group( $group_id, $user_id );
+    $joined = hp_bp_tweaks_add_user_to_group( $group_id, $user_id );
     if ( $joined ) {
         if ( function_exists( 'bp_update_user_last_activity' ) ) {
             bp_update_user_last_activity( $user_id );
@@ -187,13 +418,11 @@ function hp_bp_tweaks_ajax_import_emails() {
             $skipped++;
             continue;
         }
-        if ( function_exists( 'groups_join_group' ) ) {
-            $joined = groups_join_group( $group_id, $user_id );
-            if ( $joined ) {
-                $added++;
-                if ( function_exists( 'bp_update_user_last_activity' ) ) {
-                    bp_update_user_last_activity( $user_id );
-                }
+        $joined = hp_bp_tweaks_add_user_to_group( $group_id, $user_id );
+        if ( $joined ) {
+            $added++;
+            if ( function_exists( 'bp_update_user_last_activity' ) ) {
+                bp_update_user_last_activity( $user_id );
             }
         }
     }
@@ -216,22 +445,18 @@ add_action( 'wp_ajax_hp_add_group_members_import', 'hp_bp_tweaks_ajax_import_ema
  * טוען את ה-JS להוספת חברים
  */
 function hp_bp_tweaks_enqueue_add_members_script() {
-    if ( ! function_exists( 'bp_is_group_admin_screen' ) || ! bp_is_group_admin_screen( 'manage-members' ) ) {
+    $is_manage_members_screen = function_exists( 'bp_is_group_admin_screen' ) && bp_is_group_admin_screen( 'manage-members' );
+
+    if ( ! $is_manage_members_screen ) {
+        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+        $is_manage_members_screen = ( false !== strpos( $request_uri, '/groups/' ) && false !== strpos( $request_uri, '/manage-members' ) );
+    }
+
+    if ( ! $is_manage_members_screen ) {
         return;
     }
-    if ( ! hp_bp_tweaks_can_add_group_members() ) {
-        return;
-    }
-    wp_enqueue_script(
-        'hp-add-group-members',
-        HP_BP_TWEAKS_PLUGIN_DIR_URL . 'assets/js/group-add-members.js',
-        [ 'jquery' ],
-        HP_BP_TWEAKS_VERSION . '-' . time(),
-        true
-    );
-    wp_localize_script( 'hp-add-group-members', 'hpAddMembers', [
-        'ajax_url' => admin_url( 'admin-ajax.php' ),
-        'nonce'    => wp_create_nonce( 'hp_add_group_members' ),
-    ] );
+
+    hp_bp_tweaks_enqueue_add_members_assets();
 }
 add_action( 'bp_enqueue_scripts', 'hp_bp_tweaks_enqueue_add_members_script', 20 );
+add_action( 'wp_enqueue_scripts', 'hp_bp_tweaks_enqueue_add_members_script', 25 );
