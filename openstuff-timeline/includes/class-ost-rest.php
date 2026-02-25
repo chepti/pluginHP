@@ -26,13 +26,23 @@ class OST_REST {
 			'methods'             => 'GET',
 			'callback'            => array( $this, 'get_timeline' ),
 			'permission_callback' => '__return_true',
-			'args'                => array( 'id' => array( 'validate_callback' => function( $v ) { return is_numeric( $v ); } ) ),
+			'args'                => array(
+				'id'              => array( 'validate_callback' => function( $v ) { return is_numeric( $v ); } ),
+				'include_pending' => array( 'type' => 'boolean', 'default' => false ),
+			),
 		) );
 
 		register_rest_route( OST_REST_NAMESPACE, '/timeline/(?P<id>\d+)/like', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'like_timeline' ),
 			'permission_callback' => '__return_true',
+			'args'                => array( 'id' => array( 'validate_callback' => function( $v ) { return is_numeric( $v ); } ) ),
+		) );
+
+		register_rest_route( OST_REST_NAMESPACE, '/timeline/(?P<id>\d+)/approve-pending', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'approve_pending_changes' ),
+			'permission_callback' => function() { return current_user_can( 'edit_others_posts' ); },
 			'args'                => array( 'id' => array( 'validate_callback' => function( $v ) { return is_numeric( $v ); } ) ),
 		) );
 
@@ -99,6 +109,23 @@ class OST_REST {
 			),
 		) );
 
+		register_rest_route( OST_REST_NAMESPACE, '/topic/(?P<id>\d+)', array(
+			'methods'             => 'PUT',
+			'callback'            => array( $this, 'update_topic' ),
+			'permission_callback' => array( 'OST_Contributor_Editing', 'rest_can_edit_timeline' ),
+			'args'                => array(
+				'id'    => array( 'validate_callback' => function( $v ) { return is_numeric( $v ); } ),
+				'title' => array( 'required' => true, 'type' => 'string' ),
+			),
+		) );
+
+		register_rest_route( OST_REST_NAMESPACE, '/topic/(?P<id>\d+)', array(
+			'methods'             => 'DELETE',
+			'callback'            => array( $this, 'delete_topic' ),
+			'permission_callback' => array( 'OST_Contributor_Editing', 'rest_can_edit_timeline' ),
+			'args'                => array( 'id' => array( 'validate_callback' => function( $v ) { return is_numeric( $v ); } ) ),
+		) );
+
 		register_rest_route( OST_REST_NAMESPACE, '/timeline/(?P<id>\d+)/reorder-topics', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'reorder_topics' ),
@@ -139,6 +166,7 @@ class OST_REST {
 				'timeline' => array( 'required' => true, 'type' => 'integer' ),
 				'search'   => array( 'type' => 'string' ),
 				'content_type' => array( 'type' => 'string' ),
+				'search_all' => array( 'type' => 'boolean', 'default' => false ),
 			),
 		) );
 	}
@@ -170,6 +198,9 @@ class OST_REST {
 			return new WP_Error( 'not_found', __( 'ציר לא נמצא', 'openstuff-timeline' ), array( 'status' => 404 ) );
 		}
 
+		$include_pending = $request->get_param( 'include_pending' ) || current_user_can( 'edit_others_posts' ) || current_user_can( 'edit_post', $id );
+		$has_pending     = (int) get_post_meta( $id, 'ost_has_pending_changes', true ) > 0;
+
 		$topics = get_posts( array(
 			'post_type'      => 'os_timeline_topic',
 			'post_status'    => 'publish',
@@ -181,6 +212,12 @@ class OST_REST {
 			'meta_key'       => 'ost_order',
 			'order'          => 'ASC',
 		) );
+
+		if ( ! $include_pending ) {
+			$topics = array_filter( $topics, function( $t ) {
+				return (int) get_post_meta( $t->ID, 'ost_pending_approval', true ) !== 1;
+			} );
+		}
 
 		$topic_ids = wp_list_pluck( $topics, 'ID' );
 		$pins      = array();
@@ -194,10 +231,12 @@ class OST_REST {
 				),
 			) );
 			foreach ( $pin_posts as $pin ) {
+				if ( ! $include_pending && (int) get_post_meta( $pin->ID, 'ost_pending_approval', true ) === 1 ) {
+					continue;
+				}
 				$status  = get_post_meta( $pin->ID, 'ost_status', true ) ?: 'approved';
 				$post_id = (int) get_post_meta( $pin->ID, 'ost_post_id', true );
 				$linked  = $post_id ? get_post( $post_id ) : null;
-				/* pending: מוסתר מהציבור, חוץ מפוסטים מפורסמים (תוכן מאושר למאגר) */
 				if ( $status === 'pending' && ! current_user_can( 'manage_options' ) ) {
 					if ( ! $linked || $linked->post_status !== 'publish' ) {
 						continue;
@@ -223,7 +262,7 @@ class OST_REST {
 		$views = (int) get_post_meta( $post->ID, '_hpg_view_count', true );
 		$likes = (int) get_post_meta( $post->ID, '_hpg_like_count', true );
 
-		return rest_ensure_response( array(
+		$response = array(
 			'id'            => $post->ID,
 			'title'         => $post->post_title,
 			'subject_id'    => (int) get_post_meta( $post->ID, 'ost_subject_id', true ),
@@ -232,7 +271,11 @@ class OST_REST {
 			'topics'        => $formatted_topics,
 			'views'         => $views,
 			'likes'         => $likes,
-		) );
+		);
+		if ( $include_pending ) {
+			$response['has_pending_changes'] = $has_pending;
+		}
+		return rest_ensure_response( $response );
 	}
 
 	public function like_timeline( $request ) {
@@ -244,6 +287,47 @@ class OST_REST {
 		$count = (int) get_post_meta( $id, '_hpg_like_count', true );
 		update_post_meta( $id, '_hpg_like_count', $count + 1 );
 		return rest_ensure_response( array( 'likes' => $count + 1 ) );
+	}
+
+	/**
+	 * אישור שינויים ממתינים בציר – עורכים ומנהלים.
+	 */
+	public function approve_pending_changes( $request ) {
+		$id   = (int) $request['id'];
+		$post = get_post( $id );
+		if ( ! $post || $post->post_type !== 'os_timeline' ) {
+			return new WP_Error( 'not_found', __( 'ציר לא נמצא', 'openstuff-timeline' ), array( 'status' => 404 ) );
+		}
+		$pending_content = get_post_meta( $id, 'ost_pending_content', true );
+		if ( is_string( $pending_content ) && $pending_content !== '' ) {
+			wp_update_post( array( 'ID' => $id, 'post_content' => $pending_content ) );
+			delete_post_meta( $id, 'ost_pending_content' );
+			delete_post_meta( $id, 'ost_pending_author_id' );
+		}
+		$topics = get_posts( array(
+			'post_type'      => 'os_timeline_topic',
+			'post_status'    => 'any',
+			'posts_per_page' => -1,
+			'meta_query'     => array( array( 'key' => 'ost_parent_timeline_id', 'value' => $id ) ),
+		) );
+		foreach ( $topics as $t ) {
+			delete_post_meta( $t->ID, 'ost_pending_approval' );
+		}
+		$topic_ids = wp_list_pluck( $topics, 'ID' );
+		if ( ! empty( $topic_ids ) ) {
+			$pins = get_posts( array(
+				'post_type'      => 'os_timeline_pin',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'meta_query'     => array( array( 'key' => 'ost_topic_id', 'value' => $topic_ids, 'compare' => 'IN' ) ),
+			) );
+			foreach ( $pins as $p ) {
+				delete_post_meta( $p->ID, 'ost_pending_approval' );
+				update_post_meta( $p->ID, 'ost_status', 'approved' );
+			}
+		}
+		delete_post_meta( $id, 'ost_has_pending_changes' );
+		return rest_ensure_response( array( 'success' => true ) );
 	}
 
 	public function create_pin( $request ) {
@@ -282,6 +366,10 @@ class OST_REST {
 		update_post_meta( $id, 'ost_position_order', $max_order + 1 );
 		update_post_meta( $id, 'ost_lesson_label', $label );
 		update_post_meta( $id, 'ost_status', 'pending' );
+		if ( ! current_user_can( 'publish_posts' ) && ! current_user_can( 'manage_options' ) ) {
+			update_post_meta( $id, 'ost_pending_approval', 1 );
+			update_post_meta( $timeline_id, 'ost_has_pending_changes', 1 );
+		}
 
 		$pin = get_post( $id );
 		return rest_ensure_response( $this->format_pin( $pin ) );
@@ -419,6 +507,10 @@ class OST_REST {
 		update_post_meta( $id, 'ost_color', $color );
 		update_post_meta( $id, 'ost_order', $order );
 		update_post_meta( $id, 'ost_parent_timeline_id', $timeline_id );
+		if ( ! current_user_can( 'publish_posts' ) && ! current_user_can( 'manage_options' ) ) {
+			update_post_meta( $id, 'ost_pending_approval', 1 );
+			update_post_meta( $timeline_id, 'ost_has_pending_changes', 1 );
+		}
 
 		return rest_ensure_response( array(
 			'id'            => $id,
@@ -428,6 +520,44 @@ class OST_REST {
 			'parent_timeline_id' => $timeline_id,
 			'pins'          => array(),
 		) );
+	}
+
+	public function update_topic( $request ) {
+		$id    = (int) $request['id'];
+		$title = sanitize_text_field( $request['title'] );
+		$topic = get_post( $id );
+		if ( ! $topic || $topic->post_type !== 'os_timeline_topic' ) {
+			return new WP_Error( 'not_found', __( 'נושא לא נמצא', 'openstuff-timeline' ), array( 'status' => 404 ) );
+		}
+		$timeline_id = (int) get_post_meta( $id, 'ost_parent_timeline_id', true );
+		wp_update_post( array( 'ID' => $id, 'post_title' => $title ) );
+		if ( ! current_user_can( 'publish_posts' ) && ! current_user_can( 'manage_options' ) && $timeline_id ) {
+			update_post_meta( $id, 'ost_pending_approval', 1 );
+			update_post_meta( $timeline_id, 'ost_has_pending_changes', 1 );
+		}
+		return rest_ensure_response( array(
+			'id'    => $id,
+			'title' => $title,
+		) );
+	}
+
+	public function delete_topic( $request ) {
+		$id    = (int) $request['id'];
+		$topic = get_post( $id );
+		if ( ! $topic || $topic->post_type !== 'os_timeline_topic' ) {
+			return new WP_Error( 'not_found', __( 'נושא לא נמצא', 'openstuff-timeline' ), array( 'status' => 404 ) );
+		}
+		$pins = get_posts( array(
+			'post_type'   => 'os_timeline_pin',
+			'post_status' => 'any',
+			'posts_per_page' => -1,
+			'meta_query'  => array( array( 'key' => 'ost_topic_id', 'value' => $id ) ),
+		) );
+		foreach ( $pins as $p ) {
+			wp_delete_post( $p->ID, true );
+		}
+		wp_delete_post( $id, true );
+		return rest_ensure_response( array( 'success' => true ) );
 	}
 
 	public function reorder_topics( $request ) {
@@ -534,16 +664,19 @@ class OST_REST {
 			}
 		}
 
+		$search_all = (bool) $request->get_param( 'search_all' );
 		$args = array(
 			'post_type'      => 'post',
 			'post_status'    => 'publish',
 			'posts_per_page' => 50,
-			'tax_query'      => array(
+		);
+		if ( ! $search_all && $subject_id && $grade_id ) {
+			$args['tax_query'] = array(
 				'relation' => 'AND',
 				array( 'taxonomy' => 'subject', 'field' => 'term_id', 'terms' => $subject_id ),
 				array( 'taxonomy' => 'class', 'field' => 'term_id', 'terms' => $grade_id ),
-			),
-		);
+			);
+		}
 		if ( ! empty( $exclude_post_ids ) ) {
 			$args['post__not_in'] = array_unique( $exclude_post_ids );
 		}

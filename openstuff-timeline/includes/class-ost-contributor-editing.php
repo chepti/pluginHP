@@ -13,7 +13,8 @@ class OST_Contributor_Editing {
 
 	public function register() {
 		add_filter( 'map_meta_cap', array( $this, 'map_timeline_edit_cap' ), 10, 4 );
-		add_filter( 'rest_pre_insert_os_timeline', array( $this, 'force_pending_for_non_publishers' ), 10, 2 );
+		add_filter( 'rest_pre_insert_os_timeline', array( $this, 'store_pending_instead_of_publish' ), 10, 2 );
+		add_action( 'rest_after_insert_os_timeline', array( $this, 'after_timeline_save_store_pending' ), 10, 3 );
 		add_filter( 'rest_pre_insert_os_timeline_topic', array( $this, 'allow_topic_for_contributors' ), 10, 2 );
 		add_filter( 'rest_pre_insert_os_timeline_pin', array( $this, 'allow_pin_for_contributors' ), 10, 2 );
 	}
@@ -54,17 +55,42 @@ class OST_Contributor_Editing {
 	}
 
 	/**
-	 * שמירת ציר – משתמש ללא publish_posts יקבל pending
+	 * שמירת ציר – משתמש ללא publish_posts: לא משנה סטטוס, שומר שינויים כממתינים.
+	 * הציר נשאר מפורסם בגרסה הקודמת; השינויים נשמרים ב-meta.
 	 */
-	public function force_pending_for_non_publishers( $prepared_post, $request ) {
+	public function store_pending_instead_of_publish( $prepared_post, $request ) {
 		if ( current_user_can( 'publish_posts' ) || current_user_can( 'manage_options' ) ) {
 			return $prepared_post;
 		}
-		if ( ! is_array( $prepared_post ) ) {
-			return $prepared_post;
+		$id = (int) $request->get_param( 'id' );
+		if ( $id ) {
+			$post = get_post( $id );
+			if ( $post && $post->post_type === 'os_timeline' ) {
+				$prepared_post->post_status = 'publish';
+				$prepared_post->post_content = $post->post_content;
+			}
+		} else {
+			$prepared_post->post_status = 'pending';
 		}
-		$prepared_post['status'] = 'pending';
 		return $prepared_post;
+	}
+
+	/**
+	 * אחרי שמירה – אם משתמש תורם, שמור את התוכן החדש ב-meta כממתין.
+	 */
+	public function after_timeline_save_store_pending( $post, $request, $creating ) {
+		if ( $creating || current_user_can( 'publish_posts' ) || current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$content = $request->get_param( 'content' );
+		if ( is_array( $content ) && isset( $content['raw'] ) ) {
+			$content = $content['raw'];
+		}
+		if ( is_string( $content ) ) {
+			update_post_meta( $post->ID, 'ost_pending_content', $content );
+			update_post_meta( $post->ID, 'ost_has_pending_changes', 1 );
+			update_post_meta( $post->ID, 'ost_pending_author_id', get_current_user_id() );
+		}
 	}
 
 	/**

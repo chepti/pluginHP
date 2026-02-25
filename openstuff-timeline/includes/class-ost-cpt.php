@@ -69,7 +69,7 @@ class OST_CPT {
 			'menu_icon'           => 'dashicons-calendar-alt',
 			'supports'            => array( 'title', 'thumbnail', 'editor' ),
 			'has_archive'         => true,
-			'rewrite'             => array( 'slug' => 'timelines' ),
+			'rewrite'             => array( 'slug' => 'timelines', 'with_front' => false ),
 		);
 
 		register_post_type( 'os_timeline', $args );

@@ -3,7 +3,7 @@
  * Plugin Name:       OpenStuff Academic Year Timeline
  * Plugin URI:        https://openstuff.co.il/
  * Description:       ציר זמן שנתי מבוסס Gutenberg - ארגון חומרי למידה לפי נושאים עם גרירה ושחרור.
- * Version:           1.0.23
+ * Version:           1.0.28
  * Author:            Chepti
  * Author URI:        https://openstuff.co.il/
  * License:           GPL-2.0+
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OST_VERSION', '1.0.23' );
+define( 'OST_VERSION', '1.0.28' );
 define( 'OST_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OST_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'OST_REST_NAMESPACE', 'os-timeline/v1' );
@@ -58,6 +58,43 @@ function ost_init() {
 	$contributor_editing->register();
 }
 add_action( 'init', 'ost_init', 5 );
+
+/**
+ * רענון rewrite rules בעדכון גרסה – פותר 404 אחרי העלאה
+ */
+function ost_maybe_flush_rewrite_rules() {
+	$saved = get_option( 'ost_version', '' );
+	if ( $saved !== OST_VERSION ) {
+		flush_rewrite_rules();
+		update_option( 'ost_version', OST_VERSION );
+	}
+}
+add_action( 'init', 'ost_maybe_flush_rewrite_rules', 999 );
+
+/**
+ * ספירת צירי זמן ממתינים לאישור (לעורכים ומנהלים).
+ *
+ * @return int
+ */
+function ost_get_pending_timelines_count() {
+	if ( ! current_user_can( 'edit_others_posts' ) ) {
+		return 0;
+	}
+	$count = wp_count_posts( 'os_timeline' );
+	$pending_status = isset( $count->pending ) ? (int) $count->pending : 0;
+	$pending_changes = 0;
+	$with_changes = get_posts( array(
+		'post_type'      => 'os_timeline',
+		'post_status'    => 'publish',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+		'meta_query'     => array( array( 'key' => 'ost_has_pending_changes', 'value' => '1' ) ),
+	) );
+	if ( ! empty( $with_changes ) ) {
+		$pending_changes = count( $with_changes );
+	}
+	return $pending_status + $pending_changes;
+}
 
 /**
  * Track timeline views - רק אם GRID לא טוען (תאימות _hpg_view_count)

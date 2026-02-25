@@ -9,6 +9,11 @@
 get_header();
 ?>
 
+<?php if ( isset( $_GET['ost_debug'] ) ) : ?>
+<div class="ost-debug-notice" style="background:#fff3cd;padding:8px 12px;margin:0 0 1rem;border:1px solid #ffc107;border-radius:4px;font-size:13px;">
+	<strong>דרוג:</strong> ארכיון OpenStuff v<?php echo esc_html( defined( 'OST_VERSION' ) ? OST_VERSION : '?' ); ?> נטען. מחובר: <?php echo is_user_logged_in() ? 'כן' : 'לא'; ?>
+</div>
+<?php endif; ?>
 <main id="primary" class="site-main ost-archive-timeline" dir="rtl">
 	<header class="ost-archive-header">
 		<h1 class="ost-archive-title"><?php post_type_archive_title(); ?></h1>
@@ -82,18 +87,34 @@ get_header();
 	</script>
 	<?php endif; ?>
 
+	<?php
+	$viewing_pending = isset( $_GET['post_status'] ) && 'pending' === $_GET['post_status'] && current_user_can( 'edit_others_posts' );
+	if ( $viewing_pending ) :
+		$all_url = get_post_type_archive_link( 'os_timeline' );
+		?>
+		<div class="ost-archive-notice ost-pending-notice" role="status">
+			<?php esc_html_e( 'מציג צירים ממתינים לאישור.', 'openstuff-timeline' ); ?>
+			<a href="<?php echo esc_url( $all_url ); ?>"><?php esc_html_e( 'הצג את כל הצירים', 'openstuff-timeline' ); ?></a>
+		</div>
+	<?php endif; ?>
+
 	<div class="ost-timelines-grid">
 		<?php
 		if ( have_posts() ) :
 			while ( have_posts() ) :
 				the_post();
-				$tid   = get_the_ID();
-				$thumb = get_the_post_thumbnail_url( $tid, 'medium' );
-				$views = (int) get_post_meta( $tid, '_hpg_view_count', true );
-				$likes = (int) get_post_meta( $tid, '_hpg_like_count', true );
+				$tid     = get_the_ID();
+				$thumb   = get_the_post_thumbnail_url( $tid, 'medium' );
+				$views   = (int) get_post_meta( $tid, '_hpg_view_count', true );
+				$likes   = (int) get_post_meta( $tid, '_hpg_like_count', true );
+				$status  = get_post_status( $tid );
+				$is_pending = 'pending' === $status;
 				?>
-				<article class="ost-timeline-card">
+				<article class="ost-timeline-card<?php echo $is_pending ? ' ost-timeline-pending' : ''; ?>">
 					<a href="<?php the_permalink(); ?>" class="ost-timeline-card-link">
+						<?php if ( $is_pending ) : ?>
+							<span class="ost-card-status-badge ost-status-pending"><?php esc_html_e( 'ממתין', 'openstuff-timeline' ); ?></span>
+						<?php endif; ?>
 						<?php if ( $thumb ) : ?>
 							<div class="ost-timeline-card-thumb">
 								<img src="<?php echo esc_url( $thumb ); ?>" alt="" loading="lazy" />

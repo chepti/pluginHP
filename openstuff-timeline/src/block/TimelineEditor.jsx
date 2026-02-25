@@ -17,27 +17,33 @@ import {
 
 function DraggablePostCard( { post, isDragging, onHide, onForLater, onNotRelated } ) {
 	const [ menuOpen, setMenuOpen ] = useState( false );
+	const [ previewOpen, setPreviewOpen ] = useState( false );
 	const wrapperRef = useRef( null );
 
 	useEffect( () => {
-		if ( ! menuOpen ) return;
+		if ( ! menuOpen && ! previewOpen ) return;
 		const handler = ( e ) => {
 			if ( wrapperRef.current && ! wrapperRef.current.contains( e.target ) ) {
-				setMenuOpen( false );
+				const previewEl = document.querySelector( '.ost-preview-overlay' );
+				if ( ! previewEl || ! previewEl.contains( e.target ) ) {
+					setMenuOpen( false );
+					setPreviewOpen( false );
+				}
 			}
 		};
 		document.addEventListener( 'click', handler );
 		return () => document.removeEventListener( 'click', handler );
-	}, [ menuOpen ] );
+	}, [ menuOpen, previewOpen ] );
 
 	const { attributes, listeners, setNodeRef } = useDraggable( {
 		id: `post-${ post.id }`,
 		data: { type: 'post', post },
 	} );
 	return (
+		<>
 		<div
 			ref={ wrapperRef }
-			className={ `ost-post-card-wrapper ${ isDragging ? 'ost-dragging' : '' }` }
+			className={ `ost-post-card-wrapper ${ isDragging ? 'ost-dragging' : '' } ${ menuOpen ? 'ost-menu-open' : '' }` }
 			data-post-id={ post.id }
 		>
 			<div
@@ -68,6 +74,12 @@ function DraggablePostCard( { post, isDragging, onHide, onForLater, onNotRelated
 				</button>
 				{ menuOpen && (
 					<div className="ost-card-action-menu">
+						<button type="button" onClick={ ( e ) => { e.stopPropagation(); setPreviewOpen( true ); setMenuOpen( false ); } }>
+							👁 { __( 'תצוגה מקדימה', 'openstuff-timeline' ) }
+						</button>
+						<button type="button" onClick={ ( e ) => { e.stopPropagation(); window.open( post.url, '_blank' ); setMenuOpen( false ); } }>
+							🔗 { __( 'פתח בכרטיסייה חדשה', 'openstuff-timeline' ) }
+						</button>
 						<button type="button" onClick={ ( e ) => { e.stopPropagation(); onHide?.( post ); setMenuOpen( false ); } }>
 							👁‍🗨 { __( 'הסתר', 'openstuff-timeline' ) }
 						</button>
@@ -81,6 +93,29 @@ function DraggablePostCard( { post, isDragging, onHide, onForLater, onNotRelated
 				) }
 			</div>
 		</div>
+		{ previewOpen && post.url && (
+			<div
+				className="ost-preview-overlay"
+				role="dialog"
+				aria-modal="true"
+				aria-label={ __( 'תצוגה מקדימה', 'openstuff-timeline' ) }
+			>
+				<div className="ost-preview-backdrop" onClick={ () => setPreviewOpen( false ) } />
+				<div className="ost-preview-modal">
+					<div className="ost-preview-header">
+						<span className="ost-preview-title">{ post.title }</span>
+						<button type="button" className="ost-preview-close" onClick={ () => setPreviewOpen( false ) } aria-label={ __( 'סגור', 'openstuff-timeline' ) }>
+							✕
+						</button>
+					</div>
+					<iframe src={ post.url } title={ post.title } className="ost-preview-iframe" />
+					<a href={ post.url } target="_blank" rel="noopener noreferrer" className="ost-preview-open-tab">
+						{ __( 'פתח בכרטיסייה חדשה', 'openstuff-timeline' ) }
+					</a>
+				</div>
+			</div>
+		) }
+		</>
 	);
 }
 
@@ -154,14 +189,37 @@ function TopicDragHandle( { topic, isDragging } ) {
 	);
 }
 
-function DroppableTopic( { topic, zoomOut, onApprovePin, isOver, children, sortMode, activeSortTopicId } ) {
+function DroppableTopic( { topic, zoomOut, onApprovePin, isOver, children, sortMode, activeSortTopicId, onEditTopic, onDeleteTopic } ) {
+	const [ menuOpen, setMenuOpen ] = useState( false );
+	const [ editing, setEditing ] = useState( false );
+	const [ editTitle, setEditTitle ] = useState( topic.title );
+	const wrapperRef = useRef( null );
+
+	useEffect( () => {
+		if ( ! menuOpen && ! editing ) return;
+		const handler = ( e ) => {
+			if ( wrapperRef.current && ! wrapperRef.current.contains( e.target ) ) {
+				setMenuOpen( false );
+				if ( editing ) setEditing( false );
+			}
+		};
+		document.addEventListener( 'click', handler );
+		return () => document.removeEventListener( 'click', handler );
+	}, [ menuOpen, editing ] );
+
+	useEffect( () => setEditTitle( topic.title ), [ topic.title ] );
+
 	const { setNodeRef } = useDroppable( {
 		id: `topic-${ topic.id }`,
 		data: { type: 'topic', topic },
 	} );
+	const setRefs = ( el ) => {
+		wrapperRef.current = el;
+		setNodeRef( el );
+	};
 	return (
 		<div
-			ref={ setNodeRef }
+			ref={ setRefs }
 			className={ `ost-topic-segment ${ isOver ? 'ost-topic-over' : '' } ${ sortMode ? 'ost-topic-sort-mode' : '' }` }
 			style={ { borderColor: topic.color } }
 			data-topic-id={ topic.id }
@@ -170,7 +228,61 @@ function DroppableTopic( { topic, zoomOut, onApprovePin, isOver, children, sortM
 				{ sortMode && (
 					<TopicDragHandle topic={ topic } isDragging={ activeSortTopicId === topic.id } />
 				) }
-				<span className="ost-topic-label">{ topic.title }</span>
+				{ editing ? (
+					<>
+						<input
+							type="text"
+							className="ost-topic-edit-input"
+							value={ editTitle }
+							onChange={ ( e ) => setEditTitle( e.target.value ) }
+							onKeyDown={ ( e ) => {
+								if ( e.key === 'Enter' ) {
+									onEditTopic?.( topic.id, editTitle.trim() );
+									setEditing( false );
+								}
+								if ( e.key === 'Escape' ) {
+									setEditTitle( topic.title );
+									setEditing( false );
+								}
+							} }
+							autoFocus
+						/>
+						<button type="button" className="ost-topic-save-btn" onClick={ () => { onEditTopic?.( topic.id, editTitle.trim() ); setEditing( false ); } }>
+							✓
+						</button>
+					</>
+				) : (
+					<>
+						<span className="ost-topic-label">{ topic.title }</span>
+						<div className="ost-topic-actions">
+							<button
+								type="button"
+								className="ost-topic-edit-btn"
+								onClick={ ( e ) => { e.stopPropagation(); setMenuOpen( ! menuOpen ); } }
+								title={ __( 'ערוך נושא', 'openstuff-timeline' ) }
+								aria-label={ __( 'ערוך נושא', 'openstuff-timeline' ) }
+							>
+								✎
+							</button>
+							{ menuOpen && (
+								<div className="ost-topic-action-menu">
+									<button type="button" onClick={ ( e ) => { e.stopPropagation(); setMenuOpen( false ); setEditing( true ); } }>
+										✎ { __( 'ערוך שם', 'openstuff-timeline' ) }
+									</button>
+									<button type="button" onClick={ ( e ) => {
+										e.stopPropagation();
+										if ( window.confirm( __( 'למחוק את הנושא וכל החומרים שבו?', 'openstuff-timeline' ) ) ) {
+											onDeleteTopic?.( topic.id );
+										}
+										setMenuOpen( false );
+									} }>
+										🗑 { __( 'מחק נושא', 'openstuff-timeline' ) }
+									</button>
+								</div>
+							) }
+						</div>
+					</>
+				) }
 			</div>
 			{ zoomOut ? (
 				<div className="ost-topic-icons" />
@@ -197,6 +309,7 @@ export default function TimelineEditor( { timelineId, onTimelineChange } ) {
 	const [ loading, setLoading ] = useState( true );
 	const [ search, setSearch ] = useState( '' );
 	const [ contentFilter, setContentFilter ] = useState( '' );
+	const [ searchAll, setSearchAll ] = useState( false );
 	const [ zoomOut, setZoomOut ] = useState( false );
 	const [ fullTimeline, setFullTimeline ] = useState( null );
 	const [ newTopicTitle, setNewTopicTitle ] = useState( '' );
@@ -306,7 +419,7 @@ export default function TimelineEditor( { timelineId, onTimelineChange } ) {
 			apiFetch( { path: `/os-timeline/v1/timeline/${ selectedTimeline.id }` } )
 				.then( ( data ) => setFullTimeline( data ) )
 				.catch( () => setFullTimeline( null ) );
-			loadPosts( selectedTimeline.id, search, contentFilter );
+			loadPosts( selectedTimeline.id, search, contentFilter, searchAll );
 		}
 	};
 
@@ -374,9 +487,9 @@ export default function TimelineEditor( { timelineId, onTimelineChange } ) {
 
 	useEffect( () => {
 		if ( selectedTimeline ) {
-			loadPosts( selectedTimeline.id, search, contentFilter );
+			loadPosts( selectedTimeline.id, search, contentFilter, searchAll );
 		}
-	}, [ search, contentFilter ] );
+	}, [ search, contentFilter, searchAll ] );
 
 	const addTopic = () => {
 		if ( ! newTopicTitle.trim() || ! selectedTimeline ) return;
@@ -398,10 +511,37 @@ export default function TimelineEditor( { timelineId, onTimelineChange } ) {
 		} ).catch( () => {} ).finally( () => setAddingTopic( false ) );
 	};
 
-	const loadPosts = ( id, s = '', ct = '' ) => {
+	const handleEditTopic = ( topicId, newTitle ) => {
+		if ( ! newTitle.trim() ) return;
+		apiFetch( {
+			path: `/os-timeline/v1/topic/${ topicId }`,
+			method: 'PUT',
+			data: { title: newTitle.trim() },
+			headers: { 'Content-Type': 'application/json' },
+		} ).then( () => {
+			setFullTimeline( ( prev ) => ( {
+				...prev,
+				topics: prev.topics.map( ( t ) => ( t.id === topicId ? { ...t, title: newTitle.trim() } : t ) ),
+			} ) );
+		} );
+	};
+
+	const handleDeleteTopic = ( topicId ) => {
+		apiFetch( {
+			path: `/os-timeline/v1/topic/${ topicId }`,
+			method: 'DELETE',
+		} ).then( () => {
+			apiFetch( { path: `/os-timeline/v1/timeline/${ selectedTimeline.id }` } )
+				.then( ( data ) => setFullTimeline( data ) )
+				.catch( () => setFullTimeline( null ) );
+		} );
+	};
+
+	const loadPosts = ( id, s = '', ct = '', all = false ) => {
 		let path = `/os-timeline/v1/posts?timeline=${ id }`;
 		if ( s ) path += `&search=${ encodeURIComponent( s ) }`;
 		if ( ct ) path += `&content_type=${ encodeURIComponent( ct ) }`;
+		if ( all ) path += '&search_all=1';
 		apiFetch( { path } )
 			.then( ( data ) => setPosts( data || [] ) )
 			.catch( () => setPosts( [] ) );
@@ -476,6 +616,15 @@ export default function TimelineEditor( { timelineId, onTimelineChange } ) {
 							onChange={ ( e ) => setSearch( e.target.value ) }
 							className="ost-search-input"
 						/>
+						<select
+							value={ searchAll ? 'all' : 'class' }
+							onChange={ ( e ) => setSearchAll( e.target.value === 'all' ) }
+							className="ost-search-scope"
+							title={ __( 'היקף חיפוש', 'openstuff-timeline' ) }
+						>
+							<option value="class">{ __( 'לפי כיתות (ברירת מחדל)', 'openstuff-timeline' ) }</option>
+							<option value="all">{ __( 'כל המאגר', 'openstuff-timeline' ) }</option>
+						</select>
 						<select
 							value={ contentFilter }
 							onChange={ ( e ) => setContentFilter( e.target.value ) }
@@ -561,6 +710,8 @@ export default function TimelineEditor( { timelineId, onTimelineChange } ) {
 									isOver={ overId === `topic-${ topic.id }` }
 									sortMode={ sortTopicsMode }
 									activeSortTopicId={ activeSortTopic?.id }
+									onEditTopic={ handleEditTopic }
+									onDeleteTopic={ handleDeleteTopic }
 								>
 									{ topic.pins?.map( ( pin ) => (
 										<DraggablePinCard

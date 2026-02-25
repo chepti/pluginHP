@@ -97,6 +97,176 @@
 	flex: 1;
 }
 
+/* עריכת נושא - כפתור ותפריט */
+.ost-topic-actions {
+	position: relative;
+	display: flex;
+	align-items: center;
+	margin-right: auto;
+}
+
+.ost-topic-edit-btn {
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	background: transparent;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 0.9rem;
+	opacity: 0.7;
+	transition: opacity 0.2s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ost-topic-edit-btn:hover {
+	opacity: 1;
+	background: #f0f0f0;
+}
+
+.ost-topic-action-menu {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	margin-top: 2px;
+	background: #fff;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+	z-index: 100000;
+	min-width: 140px;
+	display: flex;
+	flex-direction: column;
+	padding: 0.25rem 0;
+}
+
+.ost-topic-action-menu button {
+	display: block;
+	width: 100%;
+	padding: 0.5rem 1rem;
+	text-align: right;
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 0.9rem;
+	transition: background 0.2s;
+}
+
+.ost-topic-action-menu button:hover {
+	background: #f0f0f0;
+}
+
+.ost-topic-edit-input {
+	flex: 1;
+	padding: 0.3rem 0.5rem;
+	border: 1px solid #2271b1;
+	border-radius: 4px;
+	font-size: 0.95rem;
+	min-width: 120px;
+}
+
+.ost-topic-save-btn {
+	padding: 0.3rem 0.6rem;
+	background: #00a32a;
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 1rem;
+}
+
+/* תצוגה מקדימה - חלונית קופצת */
+.ost-preview-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 999999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 2rem;
+	box-sizing: border-box;
+}
+
+.ost-preview-backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.5);
+	cursor: pointer;
+}
+
+.ost-preview-modal {
+	position: relative;
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+	width: 100%;
+	max-width: 900px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.ost-preview-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid #e0e0e0;
+	background: #f9f9f9;
+	flex-shrink: 0;
+}
+
+.ost-preview-title {
+	font-weight: 600;
+	font-size: 1rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ost-preview-close {
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	background: transparent;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 1.2rem;
+	line-height: 1;
+	flex-shrink: 0;
+}
+
+.ost-preview-close:hover {
+	background: #eee;
+}
+
+.ost-preview-iframe {
+	flex: 1;
+	min-height: 400px;
+	border: none;
+	width: 100%;
+}
+
+.ost-preview-open-tab {
+	display: block;
+	padding: 0.5rem 1rem;
+	text-align: center;
+	background: #2271b1;
+	color: #fff;
+	text-decoration: none;
+	font-size: 0.9rem;
+	transition: background 0.2s;
+}
+
+.ost-preview-open-tab:hover {
+	background: #135e96;
+	color: #fff;
+}
+
 .ost-editor-layout {
 	display: flex;
 	flex: 1;
@@ -132,6 +302,7 @@
 }
 
 .ost-search-input,
+.ost-search-scope,
 .ost-content-filter {
 	padding: 0.5rem;
 	border: 1px solid #ccc;
@@ -155,6 +326,11 @@
 	display: flex;
 	align-items: stretch;
 	gap: 0;
+}
+
+.ost-post-card-wrapper.ost-menu-open {
+	z-index: 99999;
+	position: relative;
 }
 
 .ost-post-card-wrapper:hover .ost-card-actions {
@@ -203,13 +379,13 @@
 .ost-card-action-menu {
 	position: absolute;
 	top: 100%;
-	right: 0;
+	left: 0;
 	margin-top: 2px;
 	background: #fff;
 	border: 1px solid #ccc;
 	border-radius: 6px;
 	box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-	z-index: 100;
+	z-index: 100000;
 	min-width: 180px;
 	display: flex;
 	flex-direction: column;
@@ -292,10 +468,14 @@
 
 .ost-card-title {
 	flex: 1;
+	min-width: 0;
 	font-size: 0.9rem;
 	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
 }
 
 .ost-card-type {
