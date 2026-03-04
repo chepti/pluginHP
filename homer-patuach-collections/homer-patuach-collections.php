@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - Collections
  * Plugin URI:        https://homerpatuach.com/
  * Description:       Allows users to create and manage collections of posts.
- * Version:           1.5.2
+ * Version:           1.5.3
  * Author:            Chepti
  * Author URI:        https://homerpatuach.com/
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_COLLECTIONS_VERSION', '1.5.2' );
+define( 'HP_COLLECTIONS_VERSION', '1.5.3' );
 define( 'HP_COLLECTIONS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 
 /**
@@ -140,16 +140,36 @@ function hpc_add_collections_ui() {
  * @return string The modified post content.
  */
 function hpc_add_collections_ui_to_content( $content ) {
-    // Only add the button to the main post content on single post pages for logged-in users.
-    if ( is_single() && 'post' === get_post_type() && in_the_loop() && is_main_query() && is_user_logged_in() ) {
-        // We need to capture the output of our function
-        ob_start();
-        hpc_add_collections_ui(); // This function now only generates the HTML
-        $collections_ui = ob_get_clean();
-        return $content . $collections_ui;
+    if ( ! is_single() || 'post' !== get_post_type() || ! in_the_loop() || ! is_main_query() ) {
+        return $content;
     }
-    return $content;
+
+    static $done = false;
+    if ( $done ) {
+        return $content;
+    }
+    $done = true;
+
+    $append = '';
+
+    // 1. Collections list (for all visitors)
+    ob_start();
+    hpc_display_post_collections_list();
+    $collections_html = ob_get_clean();
+    if ( ! empty( $collections_html ) ) {
+        $append .= '<div class="hpc-collections-sidebar-wrapper">' . $collections_html . '</div>';
+    }
+
+    // 2. Add to Collection button + modal (logged-in users only)
+    if ( is_user_logged_in() ) {
+        ob_start();
+        hpc_add_collections_ui();
+        $append .= ob_get_clean();
+    }
+
+    return $content . $append;
 }
+add_filter( 'the_content', 'hpc_add_collections_ui_to_content', 15 );
 
 /**
  * =================================================================
@@ -1071,27 +1091,9 @@ function hpc_display_post_collections_list() {
 }
 
 /**
- * Hook into the author box to display collections list below it in sidebar.
- * This replaces the old the_content filter to avoid duplication.
- * We use an action hook that fires after the author box is displayed.
- * Static flag prevents duplicate output when theme displays author box in multiple places.
+ * Removed: hpg_after_author_box_display hook.
+ * Collections list + button now added via the_content filter only (single source, no duplication).
  */
-function hpc_display_post_collections_list_after_author_box() {
-    if ( ! is_single() || 'post' !== get_post_type() ) {
-        return;
-    }
-    static $already_output = false;
-    if ( $already_output ) {
-        return;
-    }
-    $already_output = true;
-
-    // Wrap in sidebar container to appear in sidebar column
-    echo '<div class="hpc-collections-sidebar-wrapper">';
-    hpc_display_post_collections_list();
-    echo '</div>';
-}
-add_action('hpg_after_author_box_display', 'hpc_display_post_collections_list_after_author_box', 10);
 
 /**
  * =================================================================
