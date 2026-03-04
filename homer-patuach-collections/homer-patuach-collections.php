@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - Collections
  * Plugin URI:        https://homerpatuach.com/
  * Description:       Allows users to create and manage collections of posts.
- * Version:           1.5.0
+ * Version:           1.5.1
  * Author:            Chepti
  * Author URI:        https://homerpatuach.com/
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_COLLECTIONS_VERSION', '1.5.0' );
+define( 'HP_COLLECTIONS_VERSION', '1.5.1' );
 define( 'HP_COLLECTIONS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 
 /**
@@ -750,24 +750,6 @@ function hpc_add_creator_to_collection_archive_title( $title ) {
 
             $meta_html .= '</div>';
 
-            // Add "Add Post" UI for public collections when viewer is not the owner
-            $add_post_ui = '';
-            if ( is_user_logged_in() && hpc_collection_allows_contributors( $term->term_id ) && (int) $user_id !== get_current_user_id() ) {
-                $add_post_ui = '
-                <div class="hpc-archive-add-post-ui">
-                    <button class="hpc-open-search-button hpc-archive-add-post-btn" data-collection-id="' . esc_attr($term->term_id) . '">+ הוסף פוסטים לאוסף</button>
-                    <div class="hpc-search-area" id="hpc-archive-search-area-' . esc_attr($term->term_id) . '" style="display: none;">
-                        <div class="hpc-search-wrapper">
-                            <input type="text" class="hpc-post-search-input" placeholder="חפש/י פוסטים לפי שם..." data-collection-id="' . esc_attr($term->term_id) . '">
-                        </div>
-                        <div class="hpc-search-results"></div>
-                    </div>
-                </div>';
-            }
-
-            $meta_html .= $add_post_ui;
-
-
             if ($user_id) {
                 $user_info = get_userdata($user_id);
                 if ($user_info) {
@@ -782,11 +764,7 @@ function hpc_add_creator_to_collection_archive_title( $title ) {
 
                     // The new structure with divs for separate lines and a space
                     $title = '<div class="hpc-archive-title-wrapper">';
-                    $title .= '<h1 class="hpc-archive-main-title">' . esc_html($term->name);
-                    if ( hpc_collection_allows_contributors( $term->term_id ) ) {
-                        $title .= ' <span class="hpc-public-badge" title="' . esc_attr__( 'כל משתמש רשום יכול להוסיף פריטים לאוסף זה', 'homer-patuach-collections' ) . '">אוסף ציבורי</span>';
-                    }
-                    $title .= '</h1>';
+                    $title .= '<h1 class="hpc-archive-main-title">' . esc_html($term->name) . '</h1>';
                     $title .= '<div class="hpc-archive-creator">אוסף מאת ' . $creator_html . '</div>';
                     $title .= $meta_html; // Add the meta line here
                     $title .= '</div>';
@@ -797,6 +775,49 @@ function hpc_add_creator_to_collection_archive_title( $title ) {
     return $title;
 }
 add_filter( 'get_the_archive_title', 'hpc_add_creator_to_collection_archive_title', 11 );
+
+
+/**
+ * Output public collection badge and "Add Post" UI on collection archive page.
+ * Uses loop_start as injection point for broad theme compatibility.
+ */
+function hpc_collection_archive_public_ui() {
+    if ( ! is_tax( 'collection' ) || ! is_main_query() ) {
+        return;
+    }
+    $term = get_queried_object();
+    if ( ! $term || ! isset( $term->term_id ) ) {
+        return;
+    }
+    $user_id = get_term_meta( $term->term_id, 'hpc_user_id', true );
+    $is_public = hpc_collection_allows_contributors( $term->term_id );
+    if ( ! $is_public ) {
+        return;
+    }
+
+    static $output_done = false;
+    if ( $output_done ) {
+        return;
+    }
+
+    echo '<div class="hpc-archive-public-block hpc-archive-public-fallback">';
+    echo '<span class="hpc-public-badge" title="' . esc_attr__( 'כל משתמש רשום יכול להוסיף פריטים לאוסף זה', 'homer-patuach-collections' ) . '">אוסף ציבורי</span> ';
+    if ( is_user_logged_in() && (int) $user_id !== get_current_user_id() ) {
+        echo '
+        <div class="hpc-archive-add-post-ui">
+            <button class="hpc-open-search-button hpc-archive-add-post-btn" data-collection-id="' . esc_attr( $term->term_id ) . '">+ הוסף פוסטים לאוסף</button>
+            <div class="hpc-search-area" id="hpc-archive-search-area-' . esc_attr( $term->term_id ) . '" style="display: none;">
+                <div class="hpc-search-wrapper">
+                    <input type="text" class="hpc-post-search-input" placeholder="חפש/י פוסטים לפי שם..." data-collection-id="' . esc_attr( $term->term_id ) . '">
+                </div>
+                <div class="hpc-search-results"></div>
+            </div>
+        </div>';
+    }
+    echo '</div>';
+    $output_done = true;
+}
+add_action( 'loop_start', 'hpc_collection_archive_public_ui', 1 );
 
 
 /**
@@ -948,18 +969,6 @@ function hpc_collections_screen_content() {
             wp_reset_postdata();
 
             if ( bp_is_my_profile() ) {
-                // Public collection toggle (allow others to add posts)
-                $is_public = hpc_collection_allows_contributors( $collection->term_id );
-                $public_tooltip = 'אוסף ציבורי: כל משתמש רשום יכול להוסיף פוסטים לאוסף. אוסף פרטי: רק אתה יכול להוסיף פוסטים.';
-                echo '<div class="hpc-collection-public-toggle">';
-                echo '<label class="hpc-toggle-switch">';
-                echo '<input type="checkbox" class="hpc-public-checkbox" data-collection-id="' . esc_attr( $collection->term_id ) . '" ' . checked( $is_public, true, false ) . '>';
-                echo '<span class="hpc-toggle-slider"></span>';
-                echo '</label>';
-                echo '<span class="hpc-public-label">אוסף ציבורי – מאפשר לאחרים להוסיף פריטים</span>';
-                echo '<span class="hpc-tooltip-icon" title="' . esc_attr( $public_tooltip ) . '" aria-label="' . esc_attr( $public_tooltip ) . '">ⓘ</span>';
-                echo '</div>';
-
                 // Add the subject selector
                 if ( ! is_wp_error( $all_subjects ) && ! empty( $all_subjects ) ) {
                     echo '<div class="hpc-collection-subject-editor">';
@@ -998,6 +1007,16 @@ function hpc_collections_screen_content() {
         // Only show editing UI if the logged-in user is viewing their own profile.
         if ( bp_is_my_profile() ) {
             echo '<div class="hpc-collection-item-footer">'; // Footer for actions
+                // Compact public toggle - label in tooltip only
+                $is_public = hpc_collection_allows_contributors( $collection->term_id );
+                $public_tooltip = 'אוסף ציבורי: כל משתמש רשום יכול להוסיף פוסטים. אוסף פרטי: רק אתה יכול להוסיף.';
+                echo '<div class="hpc-collection-public-toggle-compact" title="' . esc_attr( $public_tooltip ) . '">';
+                echo '<label class="hpc-toggle-switch">';
+                echo '<input type="checkbox" class="hpc-public-checkbox" data-collection-id="' . esc_attr( $collection->term_id ) . '" ' . checked( $is_public, true, false ) . '>';
+                echo '<span class="hpc-toggle-slider"></span>';
+                echo '</label>';
+                echo '<span class="hpc-public-label-compact">ציבורי</span>';
+                echo '</div>';
                 // Add Post to Collection UI
                 echo '<div class="hpc-add-post-to-collection-ui">';
                 echo '  <button class="hpc-open-search-button" data-collection-id="' . esc_attr($collection->term_id) . '">+ הוסף פוסטים</button>';
