@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - Collections
  * Plugin URI:        https://homerpatuach.com/
  * Description:       Allows users to create and manage collections of posts.
- * Version:           1.5.3
+ * Version:           1.5.4
  * Author:            Chepti
  * Author URI:        https://homerpatuach.com/
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_COLLECTIONS_VERSION', '1.5.3' );
+define( 'HP_COLLECTIONS_VERSION', '1.5.4' );
 define( 'HP_COLLECTIONS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 
 /**
@@ -87,11 +87,11 @@ add_action( 'wp_enqueue_scripts', 'hpc_enqueue_assets' );
  * Add the "Add to Collection" button and modal to the single post page.
  * Hooks before the comments form for better theme compatibility.
  */
-function hpc_add_collections_ui() {
+function hpc_add_collections_ui( $post_id = 0 ) {
     // Only on single post pages for logged-in users.
     if ( is_single() && 'post' === get_post_type() && is_user_logged_in() ) {
-        
-        $button_html = '<div class="hpc-button-container"><button id="hpc-open-modal-button" class="hpc-button" data-post-id="' . get_the_ID() . '">הוסף לאוסף</button></div>';
+        $post_id = $post_id ?: get_the_ID();
+        $button_html = '<div class="hpc-button-container"><button id="hpc-open-modal-button" class="hpc-button" data-post-id="' . esc_attr( $post_id ) . '">הוסף לאוסף</button></div>';
         
         $modal_html = '
         <div id="hpc-modal-overlay" class="hpc-modal-hidden">
@@ -134,42 +134,36 @@ function hpc_add_collections_ui() {
 // add_action( 'comments_template', 'hpc_add_collections_ui', 10 );
 
 /**
- * Append the collections UI to the end of the post content.
- * This is a more reliable hook than 'comments_template'.
- * @param string $content The post content.
- * @return string The modified post content.
+ * Output collections block after the main loop (single post only).
+ * Uses loop_end to ensure single output - no duplication from multiple the_content calls.
+ * One container: "מופיע באוספים" (conditional) + "הוסף לאוסף" button (always for logged-in).
  */
-function hpc_add_collections_ui_to_content( $content ) {
-    if ( ! is_single() || 'post' !== get_post_type() || ! in_the_loop() || ! is_main_query() ) {
-        return $content;
+function hpc_output_collections_block_after_loop( $query ) {
+    if ( ! $query->is_main_query() || ! is_singular( 'post' ) ) {
+        return;
     }
 
-    static $done = false;
-    if ( $done ) {
-        return $content;
-    }
-    $done = true;
+    $post_id = get_queried_object_id();
+    $collections = $post_id ? get_the_terms( $post_id, 'collection' ) : null;
+    $has_collections = ! empty( $collections ) && ! is_wp_error( $collections );
 
-    $append = '';
+    echo '<div class="hpc-collections-block">';
 
-    // 1. Collections list (for all visitors)
-    ob_start();
-    hpc_display_post_collections_list();
-    $collections_html = ob_get_clean();
-    if ( ! empty( $collections_html ) ) {
-        $append .= '<div class="hpc-collections-sidebar-wrapper">' . $collections_html . '</div>';
+    // 1. "מופיע באוספים" - only when post has collections
+    if ( $has_collections ) {
+        echo '<div class="hpc-collections-list-part">';
+        hpc_display_post_collections_list( $post_id );
+        echo '</div>';
     }
 
-    // 2. Add to Collection button + modal (logged-in users only)
+    // 2. "הוסף לאוסף" button + modal - always for logged-in users
     if ( is_user_logged_in() ) {
-        ob_start();
-        hpc_add_collections_ui();
-        $append .= ob_get_clean();
+        hpc_add_collections_ui( $post_id );
     }
 
-    return $content . $append;
+    echo '</div>';
 }
-add_filter( 'the_content', 'hpc_add_collections_ui_to_content', 15 );
+add_action( 'loop_end', 'hpc_output_collections_block_after_loop', 10 );
 
 /**
  * =================================================================
@@ -1058,13 +1052,15 @@ function hpc_collections_screen_content() {
 
 /**
  * Displays the list of collections a post belongs to on the single post page.
+ * @param int $post_id Optional. Post ID. Uses current post if not provided.
  */
-function hpc_display_post_collections_list() {
-    if ( !is_single() || !in_the_loop() ) {
-        return;
+function hpc_display_post_collections_list( $post_id = 0 ) {
+    if ( ! $post_id ) {
+        if ( ! is_single() || ! in_the_loop() ) {
+            return;
+        }
+        $post_id = get_the_ID();
     }
-
-    $post_id = get_the_ID();
     
     // We get ALL collections this post is part of, regardless of owner, to show everyone.
     $collections = get_the_terms( $post_id, 'collection' );
@@ -1091,8 +1087,7 @@ function hpc_display_post_collections_list() {
 }
 
 /**
- * Removed: hpg_after_author_box_display hook.
- * Collections list + button now added via the_content filter only (single source, no duplication).
+ * Collections block now output via loop_end (single output, no duplication).
  */
 
 /**

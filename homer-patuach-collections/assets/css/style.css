@@ -597,6 +597,21 @@ li.hpc-checked .hpc-toggle-icon {
 5.0 - Post Collections List (Single Post Page)
 --------------------------------------------------------------*/
 /* Sidebar wrapper for collections - appears below author box in sidebar */
+/* Single container for collections + add button (after loop) */
+.hpc-collections-block {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ebee;
+}
+
+.hpc-collections-block .hpc-collections-list-part {
+    margin-bottom: 20px;
+}
+
+.hpc-collections-block .hpc-button-container {
+    margin-top: 0;
+}
+
 .hpc-collections-sidebar-wrapper {
     margin-top: 20px;
     padding: 15px;
