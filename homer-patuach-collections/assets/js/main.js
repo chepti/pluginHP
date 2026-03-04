@@ -20,6 +20,7 @@ jQuery(document).ready(function($) {
     // Close the modal
     function closeModal() {
         $modalOverlay.addClass('hpc-modal-hidden');
+        showUserCollections(); // Reset to user collections view when closing
     }
 
     $body.on('click', '#hpc-close-modal-button', closeModal);
@@ -64,6 +65,77 @@ jQuery(document).ready(function($) {
             },
             error: function() {
                 $dropdown.hide();
+            }
+        });
+    }
+
+    /**
+     * Show user collections, hide public section.
+     */
+    function showUserCollections() {
+        $('#hpc-user-collections-list').show();
+        $('#hpc-new-collection-form').show();
+        $('#hpc-show-public-collections-btn').show();
+        $('#hpc-public-collections-section').hide();
+    }
+
+    /**
+     * Show public collections section, hide user collections.
+     */
+    function showPublicCollections(postId) {
+        $('#hpc-user-collections-list').hide();
+        $('#hpc-new-collection-form').hide();
+        $('#hpc-show-public-collections-btn').hide();
+        $('#hpc-public-collections-section').show();
+        fetchPublicCollections(postId);
+    }
+
+    /**
+     * Fetch and display public collections.
+     */
+    function fetchPublicCollections(postId, search) {
+        const listEl = $('#hpc-public-collections-list');
+        listEl.html('<p>טוען אוספים ציבוריים...</p>');
+
+        $.ajax({
+            url: hpc_ajax_object.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'hpc_get_public_collections',
+                nonce: hpc_ajax_object.nonce,
+                post_id: postId || 0,
+                search: search || ''
+            },
+            success: function(response) {
+                if (response.success) {
+                    if (response.data.length > 0) {
+                        let html = '<ul class="hpc-collections-list hpc-public-collections-list">';
+                        response.data.forEach(function(collection) {
+                            const checkedClass = collection.is_in_collection ? 'hpc-checked' : '';
+                            const checkedIcon = collection.is_in_collection ? '✔' : '+';
+                            const ownerLabel = collection.owner_name ? ` <span class="hpc-collection-owner">(מאת ${collection.owner_name})</span>` : '';
+                            const collectionNameHtml = collection.url
+                                ? `<a href="${collection.url}" target="_blank" title="פתח את האוסף">${collection.name}</a>${ownerLabel}`
+                                : collection.name + ownerLabel;
+
+                            html += `<li class="${checkedClass}" data-collection-id="${collection.id}">
+                                        <button class="hpc-collection-toggle">
+                                            <span class="hpc-toggle-icon">${checkedIcon}</span>
+                                            <span class="hpc-collection-name">${collectionNameHtml}</span>
+                                        </button>
+                                     </li>`;
+                        });
+                        html += '</ul>';
+                        listEl.html(html);
+                    } else {
+                        listEl.html('<p class="hpc-no-collections-message">לא נמצאו אוספים ציבוריים. נסה חיפוש אחר.</p>');
+                    }
+                } else {
+                    listEl.html('<p>שגיאה בטעינה.</p>');
+                }
+            },
+            error: function() {
+                listEl.html('<p>שגיאת שרת.</p>');
             }
         });
     }
@@ -233,6 +305,28 @@ jQuery(document).ready(function($) {
 
     $body.on('click', '#hpc-create-collection-button', createNewCollection);
 
+    // Show public collections in modal
+    $body.on('click', '#hpc-show-public-collections-btn', function() {
+        const postId = $('#hpc-open-modal-button').data('post-id');
+        showPublicCollections(postId);
+    });
+
+    // Back to user collections from public
+    $body.on('click', '#hpc-close-public-collections', function() {
+        showUserCollections();
+    });
+
+    // Search public collections (debounced)
+    let publicSearchTimeout;
+    $body.on('keyup', '#hpc-public-collections-search-input', function() {
+        clearTimeout(publicSearchTimeout);
+        const query = $(this).val().trim();
+        const postId = $('#hpc-open-modal-button').data('post-id');
+        publicSearchTimeout = setTimeout(function() {
+            fetchPublicCollections(postId, query);
+        }, 300);
+    });
+
     // --- Subject Filter Chip Logic ---
     $body.on('click', '.hpc-subject-chip', function() {
         const $chip = $(this);
@@ -258,14 +352,14 @@ jQuery(document).ready(function($) {
         $button.next('.hpc-search-area').slideToggle(200);
     });
 
-    // --- Post Search on Profile Page ---
+    // --- Post Search on Profile Page and Collection Archive ---
     let searchTimeout;
     $body.on('keyup', '.hpc-post-search-input', function() {
         clearTimeout(searchTimeout);
         const $input = $(this);
         const query = $input.val().trim();
         const collectionId = $input.data('collection-id');
-        const $resultsContainer = $input.closest('.hpc-collection-item').find('.hpc-search-results');
+        const $resultsContainer = $input.closest('.hpc-search-area').find('.hpc-search-results');
 
         if (query.length < 3) {
             $resultsContainer.empty().hide();
@@ -416,6 +510,36 @@ jQuery(document).ready(function($) {
             });
         });
     }
+
+    // Public collection toggle
+    $('.hpc-collections-grid').on('change', '.hpc-public-checkbox', function() {
+        const $checkbox = $(this);
+        const collection_id = $checkbox.data('collection-id');
+        if ($checkbox.hasClass('processing')) return;
+        $checkbox.addClass('processing').prop('disabled', true);
+
+        $.post(hpc_ajax_object.ajax_url, {
+            action: 'hpc_toggle_collection_contributors',
+            nonce: hpc_ajax_object.nonce,
+            collection_id: collection_id
+        })
+        .done(function(response) {
+            if (response.success) {
+                // Checkbox state is already updated by the user's click
+                // Optionally show a brief success message
+            } else {
+                $checkbox.prop('checked', !$checkbox.prop('checked'));
+                alert(response.data.message || 'שגיאה.');
+            }
+        })
+        .fail(function() {
+            $checkbox.prop('checked', !$checkbox.prop('checked'));
+            alert('שגיאת שרת.');
+        })
+        .always(function() {
+            $checkbox.removeClass('processing').prop('disabled', false);
+        });
+    });
 
     // Use a more specific container for the event listener
     $('.hpc-collections-grid').on('click', '.hpc-save-subject-button', function() {

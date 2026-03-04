@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - Collections
  * Plugin URI:        https://homerpatuach.com/
  * Description:       Allows users to create and manage collections of posts.
- * Version:           1.4.0
+ * Version:           1.5.0
  * Author:            Chepti
  * Author URI:        https://homerpatuach.com/
  * License:           GPL-2.0+
@@ -17,7 +17,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_COLLECTIONS_VERSION', '1.0.0' );
+define( 'HP_COLLECTIONS_VERSION', '1.5.0' );
 define( 'HP_COLLECTIONS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 
 /**
@@ -62,8 +62,8 @@ add_action( 'init', 'hpc_register_collection_taxonomy', 0 );
  * Enqueue scripts and styles for the collections feature.
  */
 function hpc_enqueue_assets() {
-    // Load on single posts for the "Add to Collection" button, and on BuddyPress profile pages for the collections tab.
-    if ( (is_single() && 'post' === get_post_type()) || (function_exists('bp_is_user') && bp_is_user()) ) {
+    // Load on single posts, collection archive (for add-to-public-collection), and BuddyPress profile pages.
+    if ( (is_single() && 'post' === get_post_type()) || is_tax('collection') || (function_exists('bp_is_user') && bp_is_user()) ) {
         wp_enqueue_style(
             'hpc-styles',
             HP_COLLECTIONS_PLUGIN_DIR_URL . 'assets/css/style.css',
@@ -105,6 +105,19 @@ function hpc_add_collections_ui() {
                         <!-- User\'s collections will be loaded here via AJAX -->
                         <p>טוען אוספים...</p>
                     </div>
+                    <div id="hpc-public-collections-section" style="display:none;">
+                        <div class="hpc-public-collections-header">
+                            <h3>אוספים ציבוריים</h3>
+                            <button type="button" id="hpc-close-public-collections">חזרה לאוספים שלי</button>
+                        </div>
+                        <div id="hpc-public-collections-search">
+                            <input type="text" id="hpc-public-collections-search-input" placeholder="חפש אוספים ציבוריים לפי שם..." />
+                        </div>
+                        <div id="hpc-public-collections-list">
+                            <!-- Public collections loaded via AJAX -->
+                        </div>
+                    </div>
+                    <button type="button" id="hpc-show-public-collections-btn" class="hpc-secondary-button">הצג אוספים ציבוריים</button>
                     <div id="hpc-new-collection-form">
                         <input type="text" id="hpc-new-collection-name" placeholder="או צור אוסף חדש..." />
                         <button id="hpc-create-collection-button">צור</button>
@@ -148,8 +161,8 @@ function hpc_add_collections_ui_to_content( $content ) {
  * Localize script to pass PHP variables to JS, like the AJAX URL and nonce.
  */
 function hpc_localize_script() {
-    // We need the ajax object on single posts and BP user profiles.
-    if ( (is_single() && 'post' === get_post_type()) || (function_exists('bp_is_user') && bp_is_user()) ) {
+    // We need the ajax object on single posts, collection archive, and BP user profiles.
+    if ( (is_single() && 'post' === get_post_type()) || is_tax('collection') || (function_exists('bp_is_user') && bp_is_user()) ) {
         wp_localize_script( 'hpc-main-js', 'hpc_ajax_object', array(
             'ajax_url' => admin_url( 'admin-ajax.php' ),
             'nonce'    => wp_create_nonce( 'hpc_collections_nonce' ),
@@ -318,14 +331,14 @@ function hpc_add_post_to_collection() {
         return;
     }
 
-    // Verify the collection belongs to the user by checking term meta
+    // Verify the user can add to this collection: either owner or public collection (allows contributors)
     $collection_user_id = get_term_meta($term->term_id, 'hpc_user_id', true);
-    if ((int) $collection_user_id !== $user_id) {
-        // Allow adding to non-user-owned collections if it's a parent collection
-        if( $term->parent != 0 ) {
-             wp_send_json_error(['message' => 'Invalid collection ownership.']);
-             return;
-        }
+    $is_owner = (int) $collection_user_id === $user_id;
+    $allows_contributors = hpc_collection_allows_contributors( $term->term_id );
+
+    if ( ! $is_owner && ! $allows_contributors ) {
+        wp_send_json_error(['message' => 'אין הרשאה להוסיף לאוסף זה.']);
+        return;
     }
 
     // Verify the post is a 'post'
@@ -461,6 +474,109 @@ add_action('wp_ajax_hpc_update_collection_subject', 'hpc_update_collection_subje
 
 
 /**
+ * Check if a collection allows contributors (public - others can add posts).
+ *
+ * @param int $term_id Collection term ID.
+ * @return bool
+ */
+function hpc_collection_allows_contributors( $term_id ) {
+    $val = get_term_meta( $term_id, 'hpc_allow_contributors', true );
+    return (bool) $val;
+}
+
+/**
+ * AJAX handler to toggle collection's "allow contributors" (public) setting.
+ */
+function hpc_toggle_collection_contributors() {
+    check_ajax_referer( 'hpc_collections_nonce', 'nonce' );
+
+    $user_id = get_current_user_id();
+    if ( ! $user_id ) {
+        wp_send_json_error( ['message' => 'User not logged in.'] );
+    }
+
+    $collection_id = isset( $_POST['collection_id'] ) ? intval( $_POST['collection_id'] ) : 0;
+    if ( ! $collection_id ) {
+        wp_send_json_error( ['message' => 'Invalid data provided.' ] );
+    }
+
+    $collection_user_id = get_term_meta( $collection_id, 'hpc_user_id', true );
+    if ( (int) $collection_user_id !== $user_id ) {
+        wp_send_json_error( ['message' => 'Invalid collection ownership.' ] );
+    }
+
+    $current = hpc_collection_allows_contributors( $collection_id );
+    $new_val = ! $current;
+    update_term_meta( $collection_id, 'hpc_allow_contributors', $new_val ? '1' : '' );
+
+    wp_send_json_success( [
+        'allows_contributors' => $new_val,
+        'message' => $new_val ? 'האוסף כעת ציבורי – אחרים יכולים להוסיף בו פריטים.' : 'האוסף כעת פרטי – רק אתה יכול להוסיף בו פריטים.',
+    ] );
+}
+add_action( 'wp_ajax_hpc_toggle_collection_contributors', 'hpc_toggle_collection_contributors' );
+
+
+/**
+ * AJAX handler to get public collections (collections that allow contributors).
+ */
+function hpc_get_public_collections() {
+    check_ajax_referer( 'hpc_collections_nonce', 'nonce' );
+
+    $user_id = get_current_user_id();
+    if ( ! $user_id ) {
+        wp_send_json_error( ['message' => 'User not logged in.' ] );
+    }
+
+    $post_id = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
+    $search = isset( $_POST['search'] ) ? sanitize_text_field( $_POST['search'] ) : '';
+
+    $args = array(
+        'taxonomy'   => 'collection',
+        'hide_empty' => false,
+        'meta_query' => array(
+            array(
+                'key'     => 'hpc_allow_contributors',
+                'value'   => '1',
+                'compare' => '=',
+            ),
+        ),
+    );
+
+    if ( ! empty( $search ) ) {
+        $args['name__like'] = $search;
+    }
+
+    $collections = get_terms( $args );
+
+    $data = [];
+    if ( ! is_wp_error( $collections ) && ! empty( $collections ) ) {
+        foreach ( $collections as $collection ) {
+            $owner_id = get_term_meta( $collection->term_id, 'hpc_user_id', true );
+            if ( (int) $owner_id === $user_id ) {
+                continue; // Skip user's own collections - they already see them
+            }
+            $is_in_collection = $post_id ? has_term( $collection->term_id, 'collection', $post_id ) : false;
+            $collection_link = get_term_link( $collection );
+            $owner = get_userdata( $owner_id );
+            $owner_name = $owner ? $owner->display_name : '';
+
+            $data[] = [
+                'id' => $collection->term_id,
+                'name' => esc_html( $collection->name ),
+                'owner_name' => esc_html( $owner_name ),
+                'url' => is_wp_error( $collection_link ) ? '' : esc_url( $collection_link ),
+                'is_in_collection' => $is_in_collection,
+            ];
+        }
+    }
+
+    wp_send_json_success( $data );
+}
+add_action( 'wp_ajax_hpc_get_public_collections', 'hpc_get_public_collections' );
+
+
+/**
  * AJAX handler to search for posts to add to a collection.
  */
 function hpc_search_posts_for_collection() {
@@ -480,10 +596,13 @@ function hpc_search_posts_for_collection() {
         return;
     }
 
-    // Verify collection ownership
+    // Verify user can add to collection: either owner or public (allows contributors)
     $collection_user_id = get_term_meta( $collection_id, 'hpc_user_id', true );
-    if ( (int)$collection_user_id !== $user_id ) {
-        wp_send_json_error( ['message' => 'Invalid collection ownership.'] );
+    $is_owner = (int) $collection_user_id === $user_id;
+    $allows_contributors = hpc_collection_allows_contributors( $collection_id );
+
+    if ( ! $is_owner && ! $allows_contributors ) {
+        wp_send_json_error( ['message' => 'אין הרשאה לחפש ולהוסיף לאוסף זה.' ] );
     }
 
     $args = array(
@@ -631,6 +750,23 @@ function hpc_add_creator_to_collection_archive_title( $title ) {
 
             $meta_html .= '</div>';
 
+            // Add "Add Post" UI for public collections when viewer is not the owner
+            $add_post_ui = '';
+            if ( is_user_logged_in() && hpc_collection_allows_contributors( $term->term_id ) && (int) $user_id !== get_current_user_id() ) {
+                $add_post_ui = '
+                <div class="hpc-archive-add-post-ui">
+                    <button class="hpc-open-search-button hpc-archive-add-post-btn" data-collection-id="' . esc_attr($term->term_id) . '">+ הוסף פוסטים לאוסף</button>
+                    <div class="hpc-search-area" id="hpc-archive-search-area-' . esc_attr($term->term_id) . '" style="display: none;">
+                        <div class="hpc-search-wrapper">
+                            <input type="text" class="hpc-post-search-input" placeholder="חפש/י פוסטים לפי שם..." data-collection-id="' . esc_attr($term->term_id) . '">
+                        </div>
+                        <div class="hpc-search-results"></div>
+                    </div>
+                </div>';
+            }
+
+            $meta_html .= $add_post_ui;
+
 
             if ($user_id) {
                 $user_info = get_userdata($user_id);
@@ -646,7 +782,11 @@ function hpc_add_creator_to_collection_archive_title( $title ) {
 
                     // The new structure with divs for separate lines and a space
                     $title = '<div class="hpc-archive-title-wrapper">';
-                    $title .= '<h1 class="hpc-archive-main-title">' . esc_html($term->name) . '</h1>';
+                    $title .= '<h1 class="hpc-archive-main-title">' . esc_html($term->name);
+                    if ( hpc_collection_allows_contributors( $term->term_id ) ) {
+                        $title .= ' <span class="hpc-public-badge" title="' . esc_attr__( 'כל משתמש רשום יכול להוסיף פריטים לאוסף זה', 'homer-patuach-collections' ) . '">אוסף ציבורי</span>';
+                    }
+                    $title .= '</h1>';
                     $title .= '<div class="hpc-archive-creator">אוסף מאת ' . $creator_html . '</div>';
                     $title .= $meta_html; // Add the meta line here
                     $title .= '</div>';
@@ -808,6 +948,18 @@ function hpc_collections_screen_content() {
             wp_reset_postdata();
 
             if ( bp_is_my_profile() ) {
+                // Public collection toggle (allow others to add posts)
+                $is_public = hpc_collection_allows_contributors( $collection->term_id );
+                $public_tooltip = 'אוסף ציבורי: כל משתמש רשום יכול להוסיף פוסטים לאוסף. אוסף פרטי: רק אתה יכול להוסיף פוסטים.';
+                echo '<div class="hpc-collection-public-toggle">';
+                echo '<label class="hpc-toggle-switch">';
+                echo '<input type="checkbox" class="hpc-public-checkbox" data-collection-id="' . esc_attr( $collection->term_id ) . '" ' . checked( $is_public, true, false ) . '>';
+                echo '<span class="hpc-toggle-slider"></span>';
+                echo '</label>';
+                echo '<span class="hpc-public-label">אוסף ציבורי – מאפשר לאחרים להוסיף פריטים</span>';
+                echo '<span class="hpc-tooltip-icon" title="' . esc_attr( $public_tooltip ) . '" aria-label="' . esc_attr( $public_tooltip ) . '">ⓘ</span>';
+                echo '</div>';
+
                 // Add the subject selector
                 if ( ! is_wp_error( $all_subjects ) && ! empty( $all_subjects ) ) {
                     echo '<div class="hpc-collection-subject-editor">';
@@ -898,17 +1050,21 @@ function hpc_display_post_collections_list() {
     
     echo $collections_html;
 }
-add_action( 'the_content', 'hpc_display_post_collections_list_after_content' );
 
-function hpc_display_post_collections_list_after_content( $content ) {
+/**
+ * Hook into the author box to display collections list below it in sidebar.
+ * This replaces the old the_content filter to avoid duplication.
+ * We use an action hook that fires after the author box is displayed.
+ */
+function hpc_display_post_collections_list_after_author_box() {
     if ( is_single() && 'post' === get_post_type() && in_the_loop() && is_main_query() ) {
-        ob_start();
+        // Wrap in sidebar container to appear in sidebar column
+        echo '<div class="hpc-collections-sidebar-wrapper">';
         hpc_display_post_collections_list();
-        $collections_list = ob_get_clean();
-        $content .= $collections_list;
+        echo '</div>';
     }
-    return $content;
 }
+add_action('hpg_after_author_box_display', 'hpc_display_post_collections_list_after_author_box', 10);
 
 /**
  * =================================================================
@@ -922,6 +1078,16 @@ function hpc_display_post_collections_list_after_content( $content ) {
  * @param WP_Term $term The term object.
  */
 function hpc_add_subject_field_to_edit_collection_screen( $term ) {
+    $allows_contributors = hpc_collection_allows_contributors( $term->term_id );
+    ?>
+    <tr class="form-field">
+        <th scope="row" valign="top"><label for="hpc_allow_contributors"><?php _e( 'אוסף ציבורי', 'homer-patuach-collections' ); ?></label></th>
+        <td>
+            <input type="checkbox" name="hpc_allow_contributors" id="hpc_allow_contributors" value="1" <?php checked( $allows_contributors ); ?>>
+            <p class="description"><?php _e( 'כאשר מסומן, משתמשים רשומים אחרים יכולים להוסיף פוסטים לאוסף זה.', 'homer-patuach-collections' ); ?></p>
+        </td>
+    </tr>
+    <?php
     $subjects = get_terms([
         'taxonomy' => 'subject',
         'hide_empty' => false,
@@ -972,6 +1138,11 @@ function hpc_save_collection_subject_meta( $term_id ) {
         } else {
             delete_term_meta( $term_id, 'hpc_subject_id' );
         }
+    }
+    if ( isset( $_POST['hpc_allow_contributors'] ) && $_POST['hpc_allow_contributors'] === '1' ) {
+        update_term_meta( $term_id, 'hpc_allow_contributors', '1' );
+    } else {
+        delete_term_meta( $term_id, 'hpc_allow_contributors' );
     }
 }
 add_action( 'edited_collection', 'hpc_save_collection_subject_meta', 10, 2 );

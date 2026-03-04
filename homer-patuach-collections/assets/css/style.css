@@ -152,6 +152,97 @@ li.hpc-checked .hpc-toggle-icon {
     color: #666;
 }
 
+/* --- Public Collections in Modal --- */
+#hpc-show-public-collections-btn {
+    width: 100%;
+    margin-top: 15px;
+    padding: 10px 15px;
+    background: #f0f2f5;
+    border: 1px dashed #7699f2;
+    color: #7699f2;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#hpc-show-public-collections-btn:hover {
+    background: #e8ecf7;
+}
+
+.hpc-secondary-button {
+    font-family: inherit;
+}
+
+.hpc-public-collections-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.hpc-public-collections-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+#hpc-close-public-collections {
+    background: none;
+    border: 1px solid #ccc;
+    padding: 6px 12px;
+    font-size: 13px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #555;
+}
+
+#hpc-close-public-collections:hover {
+    background: #f5f5f5;
+}
+
+#hpc-public-collections-search {
+    margin-bottom: 15px;
+}
+
+#hpc-public-collections-search-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.hpc-collection-owner {
+    font-size: 0.85em;
+    color: #888;
+}
+
+/* Archive page - Add Post to public collection */
+.hpc-archive-add-post-ui {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f7f9fc;
+    border-radius: 15px;
+    border: 1px solid #e0e2e5;
+}
+
+.hpc-archive-add-post-ui .hpc-open-search-button {
+    width: 100%;
+}
+
+.hpc-public-badge {
+    display: inline-block;
+    font-size: 0.5em;
+    font-weight: normal;
+    background: linear-gradient(135deg, #7699f2, #94b2ff);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
 /* --- New Collection Form (Modal) --- */
 #hpc-new-collection-form {
     margin-top: 20px;
@@ -496,10 +587,19 @@ li.hpc-checked .hpc-toggle-icon {
 /*--------------------------------------------------------------
 5.0 - Post Collections List (Single Post Page)
 --------------------------------------------------------------*/
+/* Sidebar wrapper for collections - appears below author box in sidebar */
+.hpc-collections-sidebar-wrapper {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+
 .hpc-post-collections-list-container {
-    border-top: 1px solid #eee;
-    padding-top: 20px;
-    margin-top: 30px;
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
 }
 
 .hpc-post-collections-list-container h3 {
@@ -659,6 +759,88 @@ body.tax-collection .page-header h1.page-title .hpc-archive-title-wrapper {
     display: flex;
     flex-direction: column;
     gap: 15px; /* Consistent gap between elements */
+}
+
+/* --- Public Collection Toggle --- */
+.hpc-collection-public-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 20px;
+    background-color: #f7f9fc;
+    border-radius: 15px;
+    margin: 0 20px 20px 20px;
+    border: 1px solid #e0e2e5;
+}
+
+.hpc-public-label {
+    font-size: 14px;
+    color: #555;
+    flex-grow: 1;
+}
+
+.hpc-tooltip-icon {
+    cursor: help;
+    color: #7699f2;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* Toggle switch */
+.hpc-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+}
+
+.hpc-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.hpc-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 26px;
+}
+
+.hpc-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    right: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.hpc-toggle-switch input:checked + .hpc-toggle-slider {
+    background: linear-gradient(135deg, #7699f2, #94b2ff);
+}
+
+.hpc-toggle-switch input:checked + .hpc-toggle-slider:before {
+    transform: translateX(22px);
+}
+
+[dir="rtl"] .hpc-toggle-slider:before {
+    right: auto;
+    left: 3px;
+}
+
+[dir="rtl"] .hpc-toggle-switch input:checked + .hpc-toggle-slider:before {
+    transform: translateX(-22px);
 }
 
 .hpc-collection-subject-editor {
