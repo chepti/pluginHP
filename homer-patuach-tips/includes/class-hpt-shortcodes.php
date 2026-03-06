@@ -13,14 +13,21 @@ class HPT_Shortcodes {
 
 	public function register() {
 		add_shortcode( 'hpt_approval_bell', array( $this, 'approval_bell' ) );
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_bell_styles' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_bell_assets' ) );
+		add_action( 'wp_footer', array( $this, 'output_approval_modal' ) );
 	}
 
-	public function enqueue_bell_styles() {
+	public function enqueue_bell_assets() {
 		if ( ! is_user_logged_in() || ! current_user_can( 'edit_others_posts' ) ) {
 			return;
 		}
-		wp_enqueue_style( 'hpt-approval-bell', HPT_PLUGIN_URL . 'assets/css/approval-bell.css', array(), HPT_VERSION );
+		wp_enqueue_style( 'hpt-google-fonts', 'https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap', array(), null );
+		wp_enqueue_style( 'hpt-approval-bell', HPT_PLUGIN_URL . 'assets/css/approval-bell.css', array( 'hpt-google-fonts' ), HPT_VERSION );
+		wp_enqueue_script( 'hpt-approval-bell', HPT_PLUGIN_URL . 'assets/js/approval-bell.js', array( 'jquery' ), HPT_VERSION, true );
+		wp_localize_script( 'hpt-approval-bell', 'hptApproval', array(
+			'restUrl' => rest_url( 'hpt/v1/' ),
+			'nonce'   => wp_create_nonce( 'wp_rest' ),
+		) );
 	}
 
 	/**
@@ -34,7 +41,6 @@ class HPT_Shortcodes {
 
 		$counts   = wp_count_posts( 'os_tip' );
 		$pending  = isset( $counts->pending ) ? (int) $counts->pending : 0;
-		$url      = admin_url( 'edit.php?post_type=os_tip' . ( $pending > 0 ? '&post_status=pending' : '' ) );
 		$has_cls  = $pending > 0 ? ' hpt-bell-has-pending' : '';
 		$title    = $pending > 0
 			? sprintf( /* translators: %d: pending count */ _n( '%d טיפ ממתין לאישור', '%d טיפים ממתינים לאישור', $pending, 'homer-patuach-tips' ), $pending )
@@ -42,7 +48,7 @@ class HPT_Shortcodes {
 
 		ob_start();
 		?>
-		<a href="<?php echo esc_url( $url ); ?>" class="hpt-approval-bell<?php echo esc_attr( $has_cls ); ?>" title="<?php echo esc_attr( $title ); ?>">
+		<a href="#" class="hpt-approval-bell<?php echo esc_attr( $has_cls ); ?>" title="<?php echo esc_attr( $title ); ?>" data-hpt-modal>
 			<svg class="hpt-bell-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
 				<path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -53,5 +59,23 @@ class HPT_Shortcodes {
 		</a>
 		<?php
 		return ob_get_clean();
+	}
+
+	public function output_approval_modal() {
+		if ( ! is_user_logged_in() || ! current_user_can( 'edit_others_posts' ) ) {
+			return;
+		}
+		?>
+		<div id="hpt-approval-modal" class="hpt-approval-modal" hidden aria-hidden="true">
+			<div class="hpt-approval-modal-backdrop"></div>
+			<div class="hpt-approval-modal-panel">
+				<button type="button" class="hpt-approval-modal-close" aria-label="<?php esc_attr_e( 'סגור', 'homer-patuach-tips' ); ?>">×</button>
+				<h3 class="hpt-approval-modal-title"><?php esc_html_e( 'טיפים ממתינים לאישור', 'homer-patuach-tips' ); ?></h3>
+				<div class="hpt-approval-modal-list"></div>
+				<div class="hpt-approval-modal-empty" style="display:none;"><?php esc_html_e( 'אין טיפים ממתינים.', 'homer-patuach-tips' ); ?></div>
+				<div class="hpt-approval-modal-loading"><?php esc_html_e( 'טוען...', 'homer-patuach-tips' ); ?></div>
+			</div>
+		</div>
+		<?php
 	}
 }

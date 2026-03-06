@@ -69,6 +69,19 @@ class HPT_REST {
 			'callback'            => array( $this, 'upload_image' ),
 			'permission_callback' => function() { return is_user_logged_in(); },
 		) );
+
+		register_rest_route( 'hpt/v1', '/tips/pending', array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => array( $this, 'get_pending_tips' ),
+			'permission_callback' => function() { return current_user_can( 'edit_others_posts' ); },
+		) );
+
+		register_rest_route( 'hpt/v1', '/tips/(?P<id>\d+)/approve', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( $this, 'approve_tip' ),
+			'permission_callback' => function() { return current_user_can( 'edit_others_posts' ); },
+			'args'                => array( 'id' => array( 'type' => 'integer', 'required' => true ) ),
+		) );
 	}
 
 	public function toggle_like( $request ) {
@@ -283,6 +296,34 @@ class HPT_REST {
 			'grades'   => $grades,
 			'tags'     => $tags,
 		) );
+	}
+
+	public function get_pending_tips( $request ) {
+		$query = new WP_Query( array(
+			'post_type'      => 'os_tip',
+			'post_status'    => 'pending',
+			'posts_per_page' => 50,
+			'orderby'        => 'date',
+			'order'          => 'ASC',
+		) );
+		$tips = array();
+		foreach ( $query->posts as $post ) {
+			$tips[] = $this->format_tip( $post );
+		}
+		return rest_ensure_response( array(
+			'tips'  => $tips,
+			'total' => $query->found_posts,
+		) );
+	}
+
+	public function approve_tip( $request ) {
+		$tip_id = (int) $request['id'];
+		$post   = get_post( $tip_id );
+		if ( ! $post || $post->post_type !== 'os_tip' || $post->post_status !== 'pending' ) {
+			return new WP_Error( 'invalid_tip', __( 'טיפ לא חוקי או כבר אושר', 'homer-patuach-tips' ), array( 'status' => 400 ) );
+		}
+		wp_update_post( array( 'ID' => $tip_id, 'post_status' => 'publish' ) );
+		return rest_ensure_response( array( 'approved' => true, 'id' => $tip_id ) );
 	}
 
 	private function format_tip( $post ) {

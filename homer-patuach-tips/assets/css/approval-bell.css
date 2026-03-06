@@ -1,49 +1,196 @@
 /* פעמון אישור טיפים - שורטקוד [hpt_approval_bell] */
+/* צבע כתום-קורל כמו כפתור הוספת פוסט, יישור */
 .hpt-approval-bell {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	position: relative;
-	width: 36px;
-	height: 36px;
+	width: 40px;
+	height: 40px;
 	border-radius: 50%;
-	background: linear-gradient(135deg, #7699f2, #94b2ff);
+	background: linear-gradient(135deg, #FB8255, #FB6965);
 	color: #fff;
 	text-decoration: none;
 	transition: opacity 0.2s, transform 0.2s;
+	vertical-align: middle;
+	flex-shrink: 0;
 }
 
 .hpt-approval-bell:hover {
-	opacity: 0.9;
-	transform: scale(1.05);
+	opacity: 0.95;
+	transform: scale(1.03);
 }
 
 .hpt-approval-bell.hpt-bell-has-pending {
-	background: linear-gradient(135deg, #FB8255, #FB6965);
-	animation: hpt-bell-pulse 2s ease-in-out infinite;
-}
-
-@keyframes hpt-bell-pulse {
-	0%, 100% { box-shadow: 0 0 0 0 rgba(251, 130, 85, 0.4); }
-	50% { box-shadow: 0 0 0 6px rgba(251, 130, 85, 0); }
+	box-shadow: 0 2px 8px rgba(251, 105, 101, 0.4);
 }
 
 .hpt-approval-bell .hpt-bell-svg {
 	flex-shrink: 0;
 }
 
+/* עיגול קטן עם מספר ממתינים */
 .hpt-approval-bell .hpt-pending-count {
 	position: absolute;
-	top: -2px;
-	left: -2px;
-	min-width: 16px;
-	height: 16px;
-	padding: 0 4px;
+	top: -4px;
+	right: -4px;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 5px;
 	font-size: 11px;
-	font-weight: 600;
-	line-height: 16px;
+	font-weight: 700;
+	line-height: 18px;
 	text-align: center;
 	background: #e91e63;
 	color: #fff;
-	border-radius: 8px;
+	border-radius: 50%;
+	border: 2px solid #fff;
+}
+
+/* מודאל אישור טיפים */
+.hpt-approval-modal {
+	font-family: 'Rubik', -apple-system, BlinkMacSystemFont, sans-serif;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 99998;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+}
+
+.hpt-approval-modal[hidden] {
+	display: none !important;
+}
+
+.hpt-approval-modal-backdrop {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.hpt-approval-modal-panel {
+	position: relative;
+	direction: rtl;
+	width: 100%;
+	max-width: 520px;
+	max-height: 80vh;
+	background: #fff;
+	border-radius: 12px;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.hpt-approval-modal-close {
+	position: absolute;
+	top: 12px;
+	left: 12px;
+	width: 32px;
+	height: 32px;
+	background: none;
+	border: none;
+	font-size: 24px;
+	color: #666;
+	cursor: pointer;
+	z-index: 2;
+}
+
+.hpt-approval-modal-close:hover {
+	color: #000;
+}
+
+.hpt-approval-modal-title {
+	margin: 0;
+	padding: 20px 24px 16px;
+	font-size: 1.25rem;
+	text-align: right;
+	border-bottom: 1px solid #eee;
+}
+
+.hpt-approval-modal-list,
+.hpt-approval-modal-empty,
+.hpt-approval-modal-loading {
+	padding: 16px 24px;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.hpt-approval-modal-loading {
+	text-align: center;
+	color: #888;
+}
+
+.hpt-approval-tip-item {
+	padding: 16px;
+	margin-bottom: 12px;
+	background: #f8f9fa;
+	border-radius: 10px;
+	border: 1px solid #eee;
+	text-align: right;
+}
+
+.hpt-approval-tip-item:last-child {
+	margin-bottom: 0;
+}
+
+.hpt-approval-tip-body {
+	margin-bottom: 10px;
+	line-height: 1.5;
+	color: #333;
+}
+
+.hpt-approval-tip-body p:last-child {
+	margin-bottom: 0;
+}
+
+.hpt-approval-tip-meta {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.hpt-approval-tip-credit {
+	font-size: 12px;
+	color: #888;
+}
+
+.hpt-approval-tip-edit {
+	font-size: 14px;
+	color: #666;
+	text-decoration: none;
+}
+
+.hpt-approval-tip-edit:hover {
+	color: #7699f2;
+}
+
+.hpt-approval-tip-approve {
+	padding: 6px 16px;
+	border: none;
+	border-radius: 20px;
+	background: linear-gradient(135deg, #FB8255, #FB6965);
+	color: #fff;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: opacity 0.2s;
+}
+
+.hpt-approval-tip-approve:hover {
+	opacity: 0.9;
+}
+
+.hpt-approval-tip-approve.hpt-approving {
+	opacity: 0.7;
+	cursor: wait;
 }
