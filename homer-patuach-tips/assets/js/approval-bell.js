@@ -2,7 +2,7 @@
 	'use strict';
 
 	var restUrl = (window.hptApproval && window.hptApproval.restUrl) ? window.hptApproval.restUrl : '/wp-json/hpt/v1/';
-	var nonce = (window.hptApproval && window.hptApproval.nonce) || '';
+	var nonce = (window.hptApproval && window.hptApproval.nonce) || (window.wpApiSettings && window.wpApiSettings.nonce) || '';
 
 	function init() {
 		$(document).on('click', '.hpt-approval-bell[data-hpt-modal]', function(e) {
@@ -39,8 +39,14 @@
 		$modal.find('.hpt-approval-modal-list').empty().hide();
 		$modal.find('.hpt-approval-modal-empty').hide();
 
-		$.get(restUrl + 'tips/pending', { post_status: 'pending' })
-			.done(function(res) {
+		var url = restUrl + 'tips/pending';
+		if (nonce) url += (url.indexOf('?') >= 0 ? '&' : '?') + '_wpnonce=' + encodeURIComponent(nonce);
+		$.ajax({
+			url: url,
+			method: 'GET',
+			beforeSend: function(xhr) { if (nonce) xhr.setRequestHeader('X-WP-Nonce', nonce); },
+			credentials: 'same-origin'
+		}).done(function(res) {
 				$modal.find('.hpt-approval-modal-loading').hide();
 				var tips = res.tips || [];
 				if (tips.length === 0) {
