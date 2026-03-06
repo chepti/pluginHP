@@ -1,0 +1,239 @@
+/* Homer Patuach Tips - Bubble (Design System: חומר פתוח) */
+
+:root {
+	--hpt-gradient: linear-gradient(135deg, #FB8255, #FB6965);
+	--hpt-accent: #7699f2;
+	--hpt-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+	--hpt-shadow-accent: 0 4px 15px rgba(255, 107, 129, 0.4);
+	--hpt-border: #e9ebee;
+	--hpt-radius: 8px;
+	--hpt-radius-btn: 25px;
+}
+
+#hpt-tips-bubble {
+	position: fixed;
+	z-index: 99990;
+	font-family: inherit;
+	font-size: 14px;
+}
+
+/* מיקומים */
+.hpt-bubble--bottom-left {
+	bottom: 24px;
+	left: 24px;
+}
+
+.hpt-bubble--bottom-right {
+	bottom: 24px;
+	right: 24px;
+}
+
+.hpt-bubble--top-left {
+	top: 24px;
+	left: 24px;
+}
+
+.hpt-bubble--top-right {
+	top: 24px;
+	right: 24px;
+}
+
+/* כפתור הבועה */
+.hpt-bubble-trigger {
+	width: 56px;
+	height: 56px;
+	border: none;
+	border-radius: 50%;
+	background: var(--hpt-gradient);
+	color: white;
+	cursor: pointer;
+	box-shadow: var(--hpt-shadow-accent);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.hpt-bubble-trigger:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 20px rgba(255, 107, 129, 0.5);
+}
+
+.hpt-bubble-icon {
+	font-size: 28px;
+	line-height: 1;
+}
+
+/* פאנל מורחב */
+.hpt-bubble-panel {
+	position: absolute;
+	width: 320px;
+	max-width: calc(100vw - 48px);
+	background: #fff;
+	border-radius: var(--hpt-radius);
+	box-shadow: var(--hpt-shadow);
+	border: 1px solid var(--hpt-border);
+	overflow: hidden;
+}
+
+.hpt-bubble--bottom-left .hpt-bubble-panel,
+.hpt-bubble--top-left .hpt-bubble-panel {
+	left: 0;
+	bottom: 64px;
+}
+
+.hpt-bubble--bottom-right .hpt-bubble-panel,
+.hpt-bubble--top-right .hpt-bubble-panel {
+	right: 0;
+	bottom: 64px;
+}
+
+.hpt-bubble--top-left .hpt-bubble-panel,
+.hpt-bubble--top-right .hpt-bubble-panel {
+	bottom: auto;
+	top: 64px;
+}
+
+.hpt-bubble-panel-inner {
+	padding: 16px;
+	position: relative;
+}
+
+.hpt-bubble-close {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	background: none;
+	border: none;
+	font-size: 24px;
+	cursor: pointer;
+	color: #888;
+	line-height: 1;
+	padding: 4px;
+}
+
+.hpt-bubble-close:hover {
+	color: #333;
+}
+
+/* תוכן הטיפ */
+.hpt-tip-content-area {
+	min-height: 80px;
+	margin-bottom: 12px;
+}
+
+.hpt-tip-loading {
+	color: #888;
+	text-align: center;
+	padding: 20px;
+}
+
+.hpt-tip-display {
+	text-align: right;
+}
+
+.hpt-tip-media {
+	font-size: 36px;
+	margin-bottom: 8px;
+	text-align: center;
+}
+
+.hpt-tip-media img {
+	max-width: 80px;
+	height: auto;
+	border-radius: 4px;
+}
+
+.hpt-tip-body {
+	margin-bottom: 8px;
+	line-height: 1.5;
+	color: #333;
+}
+
+.hpt-tip-body p:last-child {
+	margin-bottom: 0;
+}
+
+.hpt-tip-credit {
+	font-size: 12px;
+	color: #888;
+}
+
+.hpt-tip-empty {
+	text-align: center;
+	padding: 20px;
+	color: #888;
+}
+
+/* ניווט */
+.hpt-bubble-nav {
+	display: flex;
+	justify-content: center;
+	gap: 16px;
+	margin-bottom: 12px;
+}
+
+.hpt-nav-prev,
+.hpt-nav-next {
+	width: 36px;
+	height: 36px;
+	border: 1px solid var(--hpt-border);
+	background: #fff;
+	border-radius: 50%;
+	cursor: pointer;
+	font-size: 20px;
+	color: #555;
+	transition: background 0.2s, color 0.2s;
+}
+
+.hpt-nav-prev:hover,
+.hpt-nav-next:hover {
+	background: #f0f2f5;
+	color: var(--hpt-accent);
+}
+
+/* כפתור סינון */
+.hpt-filter-toggle {
+	width: 100%;
+	padding: 8px 16px;
+	border: 1px solid var(--hpt-border);
+	background: #f9f9f9;
+	border-radius: var(--hpt-radius-btn);
+	cursor: pointer;
+	font-size: 13px;
+	color: #555;
+	margin-bottom: 8px;
+	transition: background 0.2s, border-color 0.2s;
+}
+
+.hpt-filter-toggle:hover {
+	background: #f0f2f5;
+	border-color: var(--hpt-accent);
+	color: var(--hpt-accent);
+}
+
+/* צ'יפי סינון */
+.hpt-filter-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.hpt-filter-chip {
+	padding: 6px 12px;
+	border: 1px solid var(--hpt-border);
+	background: #fff;
+	border-radius: 20px;
+	font-size: 12px;
+	color: #555;
+	cursor: pointer;
+	transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.hpt-filter-chip:hover,
+.hpt-filter-chip.active {
+	background: #e8ecf7;
+	border-color: var(--hpt-accent);
+	color: var(--hpt-accent);
+}

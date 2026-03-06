@@ -1,0 +1,43 @@
+/* Homer Patuach Tips - Admin Styles */
+
+.hpt-meta-box {
+	direction: rtl;
+	text-align: right;
+}
+
+.hpt-meta-box label {
+	display: block;
+	margin-bottom: 4px;
+	font-weight: 600;
+}
+
+.hpt-meta-box p {
+	margin-bottom: 16px;
+}
+
+.hpt-meta-box .widefat {
+	max-width: 100%;
+}
+
+.hpt-emoji-input {
+	width: 80px;
+	font-size: 24px;
+	text-align: center;
+}
+
+.hpt-image-preview {
+	margin-bottom: 8px;
+}
+
+.hpt-image-preview img {
+	max-width: 150px;
+	height: auto;
+	border: 1px solid #e9ebee;
+	border-radius: 4px;
+}
+
+.hpt-emoji-picker-trigger,
+.hpt-upload-image,
+.hpt-remove-image {
+	margin-left: 8px;
+}
