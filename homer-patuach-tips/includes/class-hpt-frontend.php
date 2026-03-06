@@ -68,20 +68,22 @@ class HPT_Frontend {
 				<div class="hpt-bubble-panel-inner">
 					<button type="button" class="hpt-bubble-close" aria-label="<?php esc_attr_e( 'סגור', 'homer-patuach-tips' ); ?>">×</button>
 					<div class="hpt-tip-content-area">
-						<div class="hpt-tip-loading"><?php esc_html_e( 'טוען טיפ...', 'homer-patuach-tips' ); ?></div>
-						<div class="hpt-tip-display" style="display:none;">
-							<div class="hpt-tip-media"></div>
-							<div class="hpt-tip-body"></div>
-							<div class="hpt-tip-footer">
-								<div class="hpt-tip-credit"></div>
-								<button type="button" class="hpt-tip-like" aria-label="<?php esc_attr_e( 'לייק', 'homer-patuach-tips' ); ?>"><span class="hpt-like-icon">♡</span> <span class="hpt-like-count">0</span></button>
+						<div class="hpt-tip-content-wrapper">
+							<button type="button" class="hpt-nav-prev" aria-label="<?php esc_attr_e( 'טיפ קודם', 'homer-patuach-tips' ); ?>">‹</button>
+							<div class="hpt-tip-inner">
+								<div class="hpt-tip-loading"><?php esc_html_e( 'טוען טיפ...', 'homer-patuach-tips' ); ?></div>
+								<div class="hpt-tip-display" style="display:none;">
+									<div class="hpt-tip-media"></div>
+									<div class="hpt-tip-body"></div>
+									<div class="hpt-tip-footer">
+										<div class="hpt-tip-credit"></div>
+										<button type="button" class="hpt-tip-like" aria-label="<?php esc_attr_e( 'לייק', 'homer-patuach-tips' ); ?>"><span class="hpt-like-icon">♡</span> <span class="hpt-like-count">0</span></button>
+									</div>
+								</div>
+								<div class="hpt-tip-empty" style="display:none;"><?php esc_html_e( 'לא נמצאו טיפים.', 'homer-patuach-tips' ); ?></div>
 							</div>
+							<button type="button" class="hpt-nav-next" aria-label="<?php esc_attr_e( 'טיפ הבא', 'homer-patuach-tips' ); ?>">›</button>
 						</div>
-						<div class="hpt-tip-empty" style="display:none;"><?php esc_html_e( 'לא נמצאו טיפים.', 'homer-patuach-tips' ); ?></div>
-					</div>
-					<div class="hpt-bubble-nav">
-						<button type="button" class="hpt-nav-prev" aria-label="<?php esc_attr_e( 'טיפ קודם', 'homer-patuach-tips' ); ?>">‹</button>
-						<button type="button" class="hpt-nav-next" aria-label="<?php esc_attr_e( 'טיפ הבא', 'homer-patuach-tips' ); ?>">›</button>
 					</div>
 					<div class="hpt-bubble-actions">
 						<?php if ( $is_logged_in ) : ?>
@@ -103,6 +105,10 @@ class HPT_Frontend {
 				<form id="hpt-add-tip-form" class="hpt-add-tip-form">
 					<p>
 						<label for="hpt-form-content"><?php esc_html_e( 'תוכן הטיפ', 'homer-patuach-tips' ); ?> *</label>
+						<div class="hpt-form-format-bar">
+							<button type="button" class="hpt-format-btn" data-cmd="bold" title="<?php esc_attr_e( 'מודגש', 'homer-patuach-tips' ); ?>"><b>B</b></button>
+							<button type="button" class="hpt-format-btn" data-cmd="createLink" title="<?php esc_attr_e( 'קישור', 'homer-patuach-tips' ); ?>">🔗</button>
+						</div>
 						<div id="hpt-form-content" class="hpt-form-content-editable" contenteditable="true" role="textbox" aria-label="<?php esc_attr_e( 'תוכן הטיפ', 'homer-patuach-tips' ); ?>" data-placeholder="<?php esc_attr_e( 'כתוב את הטיפ כאן...', 'homer-patuach-tips' ); ?>"></div>
 					</p>
 					<p>

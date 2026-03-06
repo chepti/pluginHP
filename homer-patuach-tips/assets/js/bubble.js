@@ -61,12 +61,8 @@
 			loadTips();
 		});
 
-		$overlay.find('.hpt-nav-prev').on('click', function() {
-			prevTip();
-		});
-		$overlay.find('.hpt-nav-next').on('click', function() {
-			nextTip();
-		});
+		$overlay.find('.hpt-nav-prev').on('click', function() { prevTip(); });
+		$overlay.find('.hpt-nav-next').on('click', function() { nextTip(); });
 
 		$(document).on('click', '.hpt-tip-like', function() {
 			var $btn = $(this);
@@ -310,6 +306,19 @@
 			}
 		);
 
+		// Format toolbar: Bold, Link
+		$form.find('.hpt-format-btn').off('click').on('click', function(e) {
+			e.preventDefault();
+			var cmd = $(this).data('cmd');
+			$('#hpt-form-content').focus();
+			if (cmd === 'createLink') {
+				var url = prompt('הזן כתובת קישור:', 'https://');
+				if (url && url !== 'https://') document.execCommand('createLink', false, url);
+			} else {
+				document.execCommand(cmd, false, null);
+			}
+		});
+
 		// Paste: preserve HTML (bold, links)
 		$form.find('#hpt-form-content').off('paste').on('paste', function(e) {
 			e.preventDefault();
@@ -324,7 +333,10 @@
 			$msg.hide();
 			var $editable = $('#hpt-form-content');
 			var content = $editable.html().trim();
-			if (!$editable.text().trim()) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			var text = (tempDiv.textContent || tempDiv.innerText || '').replace(/\s+/g, ' ').trim();
+			if (!text) {
 				$msg.removeClass('success').addClass('error').text('התוכן חובה').show();
 				return;
 			}

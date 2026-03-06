@@ -147,6 +147,22 @@
 	margin-bottom: 12px;
 }
 
+.hpt-tip-content-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.hpt-tip-content-wrapper .hpt-nav-prev,
+.hpt-tip-content-wrapper .hpt-nav-next {
+	flex-shrink: 0;
+}
+
+.hpt-tip-inner {
+	flex: 1;
+	min-width: 0;
+}
+
 .hpt-tip-loading {
 	color: #888;
 	text-align: center;
@@ -230,14 +246,7 @@
 	color: #888;
 }
 
-/* ניווט */
-.hpt-bubble-nav {
-	display: flex;
-	justify-content: center;
-	gap: 16px;
-	margin-bottom: 12px;
-}
-
+/* ניווט - חצים בצדדים */
 .hpt-nav-prev,
 .hpt-nav-next {
 	width: 36px;
@@ -382,6 +391,32 @@
 	border: 1px solid var(--hpt-border);
 	border-radius: 12px;
 	font-family: var(--hpt-font);
+}
+
+.hpt-form-format-bar {
+	display: flex;
+	gap: 6px;
+	margin-bottom: 6px;
+}
+
+.hpt-format-btn {
+	width: 32px;
+	height: 28px;
+	border: 1px solid var(--hpt-border);
+	background: #fff;
+	border-radius: 8px;
+	cursor: pointer;
+	font-size: 14px;
+	font-family: var(--hpt-font);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.2s, border-color 0.2s;
+}
+
+.hpt-format-btn:hover {
+	background: #f0f2f5;
+	border-color: var(--hpt-accent);
 }
 
 .hpt-form-content-editable {
