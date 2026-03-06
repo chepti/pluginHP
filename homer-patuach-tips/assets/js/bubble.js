@@ -152,10 +152,14 @@
 		url += '&subject_id=' + filters.subject_id + '&grade_id=' + filters.grade_id;
 		if (filters.tag_ids.length) url += '&tag_ids=' + filters.tag_ids.join(',');
 		if (!hasFilters) url += '&random=1';
+		var nonce = (window.hptBubble && window.hptBubble.nonce) || '';
+		if (nonce) url += '&_wpnonce=' + encodeURIComponent(nonce);
 
 		$.ajax({
 			url: url,
-			method: 'GET'
+			method: 'GET',
+			beforeSend: function(xhr) { if (nonce) xhr.setRequestHeader('X-WP-Nonce', nonce); },
+			credentials: 'same-origin'
 		}).done(function(res) {
 			$loading.hide();
 			tips = res.tips || [];
