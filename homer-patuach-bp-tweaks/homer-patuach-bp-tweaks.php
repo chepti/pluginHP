@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - BuddyPress Tweaks
  * Plugin URI:        https://example.com/
  * Description:       Custom styles and functionality for BuddyPress pages with community badges system.
- * Version:           3.0.7
+ * Version:           3.0.8
  * Author:            chepti
  * Author URI:        https://example.com/
  * License:           GPL-2.0+
@@ -17,10 +17,14 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'HP_BP_TWEAKS_VERSION', '3.0.7' );
+define( 'HP_BP_TWEAKS_VERSION', '3.0.8' );
 define( 'HP_BP_TWEAKS_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 define( 'HP_BP_TWEAKS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
+// Include Lucide icons helper
+if ( file_exists( HP_BP_TWEAKS_PLUGIN_DIR . 'includes/class-hpg-icons.php' ) ) {
+    require_once HP_BP_TWEAKS_PLUGIN_DIR . 'includes/class-hpg-icons.php';
+}
 // Include badges system
 if ( file_exists( HP_BP_TWEAKS_PLUGIN_DIR . 'includes/badges-system.php' ) ) {
     require_once HP_BP_TWEAKS_PLUGIN_DIR . 'includes/badges-system.php';
@@ -442,7 +446,7 @@ function hp_bp_tweaks_get_user_bar_html() {
         ?>
         <div class="hp-bp-user-menu-container hp-bp-logged-out">
             <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="hp-bp-login-link" title="התחברות / הרשמה">
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="38" height="38"><path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.718 7.718 0 0112 15.75a7.718 7.718 0 015.855 2.062A8.25 8.25 0 0112 20.25a8.25 8.25 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" /></svg>
+                 <?php echo hpg_lucide_icon( 'user', 38 ); ?>
             </a>
         </div>
         <?php
@@ -637,7 +641,7 @@ function hp_bp_tweaks_group_posts_screen_content() {
 
             echo '<div class="hpg-group-bell-wrapper" style="margin-bottom: 20px; text-align: left;">';
             echo '<a href="#" class="hpg-group-approval-bell hpg-shortcode-bell' . esc_attr( $has_pending_class ) . '" data-group-id="' . esc_attr( $group->id ) . '" title="' . esc_attr( $title ) . '">';
-            echo '<svg class="hpg-bell-svg" xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 0 24 24" width="22px" fill="#ffffff"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.21 1.79-4 4-4s4 1.79 4 4v6z"/></svg>';
+            echo hpg_lucide_icon( 'bell', 22, '#ffffff' );
             echo '<span class="hpg-pending-count hpg-group-pending-count">' . esc_html( $pending_count ) . '</span>';
             echo '</a>';
             echo '</div>';

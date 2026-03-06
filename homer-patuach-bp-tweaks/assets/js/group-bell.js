@@ -183,7 +183,7 @@ jQuery(document).ready(function ($) {
     function approvePost(postId, button) {
         var card = button.closest('.hpg-pending-card');
         card.addClass('approving');
-        button.addClass('loading').html('<svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" width="18" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>מאשר...');
+        button.addClass('loading').html('<svg class="hpg-lucide-icon" xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>מאשר...');
         $.ajax({
             url: globals.ajax_url,
             type: 'POST',
@@ -200,13 +200,13 @@ jQuery(document).ready(function ($) {
                 } else {
                     alert('שגיאה באישור: ' + (r.data || ''));
                     card.removeClass('approving');
-                    button.removeClass('loading').html('<svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" width="18" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>אשר');
+                    button.removeClass('loading').html('<svg class="hpg-lucide-icon" xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>אשר');
                 }
             },
             error: function () {
                 alert('שגיאת רשת.');
                 card.removeClass('approving');
-                button.removeClass('loading').html('<svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" width="18" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>אשר');
+                button.removeClass('loading').html('<svg class="hpg-lucide-icon" xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>אשר');
             }
         });
     }
@@ -245,7 +245,7 @@ jQuery(document).ready(function ($) {
     function deletePost(postId, button) {
         var card = button.closest('.hpg-pending-card');
         card.addClass('approving');
-        button.addClass('loading').html('<svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" width="18" fill="currentColor"><circle cx="12" cy="12" r="10" opacity="0.3"/></svg>');
+        button.addClass('loading').html('<svg class="hpg-lucide-icon hpg-loader-spin" xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>');
         $.ajax({
             url: globals.ajax_url,
             type: 'POST',
@@ -262,13 +262,13 @@ jQuery(document).ready(function ($) {
                 } else {
                     alert('שגיאה: ' + (r.data || ''));
                     card.removeClass('approving');
-                    button.removeClass('loading').html('<svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" width="18" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4z"/></svg>');
+                    button.removeClass('loading').html('<svg class="hpg-lucide-icon" xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>');
                 }
             },
             error: function () {
                 alert('שגיאת רשת.');
                 card.removeClass('approving');
-                button.removeClass('loading').html('<svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" width="18" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4z"/></svg>');
+                button.removeClass('loading').html('<svg class="hpg-lucide-icon" xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>');
             }
         });
     }

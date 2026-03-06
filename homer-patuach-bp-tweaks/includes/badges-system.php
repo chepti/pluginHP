@@ -16,6 +16,7 @@ function hpg_get_badge_definitions() {
         'contributor' => [
             'name' => 'תורם',
             'emoji' => '🌱',
+            'icon' => 'sprout',
             'description' => 'פרסם לפחות 5 פוסטים',
             'threshold' => 5,
             'type' => 'posts',
@@ -24,6 +25,7 @@ function hpg_get_badge_definitions() {
         'super_contributor' => [
             'name' => 'תורם מוביל',
             'emoji' => '🌟',
+            'icon' => 'star',
             'description' => 'פרסם לפחות 10 פוסטים',
             'threshold' => 10,
             'type' => 'posts',
@@ -32,6 +34,7 @@ function hpg_get_badge_definitions() {
         'commenter' => [
             'name' => 'מגיב',
             'emoji' => '💬',
+            'icon' => 'message-circle',
             'description' => 'כתב לפחות 5 תגובות',
             'threshold' => 5,
             'type' => 'comments_given',
@@ -40,6 +43,7 @@ function hpg_get_badge_definitions() {
         'super_commenter' => [
             'name' => 'מגיב מוביל',
             'emoji' => '🗣️',
+            'icon' => 'message-square',
             'description' => 'כתב לפחות 20 תגובות',
             'threshold' => 20,
             'type' => 'comments_given',
@@ -48,6 +52,7 @@ function hpg_get_badge_definitions() {
         'rater' => [
             'name' => 'מדרג',
             'emoji' => '⭐',
+            'icon' => 'star',
             'description' => 'נתן לפחות 5 דירוגי כוכבים לתגובות',
             'threshold' => 5,
             'type' => 'star_ratings_given',
@@ -56,6 +61,7 @@ function hpg_get_badge_definitions() {
         'super_rater' => [
             'name' => 'מדרג מוביל',
             'emoji' => '🌠',
+            'icon' => 'star',
             'description' => 'נתן לפחות 20 דירוגי כוכבים לתגובות',
             'threshold' => 20,
             'type' => 'star_ratings_given',
@@ -64,6 +70,7 @@ function hpg_get_badge_definitions() {
         'lover' => [
             'name' => 'אוהב',
             'emoji' => '❤️',
+            'icon' => 'heart',
             'description' => 'נתן לפחות 10 לבבות לפוסטים',
             'threshold' => 10,
             'type' => 'heart_likes_given',
@@ -72,6 +79,7 @@ function hpg_get_badge_definitions() {
         'tagger' => [
             'name' => 'מתייג',
             'emoji' => '🏷️',
+            'icon' => 'tag',
             'description' => 'הוסיף לפחות 5 תגיות לפוסטים',
             'threshold' => 5,
             'type' => 'tags_added',
@@ -80,6 +88,7 @@ function hpg_get_badge_definitions() {
         'founder' => [
             'name' => 'מייסד',
             'emoji' => '👑',
+            'icon' => 'crown',
             'description' => 'חבר מייסד של הקהילה',
             'threshold' => 0,
             'type' => 'manual',
@@ -88,6 +97,7 @@ function hpg_get_badge_definitions() {
         'editor' => [
             'name' => 'עורך',
             'emoji' => '✏️',
+            'icon' => 'pencil',
             'description' => 'הרשאות עריכה',
             'threshold' => 0,
             'type' => 'role',
@@ -97,6 +107,7 @@ function hpg_get_badge_definitions() {
         'timeline_editor' => [
             'name' => 'עורך ציר שנתי',
             'emoji' => '📅',
+            'icon' => 'calendar',
             'description' => 'עורך ציר זמן שנתי',
             'threshold' => 0,
             'type' => 'manual',
@@ -105,6 +116,7 @@ function hpg_get_badge_definitions() {
         'super_timeline_editor' => [
             'name' => 'עורך על של צירים',
             'emoji' => '📆',
+            'icon' => 'calendar',
             'description' => 'עורך 5 צירי זמן או יותר',
             'threshold' => 5,
             'type' => 'timelines_edited',
@@ -306,7 +318,13 @@ function hpg_display_user_badges_with_progress( $user_id ) {
                 <div class="hpg-badge-item <?php echo esc_attr( $badge_class ); ?>" 
                      title="<?php echo esc_attr( $badge['description'] ); ?>">
                     <div class="hpg-badge-icon">
-                        <?php echo $badge['emoji']; ?>
+                        <?php
+                        if ( ! empty( $badge['icon'] ) && function_exists( 'hpg_lucide_icon' ) ) {
+                            echo hpg_lucide_icon( $badge['icon'], 28 );
+                        } else {
+                            echo esc_html( $badge['emoji'] );
+                        }
+                        ?>
                     </div>
                     <div class="hpg-badge-name"><?php echo esc_html( $badge['name'] ); ?></div>
                     
@@ -383,7 +401,15 @@ function hpg_display_earned_badges( $user_id, $limit = 0 ) {
     <div class="hpg-badges-list hpg-badges-profile">
         <?php foreach ( $filtered_badges as $key => $badge ) : ?>
             <div class="hpg-badge-circle" title="<?php echo esc_attr( $badge['description'] ); ?>">
-                <span class="hpg-badge-emoji"><?php echo $badge['emoji']; ?></span>
+                <span class="hpg-badge-emoji">
+                    <?php
+                    if ( ! empty( $badge['icon'] ) && function_exists( 'hpg_lucide_icon' ) ) {
+                        echo hpg_lucide_icon( $badge['icon'], 24 );
+                    } else {
+                        echo esc_html( $badge['emoji'] );
+                    }
+                    ?>
+                </span>
                 <span class="hpg-badge-label"><?php echo esc_html( $badge['name'] ); ?></span>
             </div>
         <?php endforeach; ?>

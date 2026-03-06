@@ -1,5 +1,14 @@
 /* Homer Patuach - BuddyPress Tweaks - Main Stylesheet */
 
+/* Lucide loader spin */
+.hpg-loader-spin {
+    animation: hpg-spin 0.8s linear infinite;
+}
+@keyframes hpg-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 /* --- General & Fonts --- */
 body.buddypress, .buddypress-wrap {
     font-family: 'Rubik', sans-serif !important;
@@ -834,6 +843,11 @@ body.buddypress, .buddypress-wrap {
     line-height: 1;
     margin-bottom: 2px;
 }
+.hpg-cover-badges-wrapper .hpg-badge-emoji .hpg-lucide-icon,
+.hpg-cover-badges-wrapper .hpg-badge-emoji svg {
+    display: block;
+    margin: 0 auto 2px;
+}
 
 .hpg-cover-badges-wrapper .hpg-badge-label {
     font-size: 0.65rem;
@@ -1531,6 +1545,11 @@ body.groups #group-members-list .item-meta {
     font-size: 12px !important;
     line-height: 1 !important;
     margin: 0 4px 0 0 !important;
+}
+.hpg-member-footer .hpg-badge-circle .hpg-badge-emoji .hpg-lucide-icon,
+.hpg-member-footer .hpg-badge-circle .hpg-badge-emoji svg {
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .hpg-member-footer .hpg-badge-circle .hpg-badge-label {
