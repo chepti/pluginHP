@@ -336,6 +336,11 @@ class HPT_REST {
 		$key     = $user_id ? 'u' . $user_id : 'g' . ( isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) : '' );
 		$user_has_liked = in_array( $key, $liked, true );
 
+		$edit_url = '';
+		if ( current_user_can( 'edit_others_posts' ) ) {
+			$edit_url = get_edit_post_link( $post->ID, 'raw' );
+		}
+
 		return array(
 			'id'            => $post->ID,
 			'content'       => apply_filters( 'the_content', $post->post_content ),
@@ -347,6 +352,7 @@ class HPT_REST {
 			'tags'          => $tag_names,
 			'like_count'    => $like_count,
 			'user_has_liked'=> $user_has_liked,
+			'edit_url'      => $edit_url,
 		);
 	}
 }

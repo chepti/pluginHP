@@ -1,0 +1,49 @@
+/* פעמון אישור טיפים - שורטקוד [hpt_approval_bell] */
+.hpt-approval-bell {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, #7699f2, #94b2ff);
+	color: #fff;
+	text-decoration: none;
+	transition: opacity 0.2s, transform 0.2s;
+}
+
+.hpt-approval-bell:hover {
+	opacity: 0.9;
+	transform: scale(1.05);
+}
+
+.hpt-approval-bell.hpt-bell-has-pending {
+	background: linear-gradient(135deg, #FB8255, #FB6965);
+	animation: hpt-bell-pulse 2s ease-in-out infinite;
+}
+
+@keyframes hpt-bell-pulse {
+	0%, 100% { box-shadow: 0 0 0 0 rgba(251, 130, 85, 0.4); }
+	50% { box-shadow: 0 0 0 6px rgba(251, 130, 85, 0); }
+}
+
+.hpt-approval-bell .hpt-bell-svg {
+	flex-shrink: 0;
+}
+
+.hpt-approval-bell .hpt-pending-count {
+	position: absolute;
+	top: -2px;
+	left: -2px;
+	min-width: 16px;
+	height: 16px;
+	padding: 0 4px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 16px;
+	text-align: center;
+	background: #e91e63;
+	color: #fff;
+	border-radius: 8px;
+}

@@ -209,6 +209,26 @@
 	flex: 1;
 }
 
+.hpt-tip-footer-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.hpt-tip-edit {
+	font-size: 14px;
+	color: #888;
+	text-decoration: none;
+	padding: 4px 6px;
+	border-radius: 4px;
+	transition: color 0.2s, background 0.2s;
+}
+
+.hpt-tip-edit:hover {
+	color: var(--hpt-accent);
+	background: #f0f2f5;
+}
+
 .hpt-tip-like {
 	background: none;
 	border: none;

@@ -195,6 +195,7 @@
 		var $body = $('.hpt-tip-body');
 		var $footer = $('.hpt-tip-footer');
 		var $credit = $footer.find('.hpt-tip-credit');
+		var $edit = $footer.find('.hpt-tip-edit');
 		var $like = $footer.find('.hpt-tip-like');
 
 		$media.empty();
@@ -206,6 +207,11 @@
 
 		$body.html(tip.content || '');
 		$credit.text(tip.credit ? 'מאת: ' + tip.credit : '');
+		if (tip.edit_url) {
+			$edit.attr('href', tip.edit_url).attr('target', '_blank').show();
+		} else {
+			$edit.hide();
+		}
 		$like.data('tip-id', tip.id).find('.hpt-like-count').text(tip.like_count || 0);
 		$like.toggleClass('liked', tip.user_has_liked || false);
 		$like.find('.hpt-like-icon').text((tip.user_has_liked ? '♥' : '♡'));

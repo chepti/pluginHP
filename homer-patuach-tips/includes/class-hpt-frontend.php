@@ -77,7 +77,10 @@ class HPT_Frontend {
 									<div class="hpt-tip-body"></div>
 									<div class="hpt-tip-footer">
 										<div class="hpt-tip-credit"></div>
-										<button type="button" class="hpt-tip-like" aria-label="<?php esc_attr_e( 'לייק', 'homer-patuach-tips' ); ?>"><span class="hpt-like-icon">♡</span> <span class="hpt-like-count">0</span></button>
+										<span class="hpt-tip-footer-actions">
+											<a href="#" class="hpt-tip-edit" style="display:none;" aria-label="<?php esc_attr_e( 'עריכה', 'homer-patuach-tips' ); ?>" title="<?php esc_attr_e( 'עריכה', 'homer-patuach-tips' ); ?>">✎</a>
+											<button type="button" class="hpt-tip-like" aria-label="<?php esc_attr_e( 'לייק', 'homer-patuach-tips' ); ?>"><span class="hpt-like-icon">♡</span> <span class="hpt-like-count">0</span></button>
+										</span>
 									</div>
 								</div>
 								<div class="hpt-tip-empty" style="display:none;"><?php esc_html_e( 'לא נמצאו טיפים.', 'homer-patuach-tips' ); ?></div>
