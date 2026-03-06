@@ -65,9 +65,7 @@ class HPT_Frontend {
 		<div id="hpt-bubble-overlay" class="hpt-bubble-overlay" hidden aria-hidden="true">
 			<div id="hpt-bubble-panel" class="hpt-bubble-panel">
 				<div class="hpt-bubble-panel-inner">
-					<button type="button" class="hpt-bubble-close" aria-label="<?php esc_attr_e( 'סגור', 'homer-patuach-tips' ); ?>">
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-					</button>
+					<button type="button" class="hpt-bubble-close" aria-label="<?php esc_attr_e( 'סגור', 'homer-patuach-tips' ); ?>">×</button>
 					<div class="hpt-tip-content-area">
 						<div class="hpt-tip-loading"><?php esc_html_e( 'טוען טיפ...', 'homer-patuach-tips' ); ?></div>
 						<div class="hpt-tip-display" style="display:none;">
@@ -95,9 +93,7 @@ class HPT_Frontend {
 		<?php if ( $is_logged_in ) : ?>
 		<div id="hpt-add-tip-modal" class="hpt-modal-overlay" hidden aria-hidden="true">
 			<div class="hpt-modal">
-				<button type="button" class="hpt-modal-close" aria-label="<?php esc_attr_e( 'סגור', 'homer-patuach-tips' ); ?>">
-					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-				</button>
+				<button type="button" class="hpt-modal-close" aria-label="<?php esc_attr_e( 'סגור', 'homer-patuach-tips' ); ?>">×</button>
 				<h3 class="hpt-modal-title"><?php esc_html_e( 'הוספת טיפ חדש', 'homer-patuach-tips' ); ?></h3>
 				<form id="hpt-add-tip-form" class="hpt-add-tip-form">
 					<p>

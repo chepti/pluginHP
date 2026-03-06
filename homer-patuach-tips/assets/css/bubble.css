@@ -110,28 +110,24 @@
 	position: absolute;
 	top: 12px;
 	left: 12px;
-	width: 40px;
-	height: 40px;
-	background: #f0f2f5;
+	width: 32px;
+	height: 32px;
+	background: none;
 	border: none;
-	border-radius: 50%;
 	cursor: pointer;
-	color: #555;
+	color: #333;
+	font-size: 28px;
+	line-height: 1;
+	padding: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: background 0.2s, color 0.2s;
+	transition: color 0.2s;
 	z-index: 2;
 }
 
 .hpt-bubble-close:hover {
-	background: #e4e6e9;
-	color: #333;
-}
-
-.hpt-bubble-close svg {
-	width: 20px;
-	height: 20px;
+	color: #000;
 }
 
 /* תוכן הטיפ */
@@ -221,20 +217,17 @@
 .hpt-filter-toggle {
 	flex: 1;
 	padding: 10px 16px;
-	border: 1px solid var(--hpt-border);
-	background: #f9f9f9;
+	border: none;
 	border-radius: var(--hpt-radius-btn);
 	cursor: pointer;
 	font-size: 13px;
-	color: #555;
-	transition: background 0.2s, border-color 0.2s, color 0.2s;
+	font-weight: 600;
+	transition: opacity 0.2s, transform 0.2s;
 }
 
 .hpt-add-tip-btn {
 	background: var(--hpt-gradient);
 	color: #fff;
-	border: none;
-	font-weight: 600;
 }
 
 .hpt-add-tip-btn:hover {
@@ -242,10 +235,14 @@
 	transform: translateY(-1px);
 }
 
+.hpt-filter-toggle {
+	background: linear-gradient(135deg, #7699f2, #94b2ff);
+	color: #fff;
+}
+
 .hpt-filter-toggle:hover {
-	background: #f0f2f5;
-	border-color: var(--hpt-accent);
-	color: var(--hpt-accent);
+	opacity: 0.95;
+	transform: translateY(-1px);
 }
 
 /* מודל הוספת טיפ */
@@ -284,22 +281,23 @@
 	position: absolute;
 	top: 12px;
 	left: 12px;
-	width: 40px;
-	height: 40px;
-	background: #f0f2f5;
+	width: 32px;
+	height: 32px;
+	background: none;
 	border: none;
-	border-radius: 50%;
 	cursor: pointer;
-	color: #555;
+	color: #333;
+	font-size: 28px;
+	line-height: 1;
+	padding: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: background 0.2s, color 0.2s;
+	transition: color 0.2s;
 }
 
 .hpt-modal-close:hover {
-	background: #e4e6e9;
-	color: #333;
+	color: #000;
 }
 
 .hpt-modal-title {

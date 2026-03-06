@@ -18,6 +18,85 @@ class HPT_Admin {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_menu', array( $this, 'add_pending_badge' ), 99 );
+		add_filter( 'post_row_actions', array( $this, 'add_row_actions' ), 10, 2 );
+		add_filter( 'bulk_actions-edit-os_tip', array( $this, 'add_bulk_actions' ) );
+		add_filter( 'handle_bulk_actions-edit-os_tip', array( $this, 'handle_bulk_approve' ), 10, 3 );
+		add_action( 'admin_action_hpt_approve_tip', array( $this, 'handle_single_approve' ) );
+		add_action( 'admin_notices', array( $this, 'approval_admin_notice' ) );
+	}
+
+	public function approval_admin_notice() {
+		if ( ! isset( $_GET['hpt_approved'] ) || ! current_user_can( 'edit_others_posts' ) ) {
+			return;
+		}
+		$count = (int) $_GET['hpt_approved'];
+		if ( $count < 1 ) {
+			return;
+		}
+		$screen = get_current_screen();
+		if ( ! $screen || $screen->post_type !== 'os_tip' ) {
+			return;
+		}
+		echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(
+			/* translators: %d: number of tips approved */
+			_n( '%d טיפ אושר.', '%d טיפים אושרו.', $count, 'homer-patuach-tips' ),
+			$count
+		) . '</p></div>';
+	}
+
+	public function add_row_actions( $actions, $post ) {
+		if ( $post->post_type !== 'os_tip' ) {
+			return $actions;
+		}
+		if ( $post->post_status === 'pending' && current_user_can( 'edit_others_posts' ) ) {
+			$url = wp_nonce_url(
+				admin_url( 'admin.php?action=hpt_approve_tip&tip_id=' . $post->ID ),
+				'hpt_approve_' . $post->ID
+			);
+			$actions['hpt_approve'] = '<a href="' . esc_url( $url ) . '">' . __( 'אישור', 'homer-patuach-tips' ) . '</a>';
+		}
+		return $actions;
+	}
+
+	public function add_bulk_actions( $actions ) {
+		$actions['hpt_approve'] = __( 'אישור', 'homer-patuach-tips' );
+		return $actions;
+	}
+
+	public function handle_bulk_approve( $redirect_to, $doaction, $post_ids ) {
+		if ( $doaction !== 'hpt_approve' || empty( $post_ids ) ) {
+			return $redirect_to;
+		}
+		if ( ! current_user_can( 'edit_others_posts' ) ) {
+			return $redirect_to;
+		}
+		$approved = 0;
+		foreach ( $post_ids as $post_id ) {
+			$post = get_post( $post_id );
+			if ( $post && $post->post_type === 'os_tip' && $post->post_status === 'pending' ) {
+				wp_update_post( array( 'ID' => $post_id, 'post_status' => 'publish' ) );
+				$approved++;
+			}
+		}
+		return add_query_arg( 'hpt_approved', $approved, $redirect_to );
+	}
+
+	public function handle_single_approve() {
+		$tip_id = isset( $_GET['tip_id'] ) ? (int) $_GET['tip_id'] : 0;
+		if ( ! $tip_id || ! current_user_can( 'edit_others_posts' ) ) {
+			wp_safe_redirect( admin_url( 'edit.php?post_type=os_tip' ) );
+			exit;
+		}
+		if ( ! wp_verify_nonce( isset( $_GET['_wpnonce'] ) ? $_GET['_wpnonce'] : '', 'hpt_approve_' . $tip_id ) ) {
+			wp_safe_redirect( admin_url( 'edit.php?post_type=os_tip' ) );
+			exit;
+		}
+		$post = get_post( $tip_id );
+		if ( $post && $post->post_type === 'os_tip' && $post->post_status === 'pending' ) {
+			wp_update_post( array( 'ID' => $tip_id, 'post_status' => 'publish' ) );
+		}
+		wp_safe_redirect( admin_url( 'edit.php?post_type=os_tip&hpt_approved=1' ) );
+		exit;
 	}
 
 	public function add_pending_badge() {
