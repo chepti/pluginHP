@@ -384,6 +384,31 @@
 	font-family: var(--hpt-font);
 }
 
+.hpt-form-content-editable {
+	min-height: 100px;
+	padding: 10px 14px;
+	border: 1px solid var(--hpt-border);
+	border-radius: 12px;
+	font-family: var(--hpt-font);
+	line-height: 1.5;
+	outline: none;
+}
+
+.hpt-form-content-editable:empty::before {
+	content: attr(data-placeholder);
+	color: #999;
+}
+
+.hpt-form-content-editable a {
+	color: var(--hpt-accent);
+	text-decoration: underline;
+}
+
+.hpt-form-content-editable strong,
+.hpt-form-content-editable b {
+	font-weight: 700;
+}
+
 .hpt-form-symbol-row {
 	display: flex;
 	align-items: center;
@@ -524,4 +549,24 @@
 	background: #e8ecf7;
 	border-color: var(--hpt-accent);
 	color: var(--hpt-accent);
+}
+
+.hpt-filter-clear {
+	display: block;
+	width: 100%;
+	margin-top: 12px;
+	padding: 8px 16px;
+	border: 1px solid var(--hpt-border);
+	background: #fff;
+	border-radius: var(--hpt-radius);
+	font-size: 13px;
+	color: #666;
+	cursor: pointer;
+	font-family: var(--hpt-font);
+	transition: background 0.2s, border-color 0.2s;
+}
+
+.hpt-filter-clear:hover {
+	background: #f5f5f5;
+	border-color: #ccc;
 }

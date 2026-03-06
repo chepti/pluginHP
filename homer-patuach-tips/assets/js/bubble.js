@@ -45,15 +45,26 @@
 
 		$filterToggle.on('click', function() {
 			$filterChips.toggle();
-			if ($filterChips.is(':visible') && $filterChips.children().length === 0) {
-				loadFilterOptions();
+			var $clear = $overlay.find('.hpt-filter-clear');
+			if ($filterChips.is(':visible')) {
+				if ($filterChips.children().length === 0) loadFilterOptions();
+				$clear.toggle(filters.subject_id > 0 || filters.grade_id > 0 || filters.tag_ids.length > 0);
+			} else {
+				$clear.hide();
 			}
 		});
 
-		$bubble.find('.hpt-nav-prev').on('click', function() {
+		$overlay.find('.hpt-filter-clear').on('click', function() {
+			filters = { subject_id: 0, grade_id: 0, tag_ids: [] };
+			$('.hpt-filter-chip').removeClass('active');
+			$overlay.find('.hpt-filter-clear').hide();
+			loadTips();
+		});
+
+		$overlay.find('.hpt-nav-prev').on('click', function() {
 			prevTip();
 		});
-		$bubble.find('.hpt-nav-next').on('click', function() {
+		$overlay.find('.hpt-nav-next').on('click', function() {
 			nextTip();
 		});
 
@@ -98,6 +109,7 @@
 			$chip.toggleClass('active', (type === 'subject' && filters.subject_id === id) ||
 				(type === 'grade' && filters.grade_id === id) ||
 				(type === 'tag' && filters.tag_ids.indexOf(id) >= 0));
+			$overlay.find('.hpt-filter-clear').toggle(filters.subject_id > 0 || filters.grade_id > 0 || filters.tag_ids.length > 0);
 			loadTips();
 		});
 	}
@@ -298,12 +310,21 @@
 			}
 		);
 
+		// Paste: preserve HTML (bold, links)
+		$form.find('#hpt-form-content').off('paste').on('paste', function(e) {
+			e.preventDefault();
+			var html = (e.originalEvent.clipboardData || window.clipboardData).getData('text/html');
+			var text = (e.originalEvent.clipboardData || window.clipboardData).getData('text/plain');
+			document.execCommand('insertHTML', false, html || text);
+		});
+
 		$form.off('submit').on('submit', function(e) {
 			e.preventDefault();
 			var $msg = $form.find('.hpt-form-message');
 			$msg.hide();
-			var content = $('#hpt-form-content').val().trim();
-			if (!content) {
+			var $editable = $('#hpt-form-content');
+			var content = $editable.html().trim();
+			if (!$editable.text().trim()) {
 				$msg.removeClass('success').addClass('error').text('התוכן חובה').show();
 				return;
 			}
@@ -330,6 +351,7 @@
 			}).done(function(res) {
 				$msg.removeClass('error').addClass('success').text('הטיפ נשלח לאישור. תודה!').show();
 				$form[0].reset();
+				$('#hpt-form-content').empty();
 				$('#hpt-form-image-id').val(0);
 				$('#hpt-form-emoji').val('');
 				$form.find('.hpt-form-symbol-preview').empty();

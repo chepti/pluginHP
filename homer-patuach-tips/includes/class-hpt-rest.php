@@ -135,7 +135,7 @@ class HPT_REST {
 		if ( empty( $params ) ) {
 			$params = $request->get_body_params();
 		}
-		$content    = isset( $params['content'] ) ? sanitize_textarea_field( $params['content'] ) : '';
+		$content    = isset( $params['content'] ) ? wp_kses_post( $params['content'] ) : '';
 		$credit     = isset( $params['credit'] ) ? sanitize_text_field( $params['credit'] ) : '';
 		$media_type = isset( $params['media_type'] ) && in_array( $params['media_type'], array( 'image', 'emoji' ), true ) ? $params['media_type'] : 'emoji';
 		$emoji      = isset( $params['emoji'] ) ? sanitize_text_field( $params['emoji'] ) : '';

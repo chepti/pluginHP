@@ -90,6 +90,7 @@ class HPT_Frontend {
 						<button type="button" class="hpt-filter-toggle"><?php esc_html_e( 'סינון', 'homer-patuach-tips' ); ?></button>
 					</div>
 					<div class="hpt-filter-chips" style="display:none;"></div>
+					<button type="button" class="hpt-filter-clear" style="display:none;"><?php esc_html_e( 'ניקוי סינון', 'homer-patuach-tips' ); ?></button>
 				</div>
 			</div>
 		</div>
@@ -102,7 +103,7 @@ class HPT_Frontend {
 				<form id="hpt-add-tip-form" class="hpt-add-tip-form">
 					<p>
 						<label for="hpt-form-content"><?php esc_html_e( 'תוכן הטיפ', 'homer-patuach-tips' ); ?> *</label>
-						<textarea id="hpt-form-content" name="content" required rows="4" placeholder="<?php esc_attr_e( 'כתוב את הטיפ כאן...', 'homer-patuach-tips' ); ?>"></textarea>
+						<div id="hpt-form-content" class="hpt-form-content-editable" contenteditable="true" role="textbox" aria-label="<?php esc_attr_e( 'תוכן הטיפ', 'homer-patuach-tips' ); ?>" data-placeholder="<?php esc_attr_e( 'כתוב את הטיפ כאן...', 'homer-patuach-tips' ); ?>"></div>
 					</p>
 					<p>
 						<label for="hpt-form-credit"><?php esc_html_e( 'קרדיט', 'homer-patuach-tips' ); ?></label>
