@@ -1,0 +1,49 @@
+/* OpenStuff Timeline - דף אדמין הרשמות מורים */
+
+.ost-editor-registrations-wrap {
+	dir: rtl;
+	padding: 1rem 0;
+}
+
+.ost-admin-desc {
+	background: #f0f6fc;
+	padding: 0.75rem 1rem;
+	border-radius: 0.5rem;
+	margin-bottom: 1.5rem;
+}
+
+.ost-registrations-table {
+	margin-top: 1rem;
+}
+
+.ost-registrations-table th,
+.ost-registrations-table td {
+	text-align: right;
+}
+
+.ost-status {
+	display: inline-block;
+	padding: 0.25rem 0.6rem;
+	border-radius: 999px;
+	font-size: 0.85rem;
+	color: #fff;
+}
+
+.ost-status.pending {
+	background: #ff9800;
+}
+
+.ost-status.approved,
+.ost-status.editor {
+	background: #4caf50;
+}
+
+.ost-no-user {
+	color: #999;
+	font-style: italic;
+}
+
+.ost-has-editor {
+	color: #4caf50;
+	font-weight: bold;
+}

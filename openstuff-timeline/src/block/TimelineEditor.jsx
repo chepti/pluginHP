@@ -14,6 +14,33 @@ import {
 	useSensor,
 	useSensors,
 } from '@dnd-kit/core';
+import {
+	Gamepad2,
+	FileText,
+	Settings,
+	LayoutTemplate,
+	Video,
+	File,
+	Eye,
+	ExternalLink,
+	EyeOff,
+	Clock,
+	X,
+} from 'lucide-react';
+
+const CONTENT_ICONS = {
+	game: Gamepad2,
+	worksheet: FileText,
+	presentation: Settings,
+	template: LayoutTemplate,
+	video: Video,
+	default: File,
+};
+
+function ContentIcon( { type, size = 20 } ) {
+	const Icon = CONTENT_ICONS[ type ] || CONTENT_ICONS.default;
+	return <Icon size={ size } strokeWidth={ 2 } aria-hidden />;
+}
 
 function DraggablePostCard( { post, isDragging, onHide, onForLater, onNotRelated } ) {
 	const [ menuOpen, setMenuOpen ] = useState( false );
@@ -56,11 +83,11 @@ function DraggablePostCard( { post, isDragging, onHide, onForLater, onNotRelated
 					{ post.thumbnail_url ? (
 						<img src={ post.thumbnail_url } alt="" />
 					) : (
-						<span className="ost-card-icon">{ CONTENT_ICONS[ post.content_type ] || CONTENT_ICONS.default }</span>
+						<span className="ost-card-icon"><ContentIcon type={ post.content_type } size={ 24 } /></span>
 					) }
 				</div>
 				<div className="ost-card-title">{ post.title }</div>
-				<span className="ost-card-type">{ CONTENT_ICONS[ post.content_type ] || CONTENT_ICONS.default }</span>
+				<span className="ost-card-type"><ContentIcon type={ post.content_type } size={ 14 } /></span>
 			</div>
 			<div className="ost-card-actions">
 				<button
@@ -75,19 +102,19 @@ function DraggablePostCard( { post, isDragging, onHide, onForLater, onNotRelated
 				{ menuOpen && (
 					<div className="ost-card-action-menu">
 						<button type="button" onClick={ ( e ) => { e.stopPropagation(); setPreviewOpen( true ); setMenuOpen( false ); } }>
-							👁 { __( 'תצוגה מקדימה', 'openstuff-timeline' ) }
+							<Eye size={ 16 } /> { __( 'תצוגה מקדימה', 'openstuff-timeline' ) }
 						</button>
 						<button type="button" onClick={ ( e ) => { e.stopPropagation(); window.open( post.url, '_blank' ); setMenuOpen( false ); } }>
-							🔗 { __( 'פתח בכרטיסייה חדשה', 'openstuff-timeline' ) }
+							<ExternalLink size={ 16 } /> { __( 'פתח בכרטיסייה חדשה', 'openstuff-timeline' ) }
 						</button>
 						<button type="button" onClick={ ( e ) => { e.stopPropagation(); onHide?.( post ); setMenuOpen( false ); } }>
-							👁‍🗨 { __( 'הסתר', 'openstuff-timeline' ) }
+							<EyeOff size={ 16 } /> { __( 'הסתר', 'openstuff-timeline' ) }
 						</button>
 						<button type="button" onClick={ ( e ) => { e.stopPropagation(); onForLater?.( post ); setMenuOpen( false ); } }>
-							⏱ { __( 'למיון בהמשך', 'openstuff-timeline' ) }
+							<Clock size={ 16 } /> { __( 'למיון בהמשך', 'openstuff-timeline' ) }
 						</button>
 						<button type="button" onClick={ ( e ) => { e.stopPropagation(); onNotRelated?.( post ); setMenuOpen( false ); } }>
-							✕ { __( 'לא קשור לנושא', 'openstuff-timeline' ) }
+							<X size={ 16 } /> { __( 'לא קשור לנושא', 'openstuff-timeline' ) }
 						</button>
 					</div>
 				) }
@@ -105,7 +132,7 @@ function DraggablePostCard( { post, isDragging, onHide, onForLater, onNotRelated
 					<div className="ost-preview-header">
 						<span className="ost-preview-title">{ post.title }</span>
 						<button type="button" className="ost-preview-close" onClick={ () => setPreviewOpen( false ) } aria-label={ __( 'סגור', 'openstuff-timeline' ) }>
-							✕
+							<X size={ 20 } />
 						</button>
 					</div>
 					<iframe src={ post.url } title={ post.title } className="ost-preview-iframe" />
@@ -136,7 +163,7 @@ function DraggablePinCard( { pin, isDragging, onApprovePin } ) {
 				{ pin.thumbnail_url ? (
 					<img src={ pin.thumbnail_url } alt="" />
 				) : (
-					<span>{ CONTENT_ICONS[ pin.content_type ] || '📄' }</span>
+					<span><ContentIcon type={ pin.content_type } size={ 24 } /></span>
 				) }
 			</div>
 			<span className="ost-pin-title">{ pin.title }</span>
@@ -292,15 +319,6 @@ function DroppableTopic( { topic, zoomOut, onApprovePin, isOver, children, sortM
 		</div>
 	);
 }
-
-const CONTENT_ICONS = {
-	game: '🎲',
-	worksheet: '📝',
-	presentation: '⚙️',
-	template: '🏗️',
-	video: '🎬',
-	default: '📄',
-};
 
 export default function TimelineEditor( { timelineId, onTimelineChange } ) {
 	const [ timelines, setTimelines ] = useState( [] );
@@ -674,7 +692,7 @@ export default function TimelineEditor( { timelineId, onTimelineChange } ) {
 											{ p.thumbnail_url ? (
 												<img src={ p.thumbnail_url } alt="" />
 											) : (
-												<span className="ost-card-icon">{ CONTENT_ICONS[ p.content_type ] || CONTENT_ICONS.default }</span>
+												<span className="ost-card-icon"><ContentIcon type={ p.content_type } size={ 24 } /></span>
 											) }
 										</div>
 										<div className="ost-card-title">{ p.title }</div>
@@ -777,11 +795,11 @@ export default function TimelineEditor( { timelineId, onTimelineChange } ) {
 						{ activePost.thumbnail_url ? (
 							<img src={ activePost.thumbnail_url } alt="" />
 						) : (
-							<span className="ost-card-icon">{ CONTENT_ICONS[ activePost.content_type ] || CONTENT_ICONS.default }</span>
+							<span className="ost-card-icon"><ContentIcon type={ activePost.content_type } size={ 24 } /></span>
 						) }
 					</div>
 					<div className="ost-card-title">{ activePost.title }</div>
-					<span className="ost-card-type">{ CONTENT_ICONS[ activePost.content_type ] || CONTENT_ICONS.default }</span>
+					<span className="ost-card-type"><ContentIcon type={ activePost.content_type } size={ 14 } /></span>
 				</div>
 			) : activePin ? (
 				<div className="ost-pin-card ost-drag-overlay">
@@ -789,7 +807,7 @@ export default function TimelineEditor( { timelineId, onTimelineChange } ) {
 						{ activePin.thumbnail_url ? (
 							<img src={ activePin.thumbnail_url } alt="" />
 						) : (
-							<span>{ CONTENT_ICONS[ activePin.content_type ] || '📄' }</span>
+							<span><ContentIcon type={ activePin.content_type } size={ 24 } /></span>
 						) }
 					</div>
 					<span className="ost-pin-title">{ activePin.title }</span>

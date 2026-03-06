@@ -3,7 +3,7 @@
  * Plugin Name:       SENDISES - Content Tracker
  * Plugin URI:        https://example.com/
  * Description:       Tracks post reading for logged-in users and sends notifications via Amazon SES.
- * Version:           1.5.0
+ * Version:           1.5.1
  * Author:            Chepti
  * Author URI:        https://example.com/
  * License:           GPL v2 or later

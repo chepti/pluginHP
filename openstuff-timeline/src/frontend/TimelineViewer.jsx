@@ -17,6 +17,31 @@ import {
 	verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import {
+	Gamepad2,
+	FileText,
+	Settings,
+	LayoutTemplate,
+	Video,
+	File,
+	Tag,
+	Eye,
+	Heart,
+} from 'lucide-react';
+
+const CONTENT_ICONS = {
+	game: Gamepad2,
+	worksheet: FileText,
+	presentation: Settings,
+	template: LayoutTemplate,
+	video: Video,
+	default: File,
+};
+
+function ContentIcon( { type, size = 20 } ) {
+	const Icon = CONTENT_ICONS[ type ] || CONTENT_ICONS.default;
+	return <Icon size={ size } strokeWidth={ 2 } aria-hidden />;
+}
 
 function getFetchFn( fetchFn ) {
 	if ( fetchFn && typeof fetchFn === 'function' ) {
@@ -46,15 +71,6 @@ function postFetch( path, body ) {
 	}
 	return fetch( url, opts ).then( ( r ) => r.json() );
 }
-
-const CONTENT_ICONS = {
-	game: '🎲',
-	worksheet: '📝',
-	presentation: '⚙️',
-	template: '🏗️',
-	video: '🎬',
-	default: '📄',
-};
 
 /* פלטת צבעים לעיגולי נושאים - פסטל */
 const TOPIC_PALETTE = [
@@ -95,7 +111,7 @@ function PinCard( {
 				{ pin.thumbnail_url ? (
 					<img src={ pin.thumbnail_url } alt="" />
 				) : (
-					<span className="ost-pin-icon">{ CONTENT_ICONS[ pin.content_type ] || CONTENT_ICONS.default }</span>
+					<span className="ost-pin-icon"><ContentIcon type={ pin.content_type } size={ 24 } /></span>
 				) }
 			</div>
 			<div className="ost-pin-body">
@@ -105,7 +121,7 @@ function PinCard( {
 						{ pin.author_name && <span className="ost-pin-author">{ pin.author_name }</span> }
 						{ pin.tags?.length > 0 && (
 							<span className="ost-pin-tags">
-								<svg className="ost-tag-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden><path d="M20.59 13.41l-7.17 7.17c-.37.37-.88.59-1.42.59H5c-1.1 0-2-.9-2-2v-7c0-.53.21-1.04.59-1.41l7.17-7.17C11.53 3.21 12.04 3 12.57 3H19c1.1 0 2 .9 2 2v6.43c0 .53-.21 1.04-.41 1.58zM7.5 12C6.12 12 5 13.12 5 14.5S6.12 17 7.5 17 10 15.88 10 14.5 8.88 12 7.5 12z"/></svg>
+								<Tag size={ 14 } strokeWidth={ 2 } aria-hidden />
 								{ pin.tags.join( ', ' ) }
 							</span>
 						) }
@@ -114,7 +130,7 @@ function PinCard( {
 				) }
 			</div>
 			<div className="ost-pin-type-circle">
-				<span>{ CONTENT_ICONS[ pin.content_type ] || CONTENT_ICONS.default }</span>
+				<span><ContentIcon type={ pin.content_type } size={ 14 } /></span>
 			</div>
 		</div>
 	) : (
@@ -128,7 +144,7 @@ function PinCard( {
 				{ pin.thumbnail_url ? (
 					<img src={ pin.thumbnail_url } alt="" />
 				) : (
-					<span className="ost-pin-icon">{ CONTENT_ICONS[ pin.content_type ] || CONTENT_ICONS.default }</span>
+					<span className="ost-pin-icon"><ContentIcon type={ pin.content_type } size={ 24 } /></span>
 				) }
 			</div>
 			<div className="ost-pin-body">
@@ -138,7 +154,7 @@ function PinCard( {
 						{ pin.author_name && <span className="ost-pin-author">{ pin.author_name }</span> }
 						{ pin.tags?.length > 0 && (
 							<span className="ost-pin-tags">
-								<svg className="ost-tag-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden><path d="M20.59 13.41l-7.17 7.17c-.37.37-.88.59-1.42.59H5c-1.1 0-2-.9-2-2v-7c0-.53.21-1.04.59-1.41l7.17-7.17C11.53 3.21 12.04 3 12.57 3H19c1.1 0 2 .9 2 2v6.43c0 .53-.21 1.04-.41 1.58zM7.5 12C6.12 12 5 13.12 5 14.5S6.12 17 7.5 17 10 15.88 10 14.5 8.88 12 7.5 12z"/></svg>
+								<Tag size={ 14 } strokeWidth={ 2 } aria-hidden />
 								{ pin.tags.join( ', ' ) }
 							</span>
 						) }
@@ -147,7 +163,7 @@ function PinCard( {
 				) }
 			</div>
 			<div className="ost-pin-type-circle">
-				<span>{ CONTENT_ICONS[ pin.content_type ] || CONTENT_ICONS.default }</span>
+				<span><ContentIcon type={ pin.content_type } size={ 14 } /></span>
 			</div>
 		</a>
 	);
@@ -357,11 +373,11 @@ export default function TimelineViewer( { timelineId, fetchFn } ) {
 				<h2 className="ost-viewer-title">{ timeline.title }</h2>
 				<div className="ost-viewer-meta">
 					<span className="ost-meta-item ost-views" title="צפיות">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 10c-2.48 0-4.5-2.02-4.5-4.5S9.52 5.5 12 5.5s4.5 2.02 4.5 4.5-2.02 4.5-4.5 4.5zm0-7c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5 2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5z"/></svg>
+						<Eye size={ 18 } strokeWidth={ 2 } aria-hidden />
 						{ timeline.views ?? 0 }
 					</span>
 					<button type="button" className="ost-meta-item ost-like-btn" onClick={ handleLike } title="לייק">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+						<Heart size={ 18 } strokeWidth={ 2 } aria-hidden />
 						<span className="ost-like-count">{ timeline.likes ?? 0 }</span>
 					</button>
 				</div>

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "ost/timeline-editor",
+  "version": "1.0.0",
+  "title": "ציר זמן שנתי (עורך)",
+  "category": "widgets",
+  "icon": "calendar-alt",
+  "description": "עורך ציר זמן שנתי - המחסן וציר הנושאים",
+  "supports": {
+    "html": false,
+    "multiple": false
+  },
+  "attributes": {
+    "timelineId": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css"
+}

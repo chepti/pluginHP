@@ -393,10 +393,12 @@
 }
 
 .ost-card-action-menu button {
-	display: block;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.5rem;
 	width: 100%;
 	padding: 0.5rem 1rem;
-	text-align: right;
 	background: none;
 	border: none;
 	cursor: pointer;

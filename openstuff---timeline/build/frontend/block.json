@@ -1,0 +1,22 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "ost/timeline-viewer",
+  "version": "1.0.0",
+  "title": "ציר זמן שנתי (תצוגה)",
+  "category": "widgets",
+  "icon": "visibility",
+  "description": "תצוגת ציר זמן שנתי לצפייה ציבורית",
+  "supports": {
+    "html": false,
+    "multiple": true
+  },
+  "attributes": {
+    "timelineId": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css"
+}
