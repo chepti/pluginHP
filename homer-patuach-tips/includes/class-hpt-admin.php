@@ -17,6 +17,21 @@ class HPT_Admin {
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		add_action( 'admin_menu', array( $this, 'add_pending_badge' ), 99 );
+	}
+
+	public function add_pending_badge() {
+		global $menu;
+		$pending = (int) wp_count_posts( 'os_tip' )->pending;
+		if ( $pending < 1 || ! current_user_can( 'edit_others_posts' ) ) {
+			return;
+		}
+		foreach ( (array) $menu as $i => $item ) {
+			if ( isset( $item[2] ) && $item[2] === 'edit.php?post_type=os_tip' ) {
+				$menu[ $i ][0] .= ' <span class="awaiting-mod count-' . esc_attr( $pending ) . '"><span class="pending-count">' . number_format_i18n( $pending ) . '</span></span>';
+				break;
+			}
+		}
 	}
 
 	public function add_meta_boxes() {

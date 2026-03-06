@@ -64,56 +64,74 @@
 	line-height: 1;
 }
 
-/* פאנל מורחב */
+/* Overlay + פאנל ממורכז 50% */
+.hpt-bubble-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 99995;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+}
+
+.hpt-bubble-overlay[hidden] {
+	display: none !important;
+}
+
 .hpt-bubble-panel {
-	position: absolute;
-	width: 320px;
-	max-width: calc(100vw - 48px);
+	width: 50vw;
+	height: 50vh;
+	min-width: 280px;
+	min-height: 320px;
+	max-width: 600px;
+	max-height: 80vh;
 	background: #fff;
 	border-radius: var(--hpt-radius);
 	box-shadow: var(--hpt-shadow);
 	border: 1px solid var(--hpt-border);
 	overflow: hidden;
-}
-
-.hpt-bubble--bottom-left .hpt-bubble-panel,
-.hpt-bubble--top-left .hpt-bubble-panel {
-	left: 0;
-	bottom: 64px;
-}
-
-.hpt-bubble--bottom-right .hpt-bubble-panel,
-.hpt-bubble--top-right .hpt-bubble-panel {
-	right: 0;
-	bottom: 64px;
-}
-
-.hpt-bubble--top-left .hpt-bubble-panel,
-.hpt-bubble--top-right .hpt-bubble-panel {
-	bottom: auto;
-	top: 64px;
+	display: flex;
+	flex-direction: column;
 }
 
 .hpt-bubble-panel-inner {
-	padding: 16px;
+	padding: 24px;
 	position: relative;
+	flex: 1;
+	overflow-y: auto;
 }
 
 .hpt-bubble-close {
 	position: absolute;
-	top: 8px;
-	left: 8px;
-	background: none;
+	top: 12px;
+	left: 12px;
+	width: 40px;
+	height: 40px;
+	background: #f0f2f5;
 	border: none;
-	font-size: 24px;
+	border-radius: 50%;
 	cursor: pointer;
-	color: #888;
-	line-height: 1;
-	padding: 4px;
+	color: #555;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.2s, color 0.2s;
+	z-index: 2;
 }
 
 .hpt-bubble-close:hover {
+	background: #e4e6e9;
 	color: #333;
+}
+
+.hpt-bubble-close svg {
+	width: 20px;
+	height: 20px;
 }
 
 /* תוכן הטיפ */
@@ -192,24 +210,150 @@
 	color: var(--hpt-accent);
 }
 
-/* כפתור סינון */
+/* שורת כפתורים: הוספת טיפ + סינון */
+.hpt-bubble-actions {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.hpt-add-tip-btn,
 .hpt-filter-toggle {
-	width: 100%;
-	padding: 8px 16px;
+	flex: 1;
+	padding: 10px 16px;
 	border: 1px solid var(--hpt-border);
 	background: #f9f9f9;
 	border-radius: var(--hpt-radius-btn);
 	cursor: pointer;
 	font-size: 13px;
 	color: #555;
-	margin-bottom: 8px;
-	transition: background 0.2s, border-color 0.2s;
+	transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.hpt-add-tip-btn {
+	background: var(--hpt-gradient);
+	color: #fff;
+	border: none;
+	font-weight: 600;
+}
+
+.hpt-add-tip-btn:hover {
+	opacity: 0.95;
+	transform: translateY(-1px);
 }
 
 .hpt-filter-toggle:hover {
 	background: #f0f2f5;
 	border-color: var(--hpt-accent);
 	color: var(--hpt-accent);
+}
+
+/* מודל הוספת טיפ */
+.hpt-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 99999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+}
+
+.hpt-modal-overlay[hidden] {
+	display: none !important;
+}
+
+.hpt-modal {
+	width: 90%;
+	max-width: 480px;
+	max-height: 90vh;
+	background: #fff;
+	border-radius: var(--hpt-radius);
+	box-shadow: var(--hpt-shadow);
+	border: 1px solid var(--hpt-border);
+	overflow-y: auto;
+	position: relative;
+	padding: 24px;
+}
+
+.hpt-modal-close {
+	position: absolute;
+	top: 12px;
+	left: 12px;
+	width: 40px;
+	height: 40px;
+	background: #f0f2f5;
+	border: none;
+	border-radius: 50%;
+	cursor: pointer;
+	color: #555;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.2s, color 0.2s;
+}
+
+.hpt-modal-close:hover {
+	background: #e4e6e9;
+	color: #333;
+}
+
+.hpt-modal-title {
+	margin: 0 0 20px 0;
+	text-align: right;
+	font-size: 1.25rem;
+}
+
+.hpt-add-tip-form label {
+	display: block;
+	margin-bottom: 4px;
+	font-weight: 600;
+}
+
+.hpt-add-tip-form p {
+	margin-bottom: 16px;
+}
+
+.hpt-add-tip-form textarea,
+.hpt-add-tip-form input[type="text"],
+.hpt-add-tip-form select {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid var(--hpt-border);
+	border-radius: 4px;
+}
+
+.hpt-form-submit {
+	background: var(--hpt-gradient);
+	color: #fff;
+	border: none;
+	padding: 12px 24px;
+	border-radius: var(--hpt-radius-btn);
+	cursor: pointer;
+	font-weight: 600;
+}
+
+.hpt-form-submit:hover {
+	opacity: 0.95;
+}
+
+.hpt-form-message {
+	padding: 8px;
+	border-radius: 4px;
+}
+
+.hpt-form-message.success {
+	background: #e8f5e9;
+	color: #2e7d32;
+}
+
+.hpt-form-message.error {
+	background: #ffebee;
+	color: #c62828;
 }
 
 /* צ'יפי סינון */

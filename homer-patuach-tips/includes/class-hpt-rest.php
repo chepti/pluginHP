@@ -17,20 +17,37 @@ class HPT_REST {
 
 	public function register_routes() {
 		register_rest_route( 'hpt/v1', '/tips', array(
-			'methods'             => WP_REST_Server::READABLE,
-			'callback'            => array( $this, 'get_tips' ),
-			'permission_callback' => '__return_true',
-			'args'                => array(
-				'random'     => array( 'type' => 'boolean', 'default' => false ),
-				'subject_id' => array( 'type' => 'integer', 'default' => 0 ),
-				'grade_id'   => array( 'type' => 'integer', 'default' => 0 ),
-				'tag_ids'    => array(
-					'type'    => 'array',
-					'default' => array(),
-					'items'   => array( 'type' => 'integer' ),
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_tips' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'random'     => array( 'type' => 'boolean', 'default' => false ),
+					'subject_id' => array( 'type' => 'integer', 'default' => 0 ),
+					'grade_id'   => array( 'type' => 'integer', 'default' => 0 ),
+					'tag_ids'    => array(
+						'type'    => 'array',
+						'default' => array(),
+						'items'   => array( 'type' => 'integer' ),
+					),
+					'offset'     => array( 'type' => 'integer', 'default' => 0 ),
+					'per_page'   => array( 'type' => 'integer', 'default' => 10 ),
 				),
-				'offset'     => array( 'type' => 'integer', 'default' => 0 ),
-				'per_page'   => array( 'type' => 'integer', 'default' => 10 ),
+			),
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'create_tip' ),
+				'permission_callback' => function() { return is_user_logged_in(); },
+				'args'                => array(
+					'content'    => array( 'type' => 'string', 'required' => true ),
+					'credit'     => array( 'type' => 'string' ),
+					'media_type' => array( 'type' => 'string', 'default' => 'emoji' ),
+					'emoji'      => array( 'type' => 'string' ),
+					'image_id'   => array( 'type' => 'integer', 'default' => 0 ),
+					'subject_id' => array( 'type' => 'integer', 'default' => 0 ),
+					'grade_id'   => array( 'type' => 'integer', 'default' => 0 ),
+					'tags'       => array( 'type' => 'string' ),
+				),
 			),
 		) );
 
@@ -39,6 +56,60 @@ class HPT_REST {
 			'callback'            => array( $this, 'get_filter_options' ),
 			'permission_callback' => '__return_true',
 		) );
+	}
+
+	public function create_tip( $request ) {
+		$params = $request->get_json_params();
+		if ( empty( $params ) ) {
+			$params = $request->get_body_params();
+		}
+		$content    = isset( $params['content'] ) ? sanitize_textarea_field( $params['content'] ) : '';
+		$credit     = isset( $params['credit'] ) ? sanitize_text_field( $params['credit'] ) : '';
+		$media_type = isset( $params['media_type'] ) && in_array( $params['media_type'], array( 'image', 'emoji' ), true ) ? $params['media_type'] : 'emoji';
+		$emoji      = isset( $params['emoji'] ) ? sanitize_text_field( $params['emoji'] ) : '';
+		$image_id   = isset( $params['image_id'] ) ? (int) $params['image_id'] : 0;
+		$subject_id = isset( $params['subject_id'] ) ? (int) $params['subject_id'] : 0;
+		$grade_id   = isset( $params['grade_id'] ) ? (int) $params['grade_id'] : 0;
+		$tags_str   = isset( $params['tags'] ) ? sanitize_text_field( $params['tags'] ) : '';
+
+		if ( empty( $content ) ) {
+			return new WP_Error( 'missing_content', __( 'תוכן הטיפ חובה', 'homer-patuach-tips' ), array( 'status' => 400 ) );
+		}
+
+		$user_id = get_current_user_id();
+		$post_id = wp_insert_post( array(
+			'post_type'   => 'os_tip',
+			'post_title'  => wp_trim_words( $content, 5 ),
+			'post_content' => $content,
+			'post_status' => 'pending',
+			'post_author' => $user_id,
+		) );
+
+		if ( is_wp_error( $post_id ) ) {
+			return $post_id;
+		}
+
+		update_post_meta( $post_id, 'hpt_credit', $credit );
+		update_post_meta( $post_id, 'hpt_credit_user_id', $credit ? 0 : $user_id );
+		update_post_meta( $post_id, 'hpt_has_media_type', $media_type );
+		update_post_meta( $post_id, 'hpt_emoji', $media_type === 'emoji' ? $emoji : '' );
+		update_post_meta( $post_id, 'hpt_image_id', $media_type === 'image' ? $image_id : 0 );
+
+		if ( $subject_id > 0 && taxonomy_exists( 'subject' ) ) {
+			wp_set_object_terms( $post_id, array( $subject_id ), 'subject' );
+		}
+		if ( $grade_id > 0 && taxonomy_exists( 'class' ) ) {
+			wp_set_object_terms( $post_id, array( $grade_id ), 'class' );
+		}
+		if ( ! empty( $tags_str ) && taxonomy_exists( 'tip_tag' ) ) {
+			$tags = array_map( 'trim', explode( ',', $tags_str ) );
+			$tags = array_filter( $tags );
+			if ( ! empty( $tags ) ) {
+				wp_set_object_terms( $post_id, $tags, 'tip_tag' );
+			}
+		}
+
+		return rest_ensure_response( array( 'id' => $post_id, 'message' => __( 'הטיפ נשלח לאישור', 'homer-patuach-tips' ) ) );
 	}
 
 	public function get_tips( $request ) {
