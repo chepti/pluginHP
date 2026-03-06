@@ -41,10 +41,13 @@ class HPT_Frontend {
 		if ( is_user_logged_in() ) {
 			wp_enqueue_media();
 		}
+		$can_edit = current_user_can( 'edit_others_posts' ) || current_user_can( 'edit_others_tips' );
 		wp_localize_script( 'hpt-bubble', 'hptBubble', array(
-			'restUrl'   => rest_url( 'hpt/v1/' ),
-			'nonce'     => wp_create_nonce( 'wp_rest' ),
-			'loggedIn'  => is_user_logged_in(),
+			'restUrl'    => rest_url( 'hpt/v1/' ),
+			'nonce'      => wp_create_nonce( 'wp_rest' ),
+			'loggedIn'   => is_user_logged_in(),
+			'canEdit'    => $can_edit,
+			'editBaseUrl' => $can_edit ? admin_url( 'post.php' ) : '',
 		) );
 	}
 

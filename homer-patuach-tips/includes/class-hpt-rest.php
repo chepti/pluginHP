@@ -382,8 +382,9 @@ class HPT_REST {
 		$user_has_liked = in_array( $key, $liked, true );
 
 		$edit_url = '';
-		if ( current_user_can( 'edit_others_posts' ) ) {
-			$edit_url = get_edit_post_link( $post->ID, 'raw' );
+		if ( current_user_can( 'edit_post', $post->ID ) || current_user_can( 'edit_others_posts' ) || current_user_can( 'edit_others_tips' ) ) {
+			$link = get_edit_post_link( $post->ID, 'raw' );
+			$edit_url = $link ? $link : admin_url( 'post.php?post=' . $post->ID . '&action=edit' );
 		}
 
 		return array(

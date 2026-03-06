@@ -211,8 +211,12 @@
 
 		$body.html(tip.content || '');
 		$credit.text(tip.credit ? 'מאת: ' + tip.credit : '');
-		if (tip.edit_url) {
-			$edit.attr('href', tip.edit_url).attr('target', '_blank').show();
+		var editUrl = tip.edit_url;
+		if (!editUrl && (window.hptBubble && window.hptBubble.canEdit) && window.hptBubble.editBaseUrl && tip.id) {
+			editUrl = window.hptBubble.editBaseUrl + '?post=' + tip.id + '&action=edit';
+		}
+		if (editUrl) {
+			$edit.attr('href', editUrl).attr('target', '_blank').show();
 		} else {
 			$edit.hide();
 		}
