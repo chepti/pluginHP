@@ -16,6 +16,15 @@ class HPT_REST {
 	}
 
 	public function register_routes() {
+		// tips/pending לפני tips כדי למנוע התאמה שגויה
+		register_rest_route( 'hpt/v1', '/tips/pending', array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => array( $this, 'get_pending_tips' ),
+			'permission_callback' => function() {
+				return current_user_can( 'edit_others_posts' ) || current_user_can( 'edit_others_tips' );
+			},
+		) );
+
 		register_rest_route( 'hpt/v1', '/tips', array(
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -68,12 +77,6 @@ class HPT_REST {
 			'methods'             => WP_REST_Server::CREATABLE,
 			'callback'            => array( $this, 'upload_image' ),
 			'permission_callback' => function() { return is_user_logged_in(); },
-		) );
-
-		register_rest_route( 'hpt/v1', '/tips/pending', array(
-			'methods'             => WP_REST_Server::READABLE,
-			'callback'            => array( $this, 'get_pending_tips' ),
-			'permission_callback' => function() { return current_user_can( 'edit_others_posts' ); },
 		) );
 
 		register_rest_route( 'hpt/v1', '/tips/(?P<id>\d+)/approve', array(
@@ -299,20 +302,21 @@ class HPT_REST {
 	}
 
 	public function get_pending_tips( $request ) {
-		$query = new WP_Query( array(
+		$posts = get_posts( array(
 			'post_type'      => 'os_tip',
-			'post_status'    => 'pending',
+			'post_status'    => array( 'pending' ),
 			'posts_per_page' => 50,
 			'orderby'        => 'date',
 			'order'          => 'ASC',
+			'numberposts'    => 50,
 		) );
 		$tips = array();
-		foreach ( $query->posts as $post ) {
+		foreach ( $posts as $post ) {
 			$tips[] = $this->format_tip( $post );
 		}
 		return rest_ensure_response( array(
 			'tips'  => $tips,
-			'total' => $query->found_posts,
+			'total' => count( $tips ),
 		) );
 	}
 
