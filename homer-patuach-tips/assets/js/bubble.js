@@ -57,6 +57,31 @@
 			nextTip();
 		});
 
+		$(document).on('click', '.hpt-tip-like', function() {
+			var $btn = $(this);
+			var tipId = $btn.data('tip-id');
+			if (!tipId || $btn.hasClass('hpt-like-loading')) return;
+			$btn.addClass('hpt-like-loading');
+			$.ajax({
+				url: (window.hptBubble && window.hptBubble.restUrl) ? window.hptBubble.restUrl + 'tips/' + tipId + '/like' : '/wp-json/hpt/v1/tips/' + tipId + '/like',
+				method: 'POST',
+				beforeSend: function(xhr) {
+					xhr.setRequestHeader('X-WP-Nonce', (window.hptBubble && window.hptBubble.nonce) || '');
+				}
+			}).done(function(res) {
+				$btn.find('.hpt-like-count').text(res.like_count);
+				$btn.toggleClass('liked', res.user_has_liked);
+				$btn.find('.hpt-like-icon').text(res.user_has_liked ? '♥' : '♡');
+				var idx = tips.findIndex(function(t) { return t.id == tipId; });
+				if (idx >= 0) {
+					tips[idx].like_count = res.like_count;
+					tips[idx].user_has_liked = res.user_has_liked;
+				}
+			}).always(function() {
+				$btn.removeClass('hpt-like-loading');
+			});
+		});
+
 		$(document).on('click', '.hpt-filter-chip', function() {
 			var $chip = $(this);
 			var type = $chip.data('type');
@@ -160,7 +185,9 @@
 	function renderTip(tip) {
 		var $media = $('.hpt-tip-media');
 		var $body = $('.hpt-tip-body');
-		var $credit = $('.hpt-tip-credit');
+		var $footer = $('.hpt-tip-footer');
+		var $credit = $footer.find('.hpt-tip-credit');
+		var $like = $footer.find('.hpt-tip-like');
 
 		$media.empty();
 		if (tip.emoji) {
@@ -171,6 +198,9 @@
 
 		$body.html(tip.content || '');
 		$credit.text(tip.credit ? 'מאת: ' + tip.credit : '');
+		$like.data('tip-id', tip.id).find('.hpt-like-count').text(tip.like_count || 0);
+		$like.toggleClass('liked', tip.user_has_liked || false);
+		$like.find('.hpt-like-icon').text((tip.user_has_liked ? '♥' : '♡'));
 	}
 
 	function escapeHtml(text) {
@@ -197,45 +227,60 @@
 			}
 		});
 
-		$form.find('input[name="media_type"]').on('change', function() {
-			var type = $(this).val();
-			$form.find('.hpt-form-emoji-wrap').toggle(type === 'emoji');
-			$form.find('.hpt-form-image-wrap').toggle(type === 'image');
-		});
-
-		// Emoji picker
+		// Emoji picker - opens emoji keyboard
 		var commonEmojis = ['💡', '📚', '✏️', '🎯', '🌟', '👍', '💪', '🧠', '❤️', '🎨', '🔬', '📖', '✨', '🌈', '🎓'];
 		$form.find('.hpt-form-emoji-pick').off('click').on('click', function() {
-			var $input = $('#hpt-form-emoji');
+			var $preview = $form.find('.hpt-form-symbol-preview');
 			var $pop = $('.hpt-popover-emoji');
+			$('#hpt-form-image-id').val(0);
 			if ($pop.length) {
 				$pop.toggle();
 				return;
 			}
-			$pop = $('<div class="hpt-popover-emoji" style="position:absolute;background:#fff;border:1px solid #e9ebee;border-radius:8px;padding:8px;box-shadow:0 5px 20px rgba(0,0,0,0.2);z-index:100001;"></div>');
+			$pop = $('<div class="hpt-popover-emoji"></div>');
 			commonEmojis.forEach(function(emoji) {
-				$pop.append($('<button type="button" class="hpt-emoji-btn" style="font-size:24px;padding:4px;margin:2px;border:none;background:none;cursor:pointer;">').text(emoji));
+				$pop.append($('<button type="button" class="hpt-emoji-btn">').text(emoji));
 			});
 			$('body').append($pop);
-			var pos = $input.offset();
-			$pop.css({ top: pos.top - 100, right: pos.right }).show();
+			var $btn = $(this);
+			var pos = $btn.offset();
+			$pop.css({ top: pos.top - 120, right: pos.right }).show();
 			$pop.on('click', '.hpt-emoji-btn', function() {
-				$input.val($(this).text());
+				var e = $(this).text();
+				$('#hpt-form-emoji').val(e);
+				$preview.html('<span class="hpt-symbol-emoji">' + e + '</span>').show();
 				$pop.remove();
 			});
 			$(document).one('click', function() { $pop.remove(); });
 		});
 
-		// Image upload
+		// Image from computer - file input
 		$form.find('.hpt-form-upload-image').off('click').on('click', function() {
-			if (typeof wp === 'undefined' || !wp.media) return;
-			var frame = wp.media({ library: { type: 'image' }, multiple: false });
-			frame.on('select', function() {
-				var att = frame.state().get('selection').first().toJSON();
-				$('#hpt-form-image-id').val(att.id);
-				$form.find('.hpt-form-image-preview').html('<img src="' + att.url + '" style="max-width:80px;height:auto;">');
+			$('#hpt-form-file-input').click();
+		});
+		$('#hpt-form-file-input').off('change').on('change', function() {
+			var file = this.files[0];
+			if (!file || !file.type.match('image.*')) return;
+			var fd = new FormData();
+			fd.append('image', file);
+			$form.find('.hpt-form-symbol-preview').html('<span class="hpt-uploading">טוען...</span>');
+			$.ajax({
+				url: (window.hptBubble && window.hptBubble.restUrl) ? window.hptBubble.restUrl + 'upload-image' : '/wp-json/hpt/v1/upload-image',
+				method: 'POST',
+				data: fd,
+				processData: false,
+				contentType: false,
+				beforeSend: function(xhr) {
+					xhr.setRequestHeader('X-WP-Nonce', (window.hptBubble && window.hptBubble.nonce) || '');
+				}
+			}).done(function(res) {
+				$('#hpt-form-image-id').val(res.id);
+				$('#hpt-form-emoji').val('');
+				$form.find('.hpt-form-symbol-preview').html('<img src="' + res.url + '" alt="">').show();
+			}).fail(function() {
+				$form.find('.hpt-form-symbol-preview').html('<span class="hpt-upload-err">שגיאה</span>');
 			});
-			frame.open();
+			this.value = '';
 		});
 
 		// Load filter options for selects
@@ -262,12 +307,14 @@
 				$msg.removeClass('success').addClass('error').text('התוכן חובה').show();
 				return;
 			}
+			var emoji = $('#hpt-form-emoji').val();
+			var imageId = parseInt($('#hpt-form-image-id').val(), 10) || 0;
 			var data = {
 				content: content,
 				credit: $('#hpt-form-credit').val().trim(),
-				media_type: $form.find('input[name="media_type"]:checked').val(),
-				emoji: $('#hpt-form-emoji').val(),
-				image_id: parseInt($('#hpt-form-image-id').val(), 10) || 0,
+				media_type: imageId ? 'image' : 'emoji',
+				emoji: emoji,
+				image_id: imageId,
 				subject_id: parseInt($('#hpt-form-subject').val(), 10) || 0,
 				grade_id: parseInt($('#hpt-form-grade').val(), 10) || 0,
 				tags: $('#hpt-form-tags').val().trim()
@@ -284,7 +331,8 @@
 				$msg.removeClass('error').addClass('success').text('הטיפ נשלח לאישור. תודה!').show();
 				$form[0].reset();
 				$('#hpt-form-image-id').val(0);
-				$form.find('.hpt-form-image-preview').empty();
+				$('#hpt-form-emoji').val('');
+				$form.find('.hpt-form-symbol-preview').empty();
 				setTimeout(function() {
 					$modal.attr('hidden', 'hidden');
 					$('#hpt-bubble-overlay').removeAttr('hidden');

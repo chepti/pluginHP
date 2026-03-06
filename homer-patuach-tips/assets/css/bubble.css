@@ -8,12 +8,18 @@
 	--hpt-border: #e9ebee;
 	--hpt-radius: 8px;
 	--hpt-radius-btn: 25px;
+	--hpt-font: 'Rubik', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+#hpt-tips-bubble,
+#hpt-bubble-overlay,
+#hpt-add-tip-modal {
+	font-family: var(--hpt-font);
 }
 
 #hpt-tips-bubble {
 	position: fixed;
 	z-index: 99990;
-	font-family: inherit;
 	font-size: 14px;
 }
 
@@ -85,11 +91,9 @@
 
 .hpt-bubble-panel {
 	width: 50vw;
-	height: 50vh;
 	min-width: 280px;
-	min-height: 320px;
 	max-width: 600px;
-	max-height: 80vh;
+	max-height: 90vh;
 	background: #fff;
 	border-radius: var(--hpt-radius);
 	box-shadow: var(--hpt-shadow);
@@ -97,6 +101,13 @@
 	overflow: hidden;
 	display: flex;
 	flex-direction: column;
+}
+
+@media (max-width: 768px) {
+	.hpt-bubble-panel {
+		width: 92vw;
+		max-width: none;
+	}
 }
 
 .hpt-bubble-panel-inner {
@@ -168,9 +179,49 @@
 	margin-bottom: 0;
 }
 
+.hpt-tip-footer {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	margin-top: 8px;
+}
+
 .hpt-tip-credit {
 	font-size: 12px;
 	color: #888;
+	flex: 1;
+}
+
+.hpt-tip-like {
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 14px;
+	color: #888;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	border-radius: var(--hpt-radius);
+	transition: color 0.2s;
+}
+
+.hpt-tip-like:hover {
+	color: #e91e63;
+}
+
+.hpt-tip-like.liked {
+	color: #e91e63;
+}
+
+.hpt-tip-like.liked .hpt-like-icon {
+	color: #e91e63;
+}
+
+.hpt-tip-like.hpt-like-loading {
+	opacity: 0.6;
+	pointer-events: none;
 }
 
 .hpt-tip-empty {
@@ -265,8 +316,8 @@
 }
 
 .hpt-modal {
-	width: 90%;
-	max-width: 480px;
+	width: 95%;
+	max-width: 560px;
 	max-height: 90vh;
 	background: #fff;
 	border-radius: var(--hpt-radius);
@@ -275,6 +326,13 @@
 	overflow-y: auto;
 	position: relative;
 	padding: 24px;
+}
+
+@media (max-width: 768px) {
+	.hpt-modal {
+		width: 96%;
+		max-width: none;
+	}
 }
 
 .hpt-modal-close {
@@ -320,9 +378,69 @@
 .hpt-add-tip-form input[type="text"],
 .hpt-add-tip-form select {
 	width: 100%;
-	padding: 8px 12px;
+	padding: 10px 14px;
 	border: 1px solid var(--hpt-border);
-	border-radius: 4px;
+	border-radius: 12px;
+	font-family: var(--hpt-font);
+}
+
+.hpt-form-symbol-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.hpt-form-symbol-row label {
+	margin: 0;
+	min-width: 50px;
+}
+
+.hpt-form-symbol-controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+}
+
+.hpt-form-symbol-controls button {
+	padding: 8px 16px;
+	border: none;
+	border-radius: 12px;
+	background: var(--hpt-gradient);
+	color: #fff;
+	cursor: pointer;
+	font-size: 13px;
+	font-family: var(--hpt-font);
+}
+
+.hpt-form-symbol-controls .hpt-form-upload-image {
+	background: linear-gradient(135deg, #7699f2, #94b2ff);
+}
+
+.hpt-form-symbol-preview {
+	font-size: 24px;
+}
+
+.hpt-form-symbol-preview img {
+	max-width: 48px;
+	height: auto;
+	border-radius: 8px;
+}
+
+.hpt-form-row-inline {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.hpt-form-row-inline .hpt-form-field {
+	flex: 1;
+	min-width: 120px;
+}
+
+.hpt-form-row-inline select {
+	width: 100%;
 }
 
 .hpt-form-submit {
@@ -330,9 +448,10 @@
 	color: #fff;
 	border: none;
 	padding: 12px 24px;
-	border-radius: var(--hpt-radius-btn);
+	border-radius: 12px;
 	cursor: pointer;
 	font-weight: 600;
+	font-family: var(--hpt-font);
 }
 
 .hpt-form-submit:hover {
@@ -340,8 +459,35 @@
 }
 
 .hpt-form-message {
-	padding: 8px;
-	border-radius: 4px;
+	padding: 10px;
+	border-radius: 12px;
+	font-family: var(--hpt-font);
+}
+
+.hpt-popover-emoji {
+	position: absolute;
+	background: #fff;
+	border: 1px solid var(--hpt-border);
+	border-radius: 12px;
+	padding: 12px;
+	box-shadow: var(--hpt-shadow);
+	z-index: 100001;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.hpt-popover-emoji .hpt-emoji-btn {
+	font-size: 24px;
+	padding: 6px;
+	border: none;
+	background: none;
+	cursor: pointer;
+	border-radius: 8px;
+}
+
+.hpt-popover-emoji .hpt-emoji-btn:hover {
+	background: #f0f2f5;
 }
 
 .hpt-form-message.success {

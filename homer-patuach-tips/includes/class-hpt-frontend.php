@@ -35,7 +35,8 @@ class HPT_Frontend {
 			return;
 		}
 
-		wp_enqueue_style( 'hpt-bubble', HPT_PLUGIN_URL . 'assets/css/bubble.css', array(), HPT_VERSION );
+		wp_enqueue_style( 'hpt-google-fonts', 'https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap', array(), null );
+		wp_enqueue_style( 'hpt-bubble', HPT_PLUGIN_URL . 'assets/css/bubble.css', array( 'hpt-google-fonts' ), HPT_VERSION );
 		wp_enqueue_script( 'hpt-bubble', HPT_PLUGIN_URL . 'assets/js/bubble.js', array( 'jquery' ), HPT_VERSION, true );
 		if ( is_user_logged_in() ) {
 			wp_enqueue_media();
@@ -71,7 +72,10 @@ class HPT_Frontend {
 						<div class="hpt-tip-display" style="display:none;">
 							<div class="hpt-tip-media"></div>
 							<div class="hpt-tip-body"></div>
-							<div class="hpt-tip-credit"></div>
+							<div class="hpt-tip-footer">
+								<div class="hpt-tip-credit"></div>
+								<button type="button" class="hpt-tip-like" aria-label="<?php esc_attr_e( 'לייק', 'homer-patuach-tips' ); ?>"><span class="hpt-like-icon">♡</span> <span class="hpt-like-count">0</span></button>
+							</div>
 						</div>
 						<div class="hpt-tip-empty" style="display:none;"><?php esc_html_e( 'לא נמצאו טיפים.', 'homer-patuach-tips' ); ?></div>
 					</div>
@@ -104,29 +108,23 @@ class HPT_Frontend {
 						<label for="hpt-form-credit"><?php esc_html_e( 'קרדיט', 'homer-patuach-tips' ); ?></label>
 						<input type="text" id="hpt-form-credit" name="credit" placeholder="<?php esc_attr_e( 'ברירת מחדל: שם המשתמש', 'homer-patuach-tips' ); ?>">
 					</p>
-					<p>
-						<label><?php esc_html_e( 'תמונה או אימוג\'י', 'homer-patuach-tips' ); ?></label>
-						<label><input type="radio" name="media_type" value="emoji" checked> <?php esc_html_e( 'אימוג\'י', 'homer-patuach-tips' ); ?></label>
-						<label><input type="radio" name="media_type" value="image"> <?php esc_html_e( 'תמונה', 'homer-patuach-tips' ); ?></label>
+					<p class="hpt-form-symbol-row">
+						<label><?php esc_html_e( 'סמל', 'homer-patuach-tips' ); ?></label>
+						<span class="hpt-form-symbol-controls">
+							<input type="hidden" id="hpt-form-emoji" name="emoji" value="">
+							<input type="hidden" id="hpt-form-image-id" name="image_id" value="0">
+							<button type="button" class="hpt-form-emoji-pick"><?php esc_html_e( 'אימוג\'י', 'homer-patuach-tips' ); ?></button>
+							<button type="button" class="hpt-form-upload-image"><?php esc_html_e( 'תמונה מהמחשב', 'homer-patuach-tips' ); ?></button>
+							<span class="hpt-form-symbol-preview"></span>
+						</span>
 					</p>
-					<p class="hpt-form-emoji-wrap">
-						<label for="hpt-form-emoji"><?php esc_html_e( 'אימוג\'י', 'homer-patuach-tips' ); ?></label>
-						<input type="text" id="hpt-form-emoji" name="emoji" maxlength="4" placeholder="💡">
-						<button type="button" class="hpt-form-emoji-pick"><?php esc_html_e( 'בחר', 'homer-patuach-tips' ); ?></button>
-					</p>
-					<p class="hpt-form-image-wrap" style="display:none;">
-						<label><?php esc_html_e( 'תמונה', 'homer-patuach-tips' ); ?></label>
-						<div class="hpt-form-image-preview"></div>
-						<input type="hidden" id="hpt-form-image-id" name="image_id" value="0">
-						<button type="button" class="hpt-form-upload-image"><?php esc_html_e( 'בחר תמונה', 'homer-patuach-tips' ); ?></button>
-					</p>
-					<p class="hpt-form-subject-wrap">
-						<label for="hpt-form-subject"><?php esc_html_e( 'תחום דעת', 'homer-patuach-tips' ); ?></label>
-						<select id="hpt-form-subject" name="subject_id"><option value=""><?php esc_html_e( 'בחר...', 'homer-patuach-tips' ); ?></option></select>
-					</p>
-					<p class="hpt-form-grade-wrap">
-						<label for="hpt-form-grade"><?php esc_html_e( 'שכבת גיל', 'homer-patuach-tips' ); ?></label>
-						<select id="hpt-form-grade" name="grade_id"><option value=""><?php esc_html_e( 'בחר...', 'homer-patuach-tips' ); ?></option></select>
+					<p class="hpt-form-row-inline">
+						<span class="hpt-form-field">
+							<select id="hpt-form-subject" name="subject_id"><option value=""><?php esc_html_e( 'תחום דעת', 'homer-patuach-tips' ); ?></option></select>
+						</span>
+						<span class="hpt-form-field">
+							<select id="hpt-form-grade" name="grade_id"><option value=""><?php esc_html_e( 'שכבת גיל', 'homer-patuach-tips' ); ?></option></select>
+						</span>
 					</p>
 					<p>
 						<label for="hpt-form-tags"><?php esc_html_e( 'תגיות', 'homer-patuach-tips' ); ?></label>
@@ -137,6 +135,7 @@ class HPT_Frontend {
 					</p>
 					<p class="hpt-form-message" style="display:none;"></p>
 				</form>
+				<input type="file" id="hpt-form-file-input" accept="image/*" style="display:none;">
 			</div>
 		</div>
 		<?php endif; ?>

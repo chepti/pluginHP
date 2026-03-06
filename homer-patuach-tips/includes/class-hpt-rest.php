@@ -56,6 +56,78 @@ class HPT_REST {
 			'callback'            => array( $this, 'get_filter_options' ),
 			'permission_callback' => '__return_true',
 		) );
+
+		register_rest_route( 'hpt/v1', '/tips/(?P<id>\d+)/like', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( $this, 'toggle_like' ),
+			'permission_callback' => '__return_true',
+			'args'                => array( 'id' => array( 'type' => 'integer', 'required' => true ) ),
+		) );
+
+		register_rest_route( 'hpt/v1', '/upload-image', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( $this, 'upload_image' ),
+			'permission_callback' => function() { return is_user_logged_in(); },
+		) );
+	}
+
+	public function toggle_like( $request ) {
+		$tip_id = (int) $request['id'];
+		$post   = get_post( $tip_id );
+		if ( ! $post || $post->post_type !== 'os_tip' || $post->post_status !== 'publish' ) {
+			return new WP_Error( 'invalid_tip', __( 'טיפ לא חוקי', 'homer-patuach-tips' ), array( 'status' => 404 ) );
+		}
+		$user_id = get_current_user_id();
+		$liked   = get_post_meta( $tip_id, '_hpt_liked_users', true );
+		if ( ! is_array( $liked ) ) {
+			$liked = array();
+		}
+		$key = $user_id ? 'u' . $user_id : 'g' . ( isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) : '' );
+		$has = in_array( $key, $liked, true );
+		if ( $has ) {
+			$liked = array_values( array_diff( $liked, array( $key ) ) );
+		} else {
+			$liked[] = $key;
+		}
+		update_post_meta( $tip_id, '_hpt_liked_users', $liked );
+		update_post_meta( $tip_id, '_hpt_like_count', count( $liked ) );
+		return rest_ensure_response( array(
+			'like_count' => count( $liked ),
+			'user_has_liked' => ! $has,
+		) );
+	}
+
+	public function upload_image( $request ) {
+		$files = $request->get_file_params();
+		if ( empty( $files['image'] ) && ! empty( $_FILES['image'] ) ) {
+			$files = array( 'image' => $_FILES['image'] );
+		}
+		if ( empty( $files['image'] ) ) {
+			return new WP_Error( 'no_file', __( 'לא נבחרה תמונה', 'homer-patuach-tips' ), array( 'status' => 400 ) );
+		}
+		$file = $files['image'];
+		if ( ! empty( $file['error'] ) ) {
+			return new WP_Error( 'upload_error', __( 'שגיאה בהעלאה', 'homer-patuach-tips' ), array( 'status' => 400 ) );
+		}
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		$upload = wp_handle_upload( $file, array( 'test_form' => false ) );
+		if ( isset( $upload['error'] ) ) {
+			return new WP_Error( 'upload_failed', $upload['error'], array( 'status' => 400 ) );
+		}
+		$attachment = array(
+			'post_mime_type' => $upload['type'],
+			'post_title'     => sanitize_file_name( basename( $upload['file'] ) ),
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+		);
+		$attach_id = wp_insert_attachment( $attachment, $upload['file'] );
+		if ( is_wp_error( $attach_id ) ) {
+			return $attach_id;
+		}
+		wp_generate_attachment_metadata( $attach_id, $upload['file'] );
+		return rest_ensure_response( array( 'id' => $attach_id, 'url' => $upload['url'] ) );
 	}
 
 	public function create_tip( $request ) {
@@ -251,15 +323,30 @@ class HPT_REST {
 			$tag_names = wp_list_pluck( $tags, 'name' );
 		}
 
+		$liked = get_post_meta( $post->ID, '_hpt_liked_users', true );
+		if ( ! is_array( $liked ) ) {
+			$liked = array();
+		}
+		$like_count = (int) get_post_meta( $post->ID, '_hpt_like_count', true );
+		if ( $like_count === 0 && ! empty( $liked ) ) {
+			$like_count = count( $liked );
+			update_post_meta( $post->ID, '_hpt_like_count', $like_count );
+		}
+		$user_id = get_current_user_id();
+		$key     = $user_id ? 'u' . $user_id : 'g' . ( isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) : '' );
+		$user_has_liked = in_array( $key, $liked, true );
+
 		return array(
-			'id'        => $post->ID,
-			'content'   => apply_filters( 'the_content', $post->post_content ),
-			'credit'    => $credit,
-			'emoji'     => $media_type === 'emoji' ? $emoji : '',
-			'image_url' => $image_url,
-			'subject'   => $subject,
-			'grade'     => $grade,
-			'tags'      => $tag_names,
+			'id'            => $post->ID,
+			'content'       => apply_filters( 'the_content', $post->post_content ),
+			'credit'        => $credit,
+			'emoji'         => $media_type === 'emoji' ? $emoji : '',
+			'image_url'     => $image_url,
+			'subject'       => $subject,
+			'grade'         => $grade,
+			'tags'          => $tag_names,
+			'like_count'    => $like_count,
+			'user_has_liked'=> $user_has_liked,
 		);
 	}
 }
