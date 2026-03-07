@@ -152,7 +152,8 @@
 		url += '&subject_id=' + filters.subject_id + '&grade_id=' + filters.grade_id;
 		if (filters.tag_ids.length) url += '&tag_ids=' + filters.tag_ids.join(',');
 		if (!hasFilters) url += '&random=1';
-		var nonce = (window.hptBubble && window.hptBubble.nonce) || '';
+		var loggedIn = (window.hptBubble && window.hptBubble.loggedIn);
+		var nonce = loggedIn ? ((window.hptBubble && window.hptBubble.nonce) || '') : '';
 		if (nonce) url += '&_wpnonce=' + encodeURIComponent(nonce);
 
 		$.ajax({
