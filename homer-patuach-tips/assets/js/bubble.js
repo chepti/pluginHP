@@ -40,7 +40,7 @@
 		$('.hpt-add-tip-btn').on('click', function() {
 			$overlay.attr('hidden', 'hidden');
 			$('#hpt-add-tip-modal').removeAttr('hidden');
-			initAddTipForm();
+			initAddTipForm(null);
 		});
 
 		$filterToggle.on('click', function() {
@@ -87,6 +87,13 @@
 			}).always(function() {
 				$btn.removeClass('hpt-like-loading');
 			});
+		});
+
+		$(document).on('click', '.hpt-tip-edit', function(e) {
+			e.preventDefault();
+			var tipId = $(this).data('tip-id');
+			if (!tipId || !(window.hptBubble && window.hptBubble.canEdit)) return;
+			openEditModal(tipId);
 		});
 
 		$(document).on('click', '.hpt-filter-chip', function() {
@@ -212,12 +219,8 @@
 
 		$body.html(tip.content || '');
 		$credit.text(tip.credit ? 'מאת: ' + tip.credit : '');
-		var editUrl = tip.edit_url;
-		if (!editUrl && (window.hptBubble && window.hptBubble.canEdit) && window.hptBubble.editBaseUrl && tip.id) {
-			editUrl = window.hptBubble.editBaseUrl + '?post=' + tip.id + '&action=edit';
-		}
-		if (editUrl) {
-			$edit.attr('href', editUrl).attr('target', '_blank').show();
+		if ((window.hptBubble && window.hptBubble.canEdit) && tip.id) {
+			$edit.data('tip-id', tip.id).show();
 		} else {
 			$edit.hide();
 		}
@@ -233,10 +236,41 @@
 		return div.innerHTML;
 	}
 
-	function initAddTipForm() {
+	function openEditModal(tipId) {
+		$('#hpt-bubble-overlay').attr('hidden', 'hidden');
+		$('#hpt-add-tip-modal').removeAttr('hidden');
+		$('#hpt-add-tip-modal .hpt-modal-title').text('עריכת טיפ');
+		$('#hpt-form-tip-id').val(tipId);
+		$('#hpt-add-tip-form .hpt-form-submit').text('שמור שינויים');
+		var restUrl = (window.hptBubble && window.hptBubble.restUrl) ? window.hptBubble.restUrl : '/wp-json/hpt/v1/';
+		var nonce = (window.hptBubble && window.hptBubble.nonce) || '';
+		$.ajax({
+			url: restUrl + 'tips/' + tipId,
+			method: 'GET',
+			beforeSend: function(xhr) { if (nonce) xhr.setRequestHeader('X-WP-Nonce', nonce); },
+			credentials: 'same-origin'
+		}).done(function(tip) {
+			initAddTipForm(tip);
+		}).fail(function() {
+			$('#hpt-add-tip-form .hpt-form-message').removeClass('success').addClass('error').text('שגיאה בטעינת הטיפ').show();
+		});
+	}
+
+	function initAddTipForm(editTip) {
 		var $modal = $('#hpt-add-tip-modal');
 		var $form = $('#hpt-add-tip-form');
 		var $close = $modal.find('.hpt-modal-close');
+
+		if (!editTip) {
+			$('#hpt-add-tip-modal .hpt-modal-title').text('הוספת טיפ חדש');
+			$('#hpt-form-tip-id').val('');
+			$('#hpt-add-tip-form .hpt-form-submit').text('שלח לאישור');
+			$form[0].reset();
+			$('#hpt-form-content').empty();
+			$('#hpt-form-image-id').val(0);
+			$('#hpt-form-emoji').val('');
+			$form.find('.hpt-form-symbol-preview').empty();
+		}
 
 		$close.on('click', function() {
 			$modal.attr('hidden', 'hidden');
@@ -249,6 +283,22 @@
 				$('#hpt-bubble-overlay').removeAttr('hidden');
 			}
 		});
+
+		if (editTip) {
+			$('#hpt-form-content').html(editTip.content || '');
+			$('#hpt-form-credit').val(editTip.credit || '');
+			$('#hpt-form-emoji').val(editTip.emoji || '');
+			$('#hpt-form-image-id').val(editTip.image_id || 0);
+			$('#hpt-form-tags').val(editTip.tags || '');
+			var $preview = $form.find('.hpt-form-symbol-preview');
+			if (editTip.emoji) {
+				$preview.html('<span class="hpt-symbol-emoji">' + (editTip.emoji || '') + '</span>').show();
+			} else if (editTip.image_url) {
+				$preview.html('<img src="' + editTip.image_url + '" alt="">').show();
+			} else {
+				$preview.empty();
+			}
+		}
 
 		// Emoji picker - opens emoji keyboard
 		var commonEmojis = ['💡', '📚', '✏️', '🎯', '🌟', '👍', '💪', '🧠', '❤️', '🎨', '🔬', '📖', '✨', '🌈', '🎓'];
@@ -318,6 +368,10 @@
 				(data.grades || []).forEach(function(g) {
 					$grade.append('<option value="' + g.id + '">' + escapeHtml(g.name) + '</option>');
 				});
+				if (editTip) {
+					$sub.val(editTip.subject_id || '');
+					$grade.val(editTip.grade_id || '');
+				}
 			}
 		);
 
@@ -367,21 +421,33 @@
 				grade_id: parseInt($('#hpt-form-grade').val(), 10) || 0,
 				tags: $('#hpt-form-tags').val().trim()
 			};
+			var tipId = $('#hpt-form-tip-id').val();
+			var isEdit = tipId && tipId !== '';
+			var url = (window.hptBubble && window.hptBubble.restUrl) ? window.hptBubble.restUrl + 'tips' : '/wp-json/hpt/v1/tips';
+			if (isEdit) url += '/' + tipId;
 			$.ajax({
-				url: (window.hptBubble && window.hptBubble.restUrl) ? window.hptBubble.restUrl + 'tips' : '/wp-json/hpt/v1/tips',
-				method: 'POST',
+				url: url,
+				method: isEdit ? 'PUT' : 'POST',
 				contentType: 'application/json',
 				data: JSON.stringify(data),
 				beforeSend: function(xhr) {
 					xhr.setRequestHeader('X-WP-Nonce', (window.hptBubble && window.hptBubble.nonce) || '');
 				}
 			}).done(function(res) {
-				$msg.removeClass('error').addClass('success').text('הטיפ נשלח לאישור. תודה!').show();
+				$msg.removeClass('error').addClass('success').text(isEdit ? 'הטיפ עודכן.' : 'הטיפ נשלח לאישור. תודה!').show();
 				$form[0].reset();
 				$('#hpt-form-content').empty();
+				$('#hpt-form-tip-id').val('');
 				$('#hpt-form-image-id').val(0);
 				$('#hpt-form-emoji').val('');
 				$form.find('.hpt-form-symbol-preview').empty();
+				if (isEdit && res.tip) {
+					var idx = tips.findIndex(function(t) { return t.id == tipId; });
+					if (idx >= 0) {
+						tips[idx] = res.tip;
+						renderTip(tips[currentIndex]);
+					}
+				}
 				setTimeout(function() {
 					$modal.attr('hidden', 'hidden');
 					$('#hpt-bubble-overlay').removeAttr('hidden');

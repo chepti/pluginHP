@@ -3,7 +3,7 @@
  * Plugin Name:       Homer Patuach - Tips
  * Plugin URI:        https://homerpatuach.com/
  * Description:       מערכת טיפים עם בועה צפה, סינון לפי שכבת גיל ותחום דעת.
- * Version:           1.1.2
+ * Version:           1.2.0
  * Author:            Chepti
  * Author URI:        https://homerpatuach.com/
  * License:           GPL-2.0+
@@ -16,7 +16,7 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
-define( 'HPT_VERSION', '1.1.1' );
+define( 'HPT_VERSION', '1.2.0' );
 define( 'HPT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'HPT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

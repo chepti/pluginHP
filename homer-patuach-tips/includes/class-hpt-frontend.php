@@ -43,11 +43,10 @@ class HPT_Frontend {
 		}
 		$can_edit = current_user_can( 'edit_others_posts' ) || current_user_can( 'edit_others_tips' );
 		wp_localize_script( 'hpt-bubble', 'hptBubble', array(
-			'restUrl'    => rest_url( 'hpt/v1/' ),
-			'nonce'      => wp_create_nonce( 'wp_rest' ),
-			'loggedIn'   => is_user_logged_in(),
-			'canEdit'    => $can_edit,
-			'editBaseUrl' => $can_edit ? admin_url( 'post.php' ) : '',
+			'restUrl'  => rest_url( 'hpt/v1/' ),
+			'nonce'    => wp_create_nonce( 'wp_rest' ),
+			'loggedIn' => is_user_logged_in(),
+			'canEdit'  => $can_edit,
 		) );
 	}
 
@@ -81,7 +80,7 @@ class HPT_Frontend {
 									<div class="hpt-tip-footer">
 										<div class="hpt-tip-credit"></div>
 										<span class="hpt-tip-footer-actions">
-											<a href="#" class="hpt-tip-edit" style="display:none;" aria-label="<?php esc_attr_e( 'עריכה', 'homer-patuach-tips' ); ?>" title="<?php esc_attr_e( 'עריכה', 'homer-patuach-tips' ); ?>">✎</a>
+											<button type="button" class="hpt-tip-edit" style="display:none;" data-tip-id="" aria-label="<?php esc_attr_e( 'עריכה', 'homer-patuach-tips' ); ?>" title="<?php esc_attr_e( 'עריכה', 'homer-patuach-tips' ); ?>">✎</button>
 											<button type="button" class="hpt-tip-like" aria-label="<?php esc_attr_e( 'לייק', 'homer-patuach-tips' ); ?>"><span class="hpt-like-icon">♡</span> <span class="hpt-like-count">0</span></button>
 										</span>
 									</div>
@@ -109,6 +108,7 @@ class HPT_Frontend {
 				<button type="button" class="hpt-modal-close" aria-label="<?php esc_attr_e( 'סגור', 'homer-patuach-tips' ); ?>">×</button>
 				<h3 class="hpt-modal-title"><?php esc_html_e( 'הוספת טיפ חדש', 'homer-patuach-tips' ); ?></h3>
 				<form id="hpt-add-tip-form" class="hpt-add-tip-form">
+					<input type="hidden" id="hpt-form-tip-id" name="tip_id" value="">
 					<p>
 						<label for="hpt-form-content"><?php esc_html_e( 'תוכן הטיפ', 'homer-patuach-tips' ); ?> *</label>
 						<div class="hpt-form-format-bar">

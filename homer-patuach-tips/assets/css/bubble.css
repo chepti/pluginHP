@@ -44,10 +44,12 @@
 	right: 24px;
 }
 
-/* כפתור הבועה */
+/* כפתור הבועה - גודל וצורה קבועים */
 .hpt-bubble-trigger {
 	width: 56px;
 	height: 56px;
+	min-width: 56px;
+	min-height: 56px;
 	border: none;
 	border-radius: 50%;
 	background: var(--hpt-gradient);
@@ -58,6 +60,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	flex-shrink: 0;
 }
 
 .hpt-bubble-trigger:hover {
@@ -66,8 +69,14 @@
 }
 
 .hpt-bubble-icon {
-	font-size: 28px;
+	font-size: 32px;
 	line-height: 1;
+	min-width: 32px;
+	min-height: 32px;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 /* Overlay + פאנל ממורכז 50% */
@@ -218,7 +227,9 @@
 .hpt-tip-edit {
 	font-size: 14px;
 	color: #888;
-	text-decoration: none;
+	background: none;
+	border: none;
+	cursor: pointer;
 	padding: 4px 6px;
 	border-radius: 4px;
 	transition: color 0.2s, background 0.2s;
