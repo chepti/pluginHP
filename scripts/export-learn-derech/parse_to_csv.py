@@ -32,7 +32,6 @@ import os
 import re
 import sys
 import time
-import warnings
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse, urljoin
@@ -46,8 +45,8 @@ except ImportError:
 
 # מודלים — לעדכן מול התיעוד אם השם השתנה
 CLAUDE_MODEL = "claude-sonnet-4-20250514"
-# ניתן לדרוס ב-.env עם GEMINI_MODEL
-DEFAULT_GEMINI_MODEL = "gemini-1.5-flash"
+# gemini-1.5-flash ירד מה-API (404). ניתן לדרוס ב-.env (למשל gemini-3-flash-preview)
+DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_MAX_RETRIES = 20
 
 ALLOWED_CATEGORIES = frozenset(
@@ -365,56 +364,60 @@ def call_gemini(
         raise SystemExit(
             "חסר GEMINI_API_KEY או GOOGLE_API_KEY — שים ב-.env (ראה .env.example) או הרץ עם --dry-run"
         )
-    warnings.filterwarnings(
-        "ignore",
-        category=FutureWarning,
-        module=r"google\.generativeai",
-    )
-    from google.api_core import exceptions as google_api_exceptions
-
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import errors as genai_errors
+    from google.genai import types
 
     model_name = os.environ.get("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
     prompt = build_prompt(title, content_url, platform)
-    model = genai.GenerativeModel(
-        model_name,
-        generation_config=genai.GenerationConfig(
-            response_mime_type="application/json",
-            temperature=0.2,
-        ),
-    )
+
     response = None
     for attempt in range(max_retries):
         try:
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.2,
+                ),
+            )
             break
-        except google_api_exceptions.ResourceExhausted as e:
+        except genai_errors.APIError as e:
+            if e.code == 404:
+                raise SystemExit(
+                    f"מודל Gemini לא נמצא (404): {model_name!r}\n"
+                    "מודלים ישנים כמו gemini-1.5-flash הוסרו מה-API.\n"
+                    "עדכני ב-.env לדוגמה:\n"
+                    "  GEMINI_MODEL=gemini-2.5-flash\n"
+                    "  או GEMINI_MODEL=gemini-3-flash-preview\n"
+                    f"פרטים: {e.message or e}"
+                ) from e
+            retry_codes = (429, 503)
+            if e.code not in retry_codes:
+                raise SystemExit(
+                    f"שגיאת Gemini ({e.code}): {e.message or e}"
+                ) from e
             err_txt = str(e)
             if attempt >= max_retries - 1:
                 raise SystemExit(
-                    "מכסת Gemini נגמרה או rate limit אחרי ניסיונות חוזרים.\n"
-                    "• המתן כמה דקות או הרץ שוב מאוחר יותר (גם לילה)\n"
-                    "• הגדל --delay (למשל 2 או 5)\n"
-                    "• ב-.env נסה מודל אחר: GEMINI_MODEL=gemini-2.5-flash או gemini-2.5-flash-lite\n"
+                    "מכסת Gemini נגמרה או שגיאת שרת אחרי ניסיונות חוזרים.\n"
+                    "• המתן או הגדל --delay\n"
+                    "• ב-.env נסה: GEMINI_MODEL=gemini-3-flash-preview\n"
                     f"פרטים: {err_txt[:900]}"
                 ) from e
             wait = _gemini_retry_sleep_seconds(err_txt, attempt)
             print(
-                f"[Gemini] מכסה/429 — ממתין {wait:.0f} שניות "
+                f"[Gemini] {e.code} — ממתין {wait:.0f} שניות "
                 f"({attempt + 1}/{max_retries})...",
                 file=sys.stderr,
             )
             time.sleep(wait)
     assert response is not None
-    try:
-        text = response.text
-    except ValueError as e:
-        raise SystemExit(
-            "תשובת Gemini לא זמינה (חסימה, בטיחות או מודל). "
-            f"נסה GEMINI_MODEL אחר ב-.env. פרטים: {e} "
-            f"feedback={getattr(response, 'prompt_feedback', None)!r}"
-        ) from e
+    text = response.text
+    if not text:
+        raise SystemExit("תשובת Gemini ריקה — נסי מודל אחר או הרצה חוזרת.")
     data = parse_llm_json(text)
     return validate_enrichment(data)
 
