@@ -3,6 +3,12 @@
 """
 ייצוא משאבים מקובץ XLSX (ייצוא וורדפרס / עמודת תוכן מקודדת) ל-CSV לייבוא ב-acf-csv-importer.
 
+מפתחות API (לא לשים בגיט):
+  צור קובץ .env בתיקיית הסקריפט (העתק מ-.env.example) או הגדר משתני סביבה במערכת.
+  Gemini: GEMINI_API_KEY או GOOGLE_API_KEY
+  Claude:   ANTHROPIC_API_KEY  (רק עם --llm anthropic)
+  קובץ .env ב-.gitignore — לא להעלות לגיטהאב.
+
 מיפוי מומלץ בוורדפרס (לא אוטומטי — ידני במסך הייבוא):
   כותרת → post_title
   תיאור → post_intro
@@ -32,8 +38,14 @@ from urllib.parse import urlparse, urljoin
 
 from bs4 import BeautifulSoup
 
-# מודל — לעדכן מול https://docs.anthropic.com אם השם השתנה
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None  # type: ignore
+
+# מודלים — לעדכן מול התיעוד אם השם השתנה
 CLAUDE_MODEL = "claude-sonnet-4-20250514"
+DEFAULT_GEMINI_MODEL = "gemini-2.0-flash"
 
 ALLOWED_CATEGORIES = frozenset(
     {
@@ -287,6 +299,17 @@ def build_prompt(title: str, content_url: str, platform: str) -> str:
 הנחיות: בחר קטגוריות וכיתות רלוונטיות; אם לא בטוח — העדף "אחר" בקטגוריות ו-"א-יב" בכיתות אם זה מתאים לבית ספר."""
 
 
+def enrichment_dry_run_placeholder(title: str) -> dict[str, Any]:
+    """ערכים ללא LLM (מצב --dry-run)."""
+    return {
+        "categories": ["אחר"],
+        "grades": ["א-יב"],
+        "subject": "כללי",
+        "tags": ["ייבוא", "משאב"],
+        "description": f"משאב: {title[:200]}",
+    }
+
+
 def call_claude(
     title: str,
     content_url: str,
@@ -295,15 +318,11 @@ def call_claude(
     api_key: str | None,
 ) -> dict[str, Any]:
     if dry_run:
-        return {
-            "categories": ["אחר"],
-            "grades": ["א-יב"],
-            "subject": "כללי",
-            "tags": ["ייבוא", "משאב"],
-            "description": f"משאב: {title[:200]}",
-        }
+        return enrichment_dry_run_placeholder(title)
     if not api_key:
-        raise SystemExit("חסר ANTHROPIC_API_KEY (סביבה) — או הרץ עם --dry-run")
+        raise SystemExit(
+            "חסר ANTHROPIC_API_KEY — הגדר ב-.env או במשתנה סביבה, או הרץ עם --dry-run או --llm gemini"
+        )
     import anthropic
 
     client = anthropic.Anthropic(api_key=api_key)
@@ -320,6 +339,58 @@ def call_claude(
     text = "".join(parts) if parts else str(msg.content)
     data = parse_llm_json(text)
     return validate_enrichment(data)
+
+
+def call_gemini(
+    title: str,
+    content_url: str,
+    platform: str,
+    dry_run: bool,
+    api_key: str | None,
+) -> dict[str, Any]:
+    if dry_run:
+        return enrichment_dry_run_placeholder(title)
+    if not api_key:
+        raise SystemExit(
+            "חסר GEMINI_API_KEY או GOOGLE_API_KEY — שים ב-.env (ראה .env.example) או הרץ עם --dry-run"
+        )
+    import google.generativeai as genai
+
+    model_name = os.environ.get("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
+    genai.configure(api_key=api_key)
+    prompt = build_prompt(title, content_url, platform)
+    model = genai.GenerativeModel(
+        model_name,
+        generation_config=genai.GenerationConfig(
+            response_mime_type="application/json",
+            temperature=0.2,
+        ),
+    )
+    response = model.generate_content(prompt)
+    try:
+        text = response.text
+    except ValueError as e:
+        raise SystemExit(
+            "תשובת Gemini לא זמינה (חסימה, בטיחות או מודל). "
+            f"נסה GEMINI_MODEL אחר ב-.env. פרטים: {e} "
+            f"feedback={getattr(response, 'prompt_feedback', None)!r}"
+        ) from e
+    data = parse_llm_json(text)
+    return validate_enrichment(data)
+
+
+def enrich_row(
+    title: str,
+    content_url: str,
+    platform: str,
+    dry_run: bool,
+    llm: str,
+    anthropic_key: str | None,
+    gemini_key: str | None,
+) -> dict[str, Any]:
+    if llm == "gemini":
+        return call_gemini(title, content_url, platform, dry_run, gemini_key)
+    return call_claude(title, content_url, platform, dry_run, anthropic_key)
 
 
 def read_workbook_rows(
@@ -414,7 +485,18 @@ def main() -> None:
         default=0.25,
         help="השהיה בשניות בין קריאות API (ברירת מחדל 0.25)",
     )
+    parser.add_argument(
+        "--llm",
+        choices=("gemini", "anthropic"),
+        default="gemini",
+        help="ספק העשרה: gemini (ברירת מחדל) או anthropic (Claude)",
+    )
     args = parser.parse_args()
+
+    script_dir = Path(__file__).resolve().parent
+    if load_dotenv is not None:
+        env_path = script_dir / ".env"
+        load_dotenv(env_path)
 
     xlsx_path = args.input.expanduser().resolve()
     if not xlsx_path.is_file():
@@ -431,7 +513,6 @@ def main() -> None:
             "לא נמצאה עמודת encoded. הרץ עם --list-columns ובדוק את שמות העמודות."
         )
 
-    script_dir = Path(__file__).resolve().parent
     cache_path = args.cache or (script_dir / ".enrichment_cache.json")
     cache = load_cache(cache_path)
 
@@ -456,7 +537,8 @@ def main() -> None:
         seen_keys.add(key)
         unique_figs.append(fig)
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+    gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 
     out_rows: list[list[str]] = []
     for fig in unique_figs:
@@ -467,7 +549,15 @@ def main() -> None:
         if ck in cache:
             enriched = validate_enrichment(cache[ck])
         else:
-            enriched = call_claude(title, url, platform, args.dry_run, api_key)
+            enriched = enrich_row(
+                title,
+                url,
+                platform,
+                args.dry_run,
+                args.llm,
+                anthropic_key,
+                gemini_key,
+            )
             cache[ck] = enriched
             save_cache(cache_path, cache)
             if not args.dry_run and args.delay > 0:

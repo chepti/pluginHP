@@ -1,2 +1,5 @@
 .enrichment_cache.json
 .venv/
+.env
+.env.local
+.env.*.local
