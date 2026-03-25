@@ -3,11 +3,11 @@
 """
 ייצוא משאבים מקובץ XLSX (ייצוא וורדפרס / עמודת תוכן מקודדת) ל-CSV לייבוא ב-acf-csv-importer.
 
-מפתחות API (לא לשים בגיט):
-  צור קובץ .env בתיקיית הסקריפט (העתק מ-.env.example) או הגדר משתני סביבה במערכת.
-  Gemini: GEMINI_API_KEY או GOOGLE_API_KEY
-  Claude:   ANTHROPIC_API_KEY  (רק עם --llm anthropic)
-  קובץ .env ב-.gitignore — לא להעלות לגיטהאב.
+מצב ללא API (מומלץ כשיש בעיות מכסה/רשת):  --no-api
+  רק חילוץ מהאקסל + זיהוי פלטפורמה מה-URL + ברירות מינימליות בקטגוריות/כיתות/תחום (לעריכה ידנית בגיליון).
+
+מפתחות API (לא לשים בגיט) — רק בלי --no-api:
+  .env או משתני סביבה: GEMINI_API_KEY / GOOGLE_API_KEY או ANTHROPIC_API_KEY (--llm anthropic)
 
 מיפוי מומלץ בוורדפרס (לא אוטומטי — ידני במסך הייבוא):
   כותרת → post_title
@@ -303,14 +303,20 @@ def build_prompt(title: str, content_url: str, platform: str) -> str:
 הנחיות: בחר קטגוריות וכיתות רלוונטיות; אם לא בטוח — העדף "אחר" בקטגוריות ו-"א-יב" בכיתות אם זה מתאים לבית ספר."""
 
 
-def enrichment_dry_run_placeholder(title: str) -> dict[str, Any]:
-    """ערכים ללא LLM (מצב --dry-run)."""
+def enrichment_offline_simple(title: str, platform: str) -> dict[str, Any]:
+    """ללא API: תיאור טכני קצר ממה שכבר יודעים; בלי תגיות; שדות מסווגים — ברירות בינוניות לייבוא."""
+    t = (title or "").strip()
+    plat = (platform or "").strip()
+    if plat and plat != "אחר":
+        desc = f"{t} — פלטפורמה: {plat}"
+    else:
+        desc = t or "(ללא כותרת)"
     return {
         "categories": ["אחר"],
         "grades": ["א-יב"],
         "subject": "כללי",
-        "tags": ["ייבוא", "משאב"],
-        "description": f"משאב: {title[:200]}",
+        "tags": [],
+        "description": desc[:500],
     }
 
 
@@ -322,10 +328,10 @@ def call_claude(
     api_key: str | None,
 ) -> dict[str, Any]:
     if dry_run:
-        return enrichment_dry_run_placeholder(title)
+        return enrichment_offline_simple(title, platform)
     if not api_key:
         raise SystemExit(
-            "חסר ANTHROPIC_API_KEY — הגדר ב-.env או במשתנה סביבה, או הרץ עם --dry-run או --llm gemini"
+            "חסר ANTHROPIC_API_KEY — הגדר ב-.env או הרץ עם --no-api / --llm gemini"
         )
     import anthropic
 
@@ -382,10 +388,10 @@ def call_gemini(
     max_retries: int = GEMINI_MAX_RETRIES,
 ) -> dict[str, Any]:
     if dry_run:
-        return enrichment_dry_run_placeholder(title)
+        return enrichment_offline_simple(title, platform)
     if not api_key:
         raise SystemExit(
-            "חסר GEMINI_API_KEY או GOOGLE_API_KEY — שים ב-.env (ראה .env.example) או הרץ עם --dry-run"
+            "חסר GEMINI_API_KEY או GOOGLE_API_KEY — שים ב-.env או הרץ עם --no-api"
         )
     import httpx
     from google import genai
@@ -558,7 +564,16 @@ def main() -> None:
         default=None,
         help="בסיס לאיחוד URL יחסי (אופציונלי)",
     )
-    parser.add_argument("--dry-run", action="store_true", help="ללא קריאות ל-API; ערכי דמה")
+    parser.add_argument(
+        "--no-api",
+        action="store_true",
+        help="ייצוב פשוט: בלי Gemini/Claude, בלי מפתחות ומכסה — רק חילוץ + פלטפורמה + ברירות מינימליות",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="מעודכן כמו --no-api (תאימות לאחור)",
+    )
     parser.add_argument(
         "--list-columns",
         action="store_true",
@@ -595,6 +610,7 @@ def main() -> None:
         help="ניסיונות חוזרים אחרי 429/מכסה Gemini (ברירת מחדל %(default)s)",
     )
     args = parser.parse_args()
+    use_offline = bool(args.no_api or args.dry_run)
 
     script_dir = Path(__file__).resolve().parent
     if load_dotenv is not None:
@@ -617,7 +633,14 @@ def main() -> None:
         )
 
     cache_path = args.cache or (script_dir / ".enrichment_cache.json")
-    cache = load_cache(cache_path)
+    cache: dict[str, Any] = {}
+    if not use_offline:
+        cache = load_cache(cache_path)
+    else:
+        print(
+            "מצב ללא API — אין קריאות למודל שפה; ערכי קטגוריה/כיתה/תחום — ברירת מחדל לעריכה בגיליון.",
+            file=sys.stderr,
+        )
 
     figures_flat: list[dict[str, Any]] = []
     for row in rows:
@@ -648,24 +671,27 @@ def main() -> None:
         title = fig["title"]
         url = fig["content_url"]
         platform = detect_platform(url)
-        ck = cache_key(title, url)
-        if ck in cache:
-            enriched = validate_enrichment(cache[ck])
+        if use_offline:
+            enriched = enrichment_offline_simple(title, platform)
         else:
-            enriched = enrich_row(
-                title,
-                url,
-                platform,
-                args.dry_run,
-                args.llm,
-                anthropic_key,
-                gemini_key,
-                args.gemini_retries,
-            )
-            cache[ck] = enriched
-            save_cache(cache_path, cache)
-            if not args.dry_run and args.delay > 0:
-                time.sleep(args.delay)
+            ck = cache_key(title, url)
+            if ck in cache:
+                enriched = validate_enrichment(cache[ck])
+            else:
+                enriched = enrich_row(
+                    title,
+                    url,
+                    platform,
+                    False,
+                    args.llm,
+                    anthropic_key,
+                    gemini_key,
+                    args.gemini_retries,
+                )
+                cache[ck] = enriched
+                save_cache(cache_path, cache)
+                if args.delay > 0:
+                    time.sleep(args.delay)
 
         cat_str = ",".join(enriched["categories"])
         grades_str = ",".join(enriched["grades"])
