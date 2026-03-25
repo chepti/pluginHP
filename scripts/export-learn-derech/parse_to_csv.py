@@ -32,6 +32,7 @@ import os
 import re
 import sys
 import time
+import warnings
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse, urljoin
@@ -45,7 +46,9 @@ except ImportError:
 
 # מודלים — לעדכן מול התיעוד אם השם השתנה
 CLAUDE_MODEL = "claude-sonnet-4-20250514"
-DEFAULT_GEMINI_MODEL = "gemini-2.0-flash"
+# 2.0-flash לפעמים עם limit:0 בחינם; 2.5-flash בדרך כלל זמין — ניתן לדרוס ב-GEMINI_MODEL
+DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MAX_RETRIES = 20
 
 ALLOWED_CATEGORIES = frozenset(
     {
@@ -341,12 +344,20 @@ def call_claude(
     return validate_enrichment(data)
 
 
+def _gemini_retry_sleep_seconds(exc_message: str, attempt: int) -> float:
+    m = re.search(r"retry in ([\d.]+)\s*s", exc_message, re.I)
+    if m:
+        return float(m.group(1)) + 2.0
+    return min(120.0, 8.0 * (attempt + 1))
+
+
 def call_gemini(
     title: str,
     content_url: str,
     platform: str,
     dry_run: bool,
     api_key: str | None,
+    max_retries: int = GEMINI_MAX_RETRIES,
 ) -> dict[str, Any]:
     if dry_run:
         return enrichment_dry_run_placeholder(title)
@@ -354,6 +365,13 @@ def call_gemini(
         raise SystemExit(
             "חסר GEMINI_API_KEY או GOOGLE_API_KEY — שים ב-.env (ראה .env.example) או הרץ עם --dry-run"
         )
+    warnings.filterwarnings(
+        "ignore",
+        category=FutureWarning,
+        module=r"google\.generativeai",
+    )
+    from google.api_core import exceptions as google_api_exceptions
+
     import google.generativeai as genai
 
     model_name = os.environ.get("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
@@ -366,7 +384,29 @@ def call_gemini(
             temperature=0.2,
         ),
     )
-    response = model.generate_content(prompt)
+    response = None
+    for attempt in range(max_retries):
+        try:
+            response = model.generate_content(prompt)
+            break
+        except google_api_exceptions.ResourceExhausted as e:
+            err_txt = str(e)
+            if attempt >= max_retries - 1:
+                raise SystemExit(
+                    "מכסת Gemini נגמרה או rate limit אחרי ניסיונות חוזרים.\n"
+                    "• המתן כמה דקות או הרץ שוב מאוחר יותר (גם לילה)\n"
+                    "• הגדל --delay (למשל 2 או 5)\n"
+                    "• ב-.env נסה מודל אחר: GEMINI_MODEL=gemini-1.5-flash או gemini-2.5-flash-lite\n"
+                    f"פרטים: {err_txt[:900]}"
+                ) from e
+            wait = _gemini_retry_sleep_seconds(err_txt, attempt)
+            print(
+                f"[Gemini] מכסה/429 — ממתין {wait:.0f} שניות "
+                f"({attempt + 1}/{max_retries})...",
+                file=sys.stderr,
+            )
+            time.sleep(wait)
+    assert response is not None
     try:
         text = response.text
     except ValueError as e:
@@ -387,9 +427,12 @@ def enrich_row(
     llm: str,
     anthropic_key: str | None,
     gemini_key: str | None,
+    gemini_max_retries: int,
 ) -> dict[str, Any]:
     if llm == "gemini":
-        return call_gemini(title, content_url, platform, dry_run, gemini_key)
+        return call_gemini(
+            title, content_url, platform, dry_run, gemini_key, gemini_max_retries
+        )
     return call_claude(title, content_url, platform, dry_run, anthropic_key)
 
 
@@ -491,6 +534,13 @@ def main() -> None:
         default="gemini",
         help="ספק העשרה: gemini (ברירת מחדל) או anthropic (Claude)",
     )
+    parser.add_argument(
+        "--gemini-retries",
+        type=int,
+        default=GEMINI_MAX_RETRIES,
+        metavar="N",
+        help="ניסיונות חוזרים אחרי 429/מכסה Gemini (ברירת מחדל %(default)s)",
+    )
     args = parser.parse_args()
 
     script_dir = Path(__file__).resolve().parent
@@ -557,6 +607,7 @@ def main() -> None:
                 args.llm,
                 anthropic_key,
                 gemini_key,
+                args.gemini_retries,
             )
             cache[ck] = enriched
             save_cache(cache_path, cache)
