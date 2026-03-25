@@ -46,8 +46,8 @@ except ImportError:
 
 # מודלים — לעדכן מול התיעוד אם השם השתנה
 CLAUDE_MODEL = "claude-sonnet-4-20250514"
-# 2.0-flash לפעמים עם limit:0 בחינם; 2.5-flash בדרך כלל זמין — ניתן לדרוס ב-GEMINI_MODEL
-DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+# ניתן לדרוס ב-.env עם GEMINI_MODEL
+DEFAULT_GEMINI_MODEL = "gemini-1.5-flash"
 GEMINI_MAX_RETRIES = 20
 
 ALLOWED_CATEGORIES = frozenset(
@@ -396,7 +396,7 @@ def call_gemini(
                     "מכסת Gemini נגמרה או rate limit אחרי ניסיונות חוזרים.\n"
                     "• המתן כמה דקות או הרץ שוב מאוחר יותר (גם לילה)\n"
                     "• הגדל --delay (למשל 2 או 5)\n"
-                    "• ב-.env נסה מודל אחר: GEMINI_MODEL=gemini-1.5-flash או gemini-2.5-flash-lite\n"
+                    "• ב-.env נסה מודל אחר: GEMINI_MODEL=gemini-2.5-flash או gemini-2.5-flash-lite\n"
                     f"פרטים: {err_txt[:900]}"
                 ) from e
             wait = _gemini_retry_sleep_seconds(err_txt, attempt)
