@@ -9,16 +9,15 @@
 מפתחות API (לא לשים בגיט) — רק בלי --no-api:
   .env או משתני סביבה: GEMINI_API_KEY / GOOGLE_API_KEY או ANTHROPIC_API_KEY (--llm anthropic)
 
-מיפוי מומלץ בוורדפרס (לא אוטומטי — ידני במסך הייבוא):
+מיפוי מומלץ בוורדפרס (ידני במסך הייבוא):
   כותרת → post_title
-  תיאור → post_intro
+  תאריך פרסום → post_date (או שדה ACF / מטא — לפי האתר)
+  פתיח → post_intro
   קישור לתוכן → post_link
+  קרדיט → post_credit
   פלטפורמה → post_platform
   קישור לתמונה ראשית → post_thumbnail
-  קטגוריות → tax_category
-  כיתות → tax_class
-  תחומי דעת → tax_subject
-  תגיות → tax_post_tag
+  קטגוריות → tax_category | כיתות → tax_class | תחומי דעת → tax_subject | תגיות → tax_post_tag
 """
 
 from __future__ import annotations
@@ -63,7 +62,25 @@ ALLOWED_CATEGORIES = frozenset(
     }
 )
 
-ALLOWED_GRADES = frozenset({"א-יב", "גנים", "מורים"})
+ALLOWED_GRADES = frozenset(
+    {
+        "א",
+        "ב",
+        "ג",
+        "ד",
+        "ה",
+        "ו",
+        "ז",
+        "ח",
+        "ט",
+        "י",
+        "יא",
+        "יב",
+        "א-יב",
+        "גנים",
+        "מורים",
+    }
+)
 
 ALLOWED_SUBJECTS = frozenset(
     {
@@ -95,8 +112,10 @@ ALLOWED_SUBJECTS = frozenset(
 
 CSV_HEADERS = [
     "כותרת",
-    "תיאור",
+    "תאריך פרסום",
+    "פתיח",
     "קישור לתוכן",
+    "קרדיט",
     "פלטפורמה",
     "קישור לתמונה ראשית",
     "קטגוריות",
@@ -119,6 +138,135 @@ def find_encoded_column_index(headers: list[str]) -> int | None:
         if hn == "ns3:encoded" or "encoded" in hn:
             return i
     return None
+
+
+def find_column_flexible(headers: list[str], needles: tuple[str, ...]) -> int | None:
+    """מזהה עמודה לפי שם מדויק או חלקי (case insensitive)."""
+    for i, h in enumerate(headers):
+        hn = _norm_header(h).lower()
+        if not hn:
+            continue
+        for n in needles:
+            nl = n.lower()
+            if hn == nl or nl in hn or hn in nl:
+                return i
+    return None
+
+
+def format_pub_date_cell(val: Any) -> str:
+    if val is None or val == "":
+        return ""
+    if hasattr(val, "strftime"):
+        try:
+            return val.strftime("%Y-%m-%d")
+        except Exception:
+            pass
+    s = str(val).strip()
+    if not s:
+        return ""
+    if re.match(r"^\d{4}-\d{2}-\d{2}", s):
+        return s[:10]
+    m = re.search(r"(\d{4})-(\d{2})-(\d{2})", s)
+    if m:
+        return m.group(0)
+    try:
+        from email.utils import parsedate_to_datetime
+
+        dt = parsedate_to_datetime(s)
+        if dt:
+            return dt.strftime("%Y-%m-%d")
+    except Exception:
+        pass
+    return s[:32]
+
+
+def resolve_row_credit(headers: list[str], row: list[Any]) -> str:
+    """בוחר עמודת יוצר ראשונה עם טקסט אנושי (לא מזהה מספרי של post_author)."""
+    tried: list[tuple[str, ...]] = [
+        ("dc:creator",),
+        ("creator",),
+        ("wp:author", "author_name"),
+        ("author",),
+        ("post_author",),
+    ]
+    for needles in tried:
+        idx = find_column_flexible(headers, needles)
+        if idx is None or idx >= len(row):
+            continue
+        v = row[idx]
+        if v is None:
+            continue
+        raw = re.sub(r"[\r\n]+", " ", str(v).strip())
+        if not raw:
+            continue
+        if raw.isdigit():
+            continue
+        return raw[:500]
+    return ""
+
+
+def infer_subject_from_title(title: str) -> str:
+    """יוריסטיקה לפי מילות מפתח בכותרת (סדר: ספציפי לפני כללי)."""
+    t = title or ""
+    rules: list[tuple[tuple[str, ...], str]] = [
+        (("אנגלית", "english"), "אנגלית"),
+        (("פיזיקה",), "פיזיקה"),
+        (("כימיה",), "כימיה"),
+        (("ביולוגיה", "אנטומיה", "צמח"), "ביולוגיה"),
+        (("היסטוריה",), "היסטוריה"),
+        (("גאומטריה", "חשבון", "מתמטיקה", "כפל", "חיבור", "חיסור"), "מתמטיקה"),
+        (("מדע", "מדעים", "ניסוי"), "מדע וטכנולוגיה"),
+        (("אמנות", "ציור", "צביעה", "יצירה"), "אמנות"),
+        (("תקשורת", "מדיה"), "תקשורת"),
+        (("כישורי חיים",), "כישורי חיים"),
+        (("רגש", "אוורור", "חברתי"), "כישורי חיים"),
+        (("מולדת", "אזרחות"), "מולדת חברה ואזרחות"),
+        (("מעגל השנה", "חג", "חנוכה", "פסח"), "מעגל השנה"),
+        (("לשון", "דקדוק", "תחביר"), "לשון"),
+        (("משנה",), "משנה"),
+        (('תושב"ע', "תלמוד"), 'תושב"ע'),
+        (("נביא",), "נביא"),
+        (("תורה", "פרשה", "פרשת"), "תורה"),
+        (('תנ"ך', "תנך", "מקרא"), 'תנ"ך'),
+        (("תרבות יהודית", "יהדות", "מסורת"), "תרבות יהודית ישראלית"),
+        (("ספרות",), "ספרות"),
+        (
+            (
+                "קמץ",
+                "פתח",
+                "שווא",
+                "ניקוד",
+                "דיבור",
+                "הברה",
+                "פונולוג",
+                "אות",
+                "עברית",
+                "קריאה",
+                "כתיבה",
+                "הבנת הנקרא",
+                "מילה",
+                "משפט",
+            ),
+            "שפה",
+        ),
+    ]
+    for kws, subj in rules:
+        for kw in kws:
+            if kw in t:
+                return subj
+    return "כללי"
+
+
+def infer_category_from_title_and_url(title: str, content_url: str) -> list[str]:
+    t = title or ""
+    u = (content_url or "").lower()
+    if "מצגת" in t:
+        return ["מצגת"]
+    if "youtube.com" in u or "youtu.be" in u:
+        return ["סרטון"]
+    if u.endswith(".pdf") or ".pdf?" in u or ".pdf&" in u:
+        return ["להדפסה"]
+    return ["פעילות"]
 
 
 def normalize_content_url(url: str, base_url: str | None) -> str | None:
@@ -148,20 +296,35 @@ def normalize_url_key(url: str) -> str:
 
 
 def detect_platform(content_url: str) -> str:
-    u = content_url.lower()
+    u = (content_url or "").lower()
     parsed = urlparse(content_url)
     path = (parsed.path or "").lower()
     host = (parsed.netloc or "").lower()
     if host.startswith("www."):
         host = host[4:]
 
+    # קישורי Gemini / Bard (לא להסתמך על "g.co" כ-G בלבד)
+    if host == "g.co" and "gemini" in path:
+        return "Gemini"
+    if "gemini" in host or host == "gemini.google.com":
+        return "Gemini"
+    if "bard.google.com" in host:
+        return "Gemini"
+    if "makersuite.google.com" in host or "aistudio.google.com" in host:
+        return "Gemini"
+    if host == "g.co":
+        return "Google"
+
     if "youtu.be" in host or "youtube.com" in host:
         return "YouTube"
     if "vimeo.com" in host:
         return "Vimeo"
-    if "canva.com" in host:
+    if "canva.site" in host or "canva.com" in host:
         return "Canva"
-    if "view.genial.ly" in host or "genial.ly" in host:
+    # Genially — לפני heuristics של "view" כתת-דומיין
+    if "genially.com" in host:
+        return "Genially"
+    if host.endswith("genial.ly") or "genial.ly" in host:
         return "Genially"
     if "docs.google.com" in host:
         if "/presentation" in path or "/presentation" in u:
@@ -181,9 +344,17 @@ def detect_platform(content_url: str) -> str:
         return "Wordwall"
     if "learningapps.org" in host:
         return "LearningApps"
+    if "websim.com" in host or "websim." in u:
+        return "WebSim"
 
     if host:
-        return host.split(".")[0].title() if "." in host else host
+        parts = host.split(".")
+        brand = parts[0]
+        if brand in ("www", "app", "my") and len(parts) > 1:
+            brand = parts[1]
+        if brand == "view" and len(parts) > 1:
+            brand = parts[1]
+        return brand.replace("-", " ").title() if brand else host
     return "אחר"
 
 
@@ -261,8 +432,12 @@ def parse_llm_json(text: str) -> dict[str, Any]:
 def validate_enrichment(d: dict[str, Any]) -> dict[str, Any]:
     categories = [c.strip() for c in d.get("categories") or [] if str(c).strip()]
     categories = [c for c in categories if c in ALLOWED_CATEGORIES]
+    if not categories:
+        categories = ["פעילות"]
     grades = [g.strip() for g in d.get("grades") or [] if str(g).strip()]
     grades = [g for g in grades if g in ALLOWED_GRADES]
+    if not grades:
+        grades = ["א", "ב"]
     subj = (d.get("subject") or "").strip()
     if subj not in ALLOWED_SUBJECTS:
         subj = ""
@@ -293,30 +468,28 @@ def build_prompt(title: str, content_url: str, platform: str) -> str:
 - "grades": מערך מחרוזות מתוך הרשימה בלבד: {grade_list}
 - "subject": מחרוזת אחת בדיוק מתוך הרשימה: {subj_list} (או מחרוזת ריקה אם אי אפשר)
 - "tags": מערך של 3 עד 8 תגיות חופשיות בעברית (מילות מפתח קצרות)
-- "description": תיאור קצר בעברית, משפט אחד או שניים, מתאים לפתיח באתר
+- "description": פתיח קצר בעברית — מה הפריט ומה מטרתו; בלי להזכיר את שם הפלטפורמה בטקסט
 
 מידע על המשאב:
 - כותרת: {title}
 - קישור: {content_url}
-- פלטפורמה שזוהתה אוטומטית: {platform}
+- פלטפורמה (לשימושך בלבד, לא לשכפל בפתיח): {platform}
 
-הנחיות: בחר קטגוריות וכיתות רלוונטיות; אם לא בטוח — העדף "אחר" בקטגוריות ו-"א-יב" בכיתות אם זה מתאים לבית ספר."""
+הנחיות: בחר קטגוריות וכיתות (אפשר א,ב,ג או א-יב, גנים, מורים); לתחום דעת בחר מהרשימה המדויקת בהתאם לכותרת.
+"""
 
 
-def enrichment_offline_simple(title: str, platform: str) -> dict[str, Any]:
-    """ללא API: תיאור טכני קצר ממה שכבר יודעים; בלי תגיות; שדות מסווגים — ברירות בינוניות לייבוא."""
-    t = (title or "").strip()
-    plat = (platform or "").strip()
-    if plat and plat != "אחר":
-        desc = f"{t} — פלטפורמה: {plat}"
-    else:
-        desc = t or "(ללא כותרת)"
+def enrichment_offline_simple(
+    title: str, platform: str, content_url: str = ""
+) -> dict[str, Any]:
+    """ללא API: פתיח = כותרת בלבד (בלי פלטפורמה); קטגוריה ברירת מחדל פעילות; כיתות א,ב; תחום לפי יוריסטיקה."""
+    intro = (title or "").strip() or "(ללא כותרת)"
     return {
-        "categories": ["אחר"],
-        "grades": ["א-יב"],
-        "subject": "כללי",
+        "categories": infer_category_from_title_and_url(title, content_url),
+        "grades": ["א", "ב"],
+        "subject": infer_subject_from_title(title),
         "tags": [],
-        "description": desc[:500],
+        "description": intro[:500],
     }
 
 
@@ -328,7 +501,7 @@ def call_claude(
     api_key: str | None,
 ) -> dict[str, Any]:
     if dry_run:
-        return enrichment_offline_simple(title, platform)
+        return enrichment_offline_simple(title, platform, content_url)
     if not api_key:
         raise SystemExit(
             "חסר ANTHROPIC_API_KEY — הגדר ב-.env או הרץ עם --no-api / --llm gemini"
@@ -388,7 +561,7 @@ def call_gemini(
     max_retries: int = GEMINI_MAX_RETRIES,
 ) -> dict[str, Any]:
     if dry_run:
-        return enrichment_offline_simple(title, platform)
+        return enrichment_offline_simple(title, platform, content_url)
     if not api_key:
         raise SystemExit(
             "חסר GEMINI_API_KEY או GOOGLE_API_KEY — שים ב-.env או הרץ עם --no-api"
@@ -632,6 +805,19 @@ def main() -> None:
             "לא נמצאה עמודת encoded. הרץ עם --list-columns ובדוק את שמות העמודות."
         )
 
+    date_col_idx = find_column_flexible(
+        headers,
+        (
+            "pubdate",
+            "post_date",
+            "wp:post_date",
+            "date",
+            "published",
+            "תאריך",
+            "פרסום",
+            "post date",
+        ),
+    )
     cache_path = args.cache or (script_dir / ".enrichment_cache.json")
     cache: dict[str, Any] = {}
     if not use_offline:
@@ -650,8 +836,14 @@ def main() -> None:
         if cell is None:
             continue
         base = args.base_url or resolve_link_base(headers, row)
+        pub_date = ""
+        if date_col_idx is not None and date_col_idx < len(row):
+            pub_date = format_pub_date_cell(row[date_col_idx])
+        credit_cell = resolve_row_credit(headers, row)
         for fig in extract_figures_from_html(str(cell), base):
             fig["_source_base"] = base
+            fig["pub_date"] = pub_date
+            fig["credit"] = credit_cell
             figures_flat.append(fig)
 
     seen_keys: set[str] = set()
@@ -672,7 +864,7 @@ def main() -> None:
         url = fig["content_url"]
         platform = detect_platform(url)
         if use_offline:
-            enriched = enrichment_offline_simple(title, platform)
+            enriched = enrichment_offline_simple(title, platform, url)
         else:
             ck = cache_key(title, url)
             if ck in cache:
@@ -701,8 +893,10 @@ def main() -> None:
         out_rows.append(
             [
                 title,
+                fig.get("pub_date", "") or "",
                 enriched["description"],
                 url,
+                fig.get("credit", "") or "",
                 platform,
                 fig["thumb_url"],
                 cat_str,
