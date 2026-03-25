@@ -48,6 +48,8 @@ CLAUDE_MODEL = "claude-sonnet-4-20250514"
 # gemini-1.5-flash ירד מה-API (404). ניתן לדרוס ב-.env (למשל gemini-3-flash-preview)
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_MAX_RETRIES = 20
+# אחרי כך ניסיונות 429/503 לשורה אחת — עוצרים (מכסה יומית/דקה; cache ימשיך בריצה הבאה)
+GEMINI_QUOTA_RETRY_CAP = 8
 
 ALLOWED_CATEGORIES = frozenset(
     {
@@ -346,8 +348,29 @@ def call_claude(
 def _gemini_retry_sleep_seconds(exc_message: str, attempt: int) -> float:
     m = re.search(r"retry in ([\d.]+)\s*s", exc_message, re.I)
     if m:
-        return float(m.group(1)) + 2.0
+        return min(120.0, float(m.group(1)) + 2.0)
     return min(120.0, 8.0 * (attempt + 1))
+
+
+def _resolve_gemini_model_name() -> str:
+    """תווי BOM/מחרוזות ישנות; מודלי 1.5 הוסרו מה-API."""
+    raw = (os.environ.get("GEMINI_MODEL") or DEFAULT_GEMINI_MODEL).strip().strip(
+        "\"'"
+    )
+    if not raw:
+        return DEFAULT_GEMINI_MODEL
+    low = raw.lower()
+    if "1.5-flash" in low or "1.5-pro" in low or low in (
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-pro",
+    ):
+        print(
+            f"[Gemini] המודל {raw!r} לא זמין ב-v1beta — מחליפים ל-{DEFAULT_GEMINI_MODEL}",
+            file=sys.stderr,
+        )
+        return DEFAULT_GEMINI_MODEL
+    return raw
 
 
 def call_gemini(
@@ -364,15 +387,17 @@ def call_gemini(
         raise SystemExit(
             "חסר GEMINI_API_KEY או GOOGLE_API_KEY — שים ב-.env (ראה .env.example) או הרץ עם --dry-run"
         )
+    import httpx
     from google import genai
     from google.genai import errors as genai_errors
     from google.genai import types
 
-    model_name = os.environ.get("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
+    model_name = _resolve_gemini_model_name()
     client = genai.Client(api_key=api_key)
     prompt = build_prompt(title, content_url, platform)
 
     response = None
+    quota_strikes = 0
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
@@ -384,11 +409,28 @@ def call_gemini(
                 ),
             )
             break
+        except (
+            httpx.ConnectError,
+            httpx.ConnectTimeout,
+            httpx.ReadTimeout,
+            httpx.WriteTimeout,
+        ) as e:
+            if attempt >= max_retries - 1:
+                raise SystemExit(
+                    "שגיאת רשת (אין חיבור / DNS). חברי אינטרנט והריצי שוב אותה פקודה — "
+                    "הקובץ .enrichment_cache.json שומר התקדמות.\n"
+                    f"פרטים: {e}"
+                ) from e
+            wait = min(120.0, 15.0 * (attempt + 1))
+            print(
+                f"[Gemini] רשת — ממתין {wait:.0f} שניות ({attempt + 1}/{max_retries})...",
+                file=sys.stderr,
+            )
+            time.sleep(wait)
         except genai_errors.APIError as e:
             if e.code == 404:
                 raise SystemExit(
                     f"מודל Gemini לא נמצא (404): {model_name!r}\n"
-                    "מודלים ישנים כמו gemini-1.5-flash הוסרו מה-API.\n"
                     "עדכני ב-.env לדוגמה:\n"
                     "  GEMINI_MODEL=gemini-2.5-flash\n"
                     "  או GEMINI_MODEL=gemini-3-flash-preview\n"
@@ -399,18 +441,26 @@ def call_gemini(
                 raise SystemExit(
                     f"שגיאת Gemini ({e.code}): {e.message or e}"
                 ) from e
+            quota_strikes += 1
             err_txt = str(e)
+            if quota_strikes >= GEMINI_QUOTA_RETRY_CAP:
+                raise SystemExit(
+                    "חוזרות יותר מדי שגיאות מכסה (429/503) — עוצרים כדי לא לבזבז זמן.\n"
+                    "• נסי שוב מאוחר יותר (מחר או אחרי שעה); אותה פקודה — הקאש ימשיך\n"
+                    "• הגדלי --delay ל-10 או 30; או GEMINI_MODEL=gemini-3-flash-preview\n"
+                    "• לייצוא בלי AI: --dry-run (ערכי מילוי), אחר כך עריכה ידנית בגיליון\n"
+                    f"פרטים: {err_txt[:900]}"
+                ) from e
             if attempt >= max_retries - 1:
                 raise SystemExit(
-                    "מכסת Gemini נגמרה או שגיאת שרת אחרי ניסיונות חוזרים.\n"
+                    "מכסת Gemini / שרת אחרי כל ניסיונות השחזור.\n"
                     "• המתן או הגדל --delay\n"
-                    "• ב-.env נסה: GEMINI_MODEL=gemini-3-flash-preview\n"
                     f"פרטים: {err_txt[:900]}"
                 ) from e
             wait = _gemini_retry_sleep_seconds(err_txt, attempt)
             print(
                 f"[Gemini] {e.code} — ממתין {wait:.0f} שניות "
-                f"({attempt + 1}/{max_retries})...",
+                f"(מכסה {quota_strikes}/{GEMINI_QUOTA_RETRY_CAP}, ניסיון {attempt + 1}/{max_retries})...",
                 file=sys.stderr,
             )
             time.sleep(wait)
