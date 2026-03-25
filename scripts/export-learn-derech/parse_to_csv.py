@@ -153,6 +153,40 @@ def find_column_flexible(headers: list[str], needles: tuple[str, ...]) -> int | 
     return None
 
 
+def _header_normalized_for_match(h: str) -> str:
+    hn = _norm_header(h).lower()
+    return hn.replace("_", " ").replace(":", " ")
+
+
+def find_date_column_index(headers: list[str]) -> int | None:
+    """תאריך פרסום מקורי של הפוסט — לפני pubDate (לעיתים תאריך הייצוא)."""
+    priority_needles = (
+        "post date",  # POST DATE באקסל
+        "post_date",
+        "ns2 post date",
+        "wp post date",
+        "post date gmt",
+        "post_date_gmt",
+        "post modified",
+        "post_modified",
+        "ns2 post modified",
+        "pubdate",  # אחרון ברירת משנה
+        "pub date",
+        "published",
+        "תאריך פרסום",
+        "תאריך",
+    )
+    for needle in priority_needles:
+        nl = needle.lower()
+        for i, h in enumerate(headers):
+            hn = _header_normalized_for_match(h)
+            if not hn:
+                continue
+            if hn == nl or nl in hn:
+                return i
+    return None
+
+
 def format_pub_date_cell(val: Any) -> str:
     if val is None or val == "":
         return ""
@@ -183,9 +217,11 @@ def format_pub_date_cell(val: Any) -> str:
 def resolve_row_credit(headers: list[str], row: list[Any]) -> str:
     """בוחר עמודת יוצר ראשונה עם טקסט אנושי (לא מזהה מספרי של post_author)."""
     tried: list[tuple[str, ...]] = [
-        ("dc:creator",),
+        ("author_display_name", "ns2:author_display_name"),
+        ("author_first_name", "ns2:author_first_name"),
+        ("dc:creator", "ns4:creator"),
         ("creator",),
-        ("wp:author", "author_name"),
+        ("wp:author", "author_name", "author_login", "ns2:author_login"),
         ("author",),
         ("post_author",),
     ]
@@ -805,19 +841,14 @@ def main() -> None:
             "לא נמצאה עמודת encoded. הרץ עם --list-columns ובדוק את שמות העמודות."
         )
 
-    date_col_idx = find_column_flexible(
-        headers,
-        (
-            "pubdate",
-            "post_date",
-            "wp:post_date",
-            "date",
-            "published",
-            "תאריך",
-            "פרסום",
-            "post date",
-        ),
-    )
+    date_col_idx = find_date_column_index(headers)
+    if date_col_idx is not None:
+        print(
+            f"עמודת תאריך נבחרה: {headers[date_col_idx]!r} (אינדקס {date_col_idx})",
+            file=sys.stderr,
+        )
+    else:
+        print("לא נמצאה עמודת תאריך — עמודת «תאריך פרסום» תישאר ריקה.", file=sys.stderr)
     cache_path = args.cache or (script_dir / ".enrichment_cache.json")
     cache: dict[str, Any] = {}
     if not use_offline:
