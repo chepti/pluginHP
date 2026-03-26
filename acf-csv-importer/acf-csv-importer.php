@@ -3,7 +3,7 @@
  * Plugin Name: ACF CSV Importer
  * Plugin URI:  https://github.com/chepti
  * Description: תוסף לייבוא נתונים מקובץ CSV לפוסטים ושדות ACF. פשוט, מאובטח ומותאם אישית.    
- * Version:     1.1.0
+ * Version:     1.2.0
  * Author:      Chepti
  * Author URI:  https://github.com/chepti
  * License:     GPL2
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // הגדרת קבועים של התוסף
-define( 'ACF_CSV_IMPORTER_VERSION', '1.1.0' );
+define( 'ACF_CSV_IMPORTER_VERSION', '1.2.0' );
 define( 'ACF_CSV_IMPORTER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ACF_CSV_IMPORTER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

@@ -101,6 +101,32 @@ class ACF_CSV_Importer_Admin {
                             ?>
                         </select>
                     </p>
+                    <p>
+                        <label for="default_post_author"><?php _e( 'מחבר ברירת מחדל לכל השורות (אופציונלי):', 'acf-csv-importer' ); ?></label><br>
+                        <select id="default_post_author" name="default_post_author" class="regular-text" style="max-width:100%;">
+                            <option value="0"><?php _e( '— ללא — (רק אם ממפים עמודת מחבר או שורת CSV מגדירה)', 'acf-csv-importer' ); ?></option>
+                            <?php
+                            $author_users = get_users(
+                                array(
+                                    'capability' => 'edit_posts',
+                                    'orderby'    => 'display_name',
+                                    'order'      => 'ASC',
+                                )
+                            );
+                            foreach ( $author_users as $u ) {
+                                printf(
+                                    '<option value="%1$s">%2$s (%3$s)</option>',
+                                    esc_attr( (string) $u->ID ),
+                                    esc_html( $u->display_name ),
+                                    esc_html( $u->user_login )
+                                );
+                            }
+                            ?>
+                        </select>
+                    </p>
+                    <p class="description" style="max-width:60em;">
+                        <?php _e( 'אפשר למפות את עמודת הקרדיט לשדה «מחבר»: המערכת תזהה לפי מזהה מספרי, אימייל, שם משתמש או שם תצוגה. אם השורה ריקה או שלא נמצאה התאמה — יוחל מחבר ברירת המחדל כאן.', 'acf-csv-importer' ); ?>
+                    </p>
                     <p class="submit">
                         <input type="submit" class="button button-primary" value="<?php _e( 'התחל ייבוא', 'acf-csv-importer' ); ?>">
                     </p>
@@ -141,7 +167,7 @@ class ACF_CSV_Importer_Admin {
                     'post_excerpt' => __( 'תקציר', 'acf-csv-importer' ),
                     'post_date'    => __( 'תאריך פרסום', 'acf-csv-importer' ),
                     'post_status'  => __( 'סטטוס', 'acf-csv-importer' ),
-                    'post_author'  => __( 'מחבר (ID או אימייל)', 'acf-csv-importer' ),
+                    'post_author'  => __( 'מחבר (מזהה, אימייל, שם משתמש או שם תצוגה — למשל עמודת קרדיט)', 'acf-csv-importer' ),
                     'post_thumbnail' => __( 'תמונה ראשית (קישור)', 'acf-csv-importer' ),
                 ],
             ],

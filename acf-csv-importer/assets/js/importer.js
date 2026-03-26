@@ -89,6 +89,7 @@ jQuery(document).ready(function($) {
             security: acf_csv_importer.nonce,
             file_path: $('#uploaded-file-path').val(),
             post_type: $('#post_type_selector').val(),
+            default_author_id: $('#default_post_author').val() || '0',
             mapping: mappingData.reduce(function(obj, item) {
                 // המרת ה-serializeArray למבנה אובייקטים מתאים
                 var name = item.name.match(/mapping\[(\d+)\]\[(\w+)\]/);
