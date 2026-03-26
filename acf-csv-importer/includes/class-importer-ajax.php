@@ -215,14 +215,27 @@ class ACF_CSV_Importer_Ajax {
             }
         }
 
-        if ( $author_id > 0 ) {
-            $post_args['post_author'] = $author_id;
+        // אם נבחר משתמש ברשימת «קבוע» אך לא סומן מצב fixed — עדיין משתמשים בו כשאר אין מחבר אחר (מניעת שיוך שקט לאדמין הייבוא).
+        if ( $author_id < 1 && $post_author_fixed_id > 0 && get_userdata( $post_author_fixed_id ) ) {
+            $author_id = $post_author_fixed_id;
         }
-        
+
         if ( empty( $post_args['post_title'] ) ) {
             $errors[] = __( 'שורה ללא כותרת, דילוג.', 'acf-csv-importer' );
             return;
         }
+
+        // בלי post_author מפורש וורדפרס משייך ל־get_current_user_id() (מבצע הייבוא — לרוב אדמין). לא ליצור פוסט במצב כזה.
+        if ( $author_id < 1 ) {
+            $errors[] = sprintf(
+                /* translators: %s: post title */
+                __( '«%s»: לא נקבע מחבר — הפוסט לא יובא (כדי שלא ישויך בשקט למנהל הייבוא). סמנו «משתמש קבוע», הגדירו «גיבוי», או מיפוי / עמודת אימייל־לוגין.', 'acf-csv-importer' ),
+                $post_args['post_title']
+            );
+            return;
+        }
+
+        $post_args['post_author'] = $author_id;
 
         $post_id = wp_insert_post( $post_args, true );
 

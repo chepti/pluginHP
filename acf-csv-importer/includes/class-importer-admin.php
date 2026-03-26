@@ -146,6 +146,9 @@ class ACF_CSV_Importer_Admin {
                         <p>
                             <label><input type="radio" name="post_author_mode" value="map" id="post_author_mode_map" checked> <?php _e( 'לפי מיפוי בטבלה למטה (שדה «מחבר») — כולל זיהוי גמיש לפי שם תצוגה אם צריך', 'acf-csv-importer' ); ?></label>
                         </p>
+                        <p class="description">
+                            <?php _e( 'חשוב: אם לא ייקבע מחבר במפורש, וורדפרס משייך את הפוסט למשתמש שמריץ את הייבוא — לרוב האדמין. לכן יש לסמן משתמש קבוע או להגדיר גיבוי; אחרת השורה תידלג עם הודעה.', 'acf-csv-importer' ); ?>
+                        </p>
                         <p>
                             <label for="post_author_fallback_id"><?php _e( 'גיבוי: אם לא נקבע מחבר או שהזיהוי נכשל:', 'acf-csv-importer' ); ?></label><br>
                             <select id="post_author_fallback_id" class="regular-text" style="max-width:100%;">
