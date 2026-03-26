@@ -39,11 +39,22 @@ jQuery(document).ready(function($) {
         });
     });
 
+    function refreshAuthorModeUi() {
+        var mode = $('input[name="post_author_mode"]:checked').val();
+        var hasFile = $('#uploaded-file-path').val() !== '';
+        $('#post_author_csv_header').prop('disabled', !hasFile || mode !== 'csv_login');
+        $('#credit_text_csv_header').prop('disabled', !hasFile);
+    }
+
+    $(document).on('change', 'input[name="post_author_mode"]', refreshAuthorModeUi);
+
     // פונקציה למילוי טבלת המיפוי
     function populateMappingTable(data) {
         $('#uploaded-file-path').val(data.file_path);
         var tableBody = $('#csv-mapping-table-body');
         tableBody.empty();
+
+        var headersList = data.headers || [];
 
         $.each(data.headers, function(index, header) {
             var preview = data.first_row && data.first_row[index] ? data.first_row[index] : '';
@@ -69,6 +80,25 @@ jQuery(document).ready(function($) {
 
             tableBody.append(row);
         });
+
+        function fillCsvHeaderSelect($sel, emptyLabel) {
+            $sel.empty();
+            $sel.append($('<option>').val('').text(emptyLabel));
+            $.each(headersList, function(i, h) {
+                $sel.append($('<option>').val(h).text(h));
+            });
+        }
+
+        fillCsvHeaderSelect($('#post_author_csv_header'), '— בחרו עמודה —');
+        fillCsvHeaderSelect($('#credit_text_csv_header'), '— ללא / בחרו עמודה —');
+
+        var $ct = $('#credit_text_target');
+        $ct.empty();
+        $.each(data.credit_targets || {}, function(key, label) {
+            $ct.append($('<option>').val(key).text(label));
+        });
+
+        refreshAuthorModeUi();
     }
 
     // שלב 2: טיפול במיפוי והתחלת ייבוא
@@ -89,7 +119,12 @@ jQuery(document).ready(function($) {
             security: acf_csv_importer.nonce,
             file_path: $('#uploaded-file-path').val(),
             post_type: $('#post_type_selector').val(),
-            default_author_id: $('#default_post_author').val() || '0',
+            post_author_mode: $('input[name="post_author_mode"]:checked').val() || 'map',
+            post_author_fixed_id: $('#post_author_fixed_id').val() || '0',
+            post_author_csv_header: $('#post_author_csv_header').val() || '',
+            post_author_fallback_id: $('#post_author_fallback_id').val() || '0',
+            credit_text_csv_header: $('#credit_text_csv_header').val() || '',
+            credit_text_target: $('#credit_text_target').val() || '',
             mapping: mappingData.reduce(function(obj, item) {
                 // המרת ה-serializeArray למבנה אובייקטים מתאים
                 var name = item.name.match(/mapping\[(\d+)\]\[(\w+)\]/);

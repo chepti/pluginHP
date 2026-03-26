@@ -39,19 +39,59 @@ class ACF_CSV_Importer_Ajax {
         }
         $total_rows--; // הסרת שורת הכותרת מהספירה
 
-        $default_author_id = isset( $_POST['default_author_id'] ) ? absint( wp_unslash( $_POST['default_author_id'] ) ) : 0;
-        if ( $default_author_id && ! get_userdata( $default_author_id ) ) {
-            $default_author_id = 0;
+        $file_headers = array();
+        $hdr_handle   = fopen( $file_path, 'r' );
+        if ( $hdr_handle ) {
+            $hdr_row = fgetcsv( $hdr_handle );
+            fclose( $hdr_handle );
+            if ( is_array( $hdr_row ) ) {
+                $file_headers = $hdr_row;
+            }
+        }
+
+        $post_author_mode = isset( $_POST['post_author_mode'] ) ? sanitize_key( wp_unslash( $_POST['post_author_mode'] ) ) : 'map';
+        if ( ! in_array( $post_author_mode, array( 'map', 'fixed', 'csv_login' ), true ) ) {
+            $post_author_mode = 'map';
+        }
+
+        $post_author_fixed_id   = isset( $_POST['post_author_fixed_id'] ) ? absint( wp_unslash( $_POST['post_author_fixed_id'] ) ) : 0;
+        $post_author_fallback_id = isset( $_POST['post_author_fallback_id'] ) ? absint( wp_unslash( $_POST['post_author_fallback_id'] ) ) : 0;
+        if ( $post_author_fixed_id && ! get_userdata( $post_author_fixed_id ) ) {
+            $post_author_fixed_id = 0;
+        }
+        if ( $post_author_fallback_id && ! get_userdata( $post_author_fallback_id ) ) {
+            $post_author_fallback_id = 0;
+        }
+
+        $post_author_csv_header = isset( $_POST['post_author_csv_header'] ) ? sanitize_text_field( wp_unslash( $_POST['post_author_csv_header'] ) ) : '';
+        if ( $post_author_csv_header !== '' && ! in_array( $post_author_csv_header, $file_headers, true ) ) {
+            $post_author_csv_header = '';
+        }
+
+        $credit_text_csv_header = isset( $_POST['credit_text_csv_header'] ) ? sanitize_text_field( wp_unslash( $_POST['credit_text_csv_header'] ) ) : '';
+        if ( $credit_text_csv_header !== '' && ! in_array( $credit_text_csv_header, $file_headers, true ) ) {
+            $credit_text_csv_header = '';
+        }
+
+        $allowed_credit = function_exists( 'acf_csv_importer_credit_target_options' ) ? acf_csv_importer_credit_target_options() : array();
+        $credit_target  = isset( $_POST['credit_text_target'] ) ? sanitize_text_field( wp_unslash( $_POST['credit_text_target'] ) ) : '';
+        if ( $credit_target !== '' && ! array_key_exists( $credit_target, $allowed_credit ) ) {
+            $credit_target = '';
         }
 
         $import_data = array(
-            'file_path'         => $file_path,
-            'mapping'           => $_POST['mapping'],
-            'post_type'         => sanitize_text_field( $_POST['post_type'] ),
-            'default_author_id' => $default_author_id,
-            'total_rows'        => $total_rows,
-            'processed'         => 0,
-            'errors'            => array(),
+            'file_path'                => $file_path,
+            'mapping'                  => $_POST['mapping'],
+            'post_type'                => sanitize_text_field( wp_unslash( $_POST['post_type'] ) ),
+            'post_author_mode'         => $post_author_mode,
+            'post_author_fixed_id'     => $post_author_fixed_id,
+            'post_author_fallback_id'  => $post_author_fallback_id,
+            'post_author_csv_header'   => $post_author_csv_header,
+            'credit_text_csv_header'   => $credit_text_csv_header,
+            'credit_text_target'       => $credit_target,
+            'total_rows'               => $total_rows,
+            'processed'                => 0,
+            'errors'                   => array(),
         );
 
         set_transient( 'acf_csv_import_data_' . get_current_user_id(), $import_data, HOUR_IN_SECONDS );
@@ -116,7 +156,13 @@ class ACF_CSV_Importer_Ajax {
      */
     private function import_row( $row, $headers, $mapping, $post_type, &$errors, $import_data ) {
         $row_data = array_combine( $headers, $row );
-        $default_author_id = isset( $import_data['default_author_id'] ) ? absint( $import_data['default_author_id'] ) : 0;
+
+        $post_author_mode        = isset( $import_data['post_author_mode'] ) ? $import_data['post_author_mode'] : 'map';
+        $post_author_fixed_id    = isset( $import_data['post_author_fixed_id'] ) ? absint( $import_data['post_author_fixed_id'] ) : 0;
+        $post_author_fallback_id = isset( $import_data['post_author_fallback_id'] ) ? absint( $import_data['post_author_fallback_id'] ) : 0;
+        $post_author_csv_header  = isset( $import_data['post_author_csv_header'] ) ? $import_data['post_author_csv_header'] : '';
+        $credit_text_csv_header  = isset( $import_data['credit_text_csv_header'] ) ? $import_data['credit_text_csv_header'] : '';
+        $credit_target           = isset( $import_data['credit_text_target'] ) ? $import_data['credit_text_target'] : '';
 
         $post_args = [
             'post_type' => $post_type,
@@ -148,10 +194,27 @@ class ACF_CSV_Importer_Ajax {
             }
         }
 
-        $author_id = $this->resolve_post_author_value( $post_author_raw );
-        if ( $author_id <= 0 && $default_author_id > 0 && get_userdata( $default_author_id ) ) {
-            $author_id = $default_author_id;
+        $author_id = 0;
+        if ( 'fixed' === $post_author_mode ) {
+            if ( $post_author_fixed_id > 0 && get_userdata( $post_author_fixed_id ) ) {
+                $author_id = $post_author_fixed_id;
+            } elseif ( $post_author_fallback_id > 0 && get_userdata( $post_author_fallback_id ) ) {
+                $author_id = $post_author_fallback_id;
+            }
+        } elseif ( 'csv_login' === $post_author_mode ) {
+            if ( $post_author_csv_header !== '' && isset( $row_data[ $post_author_csv_header ] ) ) {
+                $author_id = $this->resolve_post_author_from_login_or_email( $row_data[ $post_author_csv_header ] );
+            }
+            if ( $author_id <= 0 && $post_author_fallback_id > 0 && get_userdata( $post_author_fallback_id ) ) {
+                $author_id = $post_author_fallback_id;
+            }
+        } else {
+            $author_id = $this->resolve_post_author_value( $post_author_raw );
+            if ( $author_id <= 0 && $post_author_fallback_id > 0 && get_userdata( $post_author_fallback_id ) ) {
+                $author_id = $post_author_fallback_id;
+            }
         }
+
         if ( $author_id > 0 ) {
             $post_args['post_author'] = $author_id;
         }
@@ -182,13 +245,58 @@ class ACF_CSV_Importer_Ajax {
         foreach ( $taxonomies as $tax => $terms ) {
             wp_set_object_terms( $post_id, $terms, $tax, true );
         }
+
+        if ( $credit_text_csv_header !== '' && $credit_target !== '' && isset( $row_data[ $credit_text_csv_header ] ) ) {
+            $this->save_credit_text_for_post( $post_id, $row_data[ $credit_text_csv_header ], $credit_target );
+        }
     }
 
     /**
-     * הורדת תמונה מקישור והגדרתה כתמונה ראשית
+     * שמירת קרדיט טקסטואלי למטא של התוסף או לשדה ACF
      */
+    private function save_credit_text_for_post( $post_id, $credit_raw, $credit_target ) {
+        if ( ! is_string( $credit_raw ) ) {
+            return;
+        }
+        if ( defined( 'ACF_CSV_IMPORTER_CREDIT_META_KEY' ) && ACF_CSV_IMPORTER_CREDIT_META_KEY === $credit_target ) {
+            update_post_meta( $post_id, ACF_CSV_IMPORTER_CREDIT_META_KEY, sanitize_textarea_field( $credit_raw ) );
+            return;
+        }
+        if ( function_exists( 'acf_get_field' ) && function_exists( 'update_field' ) ) {
+            $f = acf_get_field( $credit_target );
+            if ( is_array( $f ) && ! empty( $f['name'] ) ) {
+                $type = isset( $f['type'] ) ? $f['type'] : 'text';
+                $val  = ( 'wysiwyg' === $type ) ? wp_kses_post( $credit_raw ) : sanitize_textarea_field( $credit_raw );
+                update_field( $credit_target, $val, $post_id );
+            }
+        }
+    }
+
     /**
-     * פיענוח מזהה משתמש מטקסט (מזהה, אימייל, לוגין, slug, שם תצוגה — לרוב שם בעמודת קרדיט)
+     * זיהוי מחבר קפדני: מזהה מספרי, אימייל או שם משתמש בלבד (בלי שם תצוגה מהקובץ)
+     */
+    private function resolve_post_author_from_login_or_email( $value ) {
+        if ( ! is_string( $value ) ) {
+            return 0;
+        }
+        $value = trim( wp_strip_all_tags( $value ) );
+        if ( $value === '' ) {
+            return 0;
+        }
+        if ( is_numeric( $value ) ) {
+            $id = absint( $value );
+            return ( $id && get_userdata( $id ) ) ? $id : 0;
+        }
+        if ( is_email( $value ) ) {
+            $user = get_user_by( 'email', $value );
+            return $user ? (int) $user->ID : 0;
+        }
+        $user = get_user_by( 'login', $value );
+        return $user ? (int) $user->ID : 0;
+    }
+
+    /**
+     * פיענוח מזהה משתמש מטקסט (מצב מיפוי בטבלה): מזהה, אימייל, לוגין, slug, שם תצוגה
      */
     private function resolve_post_author_value( $value ) {
         if ( ! is_string( $value ) ) {

@@ -101,32 +101,85 @@ class ACF_CSV_Importer_Admin {
                             ?>
                         </select>
                     </p>
-                    <p>
-                        <label for="default_post_author"><?php _e( 'מחבר ברירת מחדל לכל השורות (אופציונלי):', 'acf-csv-importer' ); ?></label><br>
-                        <select id="default_post_author" name="default_post_author" class="regular-text" style="max-width:100%;">
-                            <option value="0"><?php _e( '— ללא — (רק אם ממפים עמודת מחבר או שורת CSV מגדירה)', 'acf-csv-importer' ); ?></option>
-                            <?php
-                            $author_users = get_users(
-                                array(
-                                    'capability' => 'edit_posts',
-                                    'orderby'    => 'display_name',
-                                    'order'      => 'ASC',
-                                )
-                            );
-                            foreach ( $author_users as $u ) {
-                                printf(
-                                    '<option value="%1$s">%2$s (%3$s)</option>',
-                                    esc_attr( (string) $u->ID ),
-                                    esc_html( $u->display_name ),
-                                    esc_html( $u->user_login )
-                                );
-                            }
-                            ?>
-                        </select>
-                    </p>
+                    <h3 style="margin-top:1.5em;"><?php _e( 'תורם במערכת וקרדיט טקסטואלי', 'acf-csv-importer' ); ?></h3>
                     <p class="description" style="max-width:60em;">
-                        <?php _e( 'אפשר למפות את עמודת הקרדיט לשדה «מחבר»: המערכת תזהה לפי מזהה מספרי, אימייל, שם משתמש או שם תצוגה. אם השורה ריקה או שלא נמצאה התאמה — יוחל מחבר ברירת המחדל כאן.', 'acf-csv-importer' ); ?>
+                        <?php _e( '«מחבר הפוסט» בוורדפרס נקבע לפי משתמש אמיתי במערכת (מופיע נכון בתבנית ובלוח הבקרה). הקרדיט הטקסטואלי הוא ערך נפרד מהקובץ — למשל משפט קרדיט בתוכן — ונשמר לשדה שתבחרו.', 'acf-csv-importer' ); ?>
                     </p>
+                    <fieldset class="acf-csv-importer-author-mode" style="border:1px solid #ccd0d4;padding:12px;max-width:60em;">
+                        <legend><strong><?php _e( 'מי יהיה מחבר הפוסט (מהמערכת)?', 'acf-csv-importer' ); ?></strong></legend>
+                        <p>
+                            <label><input type="radio" name="post_author_mode" value="fixed" id="post_author_mode_fixed"> <?php _e( 'משתמש קבוע לכל השורות (בחירה מהרשימה — השם המדויק מהאתר)', 'acf-csv-importer' ); ?></label>
+                        </p>
+                        <p class="acf-csv-indent" style="margin-right:1.5em;">
+                            <label for="post_author_fixed_id"><?php _e( 'משתמש:', 'acf-csv-importer' ); ?></label><br>
+                            <select id="post_author_fixed_id" class="regular-text" style="max-width:100%;">
+                                <option value="0"><?php _e( '— בחרו משתמש —', 'acf-csv-importer' ); ?></option>
+                                <?php
+                                $author_users = get_users(
+                                    array(
+                                        'capability' => 'edit_posts',
+                                        'orderby'    => 'display_name',
+                                        'order'      => 'ASC',
+                                    )
+                                );
+                                foreach ( $author_users as $u ) {
+                                    printf(
+                                        '<option value="%1$s">%2$s | %3$s | %4$s</option>',
+                                        esc_attr( (string) $u->ID ),
+                                        esc_html( $u->display_name ),
+                                        esc_html( $u->user_login ),
+                                        esc_html( $u->user_email )
+                                    );
+                                }
+                                ?>
+                            </select>
+                        </p>
+                        <p>
+                            <label><input type="radio" name="post_author_mode" value="csv_login" id="post_author_mode_csv_login"> <?php _e( 'לפי עמודה בקובץ — רק אימייל או שם משתמש (ללא התאמה לפי שם תצוגה מהגיליון)', 'acf-csv-importer' ); ?></label>
+                        </p>
+                        <p class="acf-csv-indent" style="margin-right:1.5em;">
+                            <label for="post_author_csv_header"><?php _e( 'עמודת זיהוי ב־CSV:', 'acf-csv-importer' ); ?></label><br>
+                            <select id="post_author_csv_header" class="regular-text" style="max-width:100%;" disabled>
+                                <option value=""><?php _e( '— לאחר העלאה ימולא מהכותרות —', 'acf-csv-importer' ); ?></option>
+                            </select>
+                        </p>
+                        <p>
+                            <label><input type="radio" name="post_author_mode" value="map" id="post_author_mode_map" checked> <?php _e( 'לפי מיפוי בטבלה למטה (שדה «מחבר») — כולל זיהוי גמיש לפי שם תצוגה אם צריך', 'acf-csv-importer' ); ?></label>
+                        </p>
+                        <p>
+                            <label for="post_author_fallback_id"><?php _e( 'גיבוי: אם לא נקבע מחבר או שהזיהוי נכשל:', 'acf-csv-importer' ); ?></label><br>
+                            <select id="post_author_fallback_id" class="regular-text" style="max-width:100%;">
+                                <option value="0"><?php _e( '— ללא גיבוי —', 'acf-csv-importer' ); ?></option>
+                                <?php
+                                foreach ( $author_users as $u ) {
+                                    printf(
+                                        '<option value="%1$s">%2$s (%3$s)</option>',
+                                        esc_attr( (string) $u->ID ),
+                                        esc_html( $u->display_name ),
+                                        esc_html( $u->user_login )
+                                    );
+                                }
+                                ?>
+                            </select>
+                        </p>
+                    </fieldset>
+                    <fieldset style="border:1px solid #ccd0d4;padding:12px;max-width:60em;margin-top:1em;">
+                        <legend><strong><?php _e( 'קרדיט טקסטואלי (מעמודת CSV לשדה יעד)', 'acf-csv-importer' ); ?></strong></legend>
+                        <p>
+                            <label for="credit_text_csv_header"><?php _e( 'עמודת מקור בקובץ:', 'acf-csv-importer' ); ?></label><br>
+                            <select id="credit_text_csv_header" class="regular-text" style="max-width:100%;" disabled>
+                                <option value=""><?php _e( '— לאחר העלאה —', 'acf-csv-importer' ); ?></option>
+                            </select>
+                        </p>
+                        <p>
+                            <label for="credit_text_target"><?php _e( 'שמירה ב:', 'acf-csv-importer' ); ?></label><br>
+                            <select id="credit_text_target" class="regular-text" style="max-width:100%;">
+                                <?php foreach ( acf_csv_importer_credit_target_options() as $val => $lab ) : ?>
+                                    <option value="<?php echo esc_attr( $val ); ?>"><?php echo esc_html( $lab ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </p>
+                    </fieldset>
                     <p class="submit">
                         <input type="submit" class="button button-primary" value="<?php _e( 'התחל ייבוא', 'acf-csv-importer' ); ?>">
                     </p>
@@ -167,7 +220,7 @@ class ACF_CSV_Importer_Admin {
                     'post_excerpt' => __( 'תקציר', 'acf-csv-importer' ),
                     'post_date'    => __( 'תאריך פרסום', 'acf-csv-importer' ),
                     'post_status'  => __( 'סטטוס', 'acf-csv-importer' ),
-                    'post_author'  => __( 'מחבר (מזהה, אימייל, שם משתמש או שם תצוגה — למשל עמודת קרדיט)', 'acf-csv-importer' ),
+                    'post_author'  => __( 'מחבר (רק במצב «לפי מיפוי בטבלה»: מזהה / אימייל / לוגין / שם תצוגה)', 'acf-csv-importer' ),
                     'post_thumbnail' => __( 'תמונה ראשית (קישור)', 'acf-csv-importer' ),
                 ],
             ],
@@ -242,11 +295,14 @@ class ACF_CSV_Importer_Admin {
             wp_send_json_error( [ 'message' => __( 'קובץ CSV ריק או לא תקין.', 'acf-csv-importer' ) ] );
         }
         
-        wp_send_json_success( [
-            'file_path' => $file_path,
-            'headers' => $headers,
-            'first_row' => $first_row,
-            'mapping_fields' => $this->get_mapping_fields(),
-        ] );
+        wp_send_json_success(
+            array(
+                'file_path'       => $file_path,
+                'headers'         => $headers,
+                'first_row'       => $first_row,
+                'mapping_fields'  => $this->get_mapping_fields(),
+                'credit_targets'  => acf_csv_importer_credit_target_options(),
+            )
+        );
     }
 }

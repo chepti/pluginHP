@@ -3,7 +3,7 @@
  * Plugin Name: ACF CSV Importer
  * Plugin URI:  https://github.com/chepti
  * Description: תוסף לייבוא נתונים מקובץ CSV לפוסטים ושדות ACF. פשוט, מאובטח ומותאם אישית.    
- * Version:     1.2.0
+ * Version:     1.3.0
  * Author:      Chepti
  * Author URI:  https://github.com/chepti
  * License:     GPL2
@@ -18,7 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // הגדרת קבועים של התוסף
-define( 'ACF_CSV_IMPORTER_VERSION', '1.2.0' );
+define( 'ACF_CSV_IMPORTER_VERSION', '1.3.0' );
+define( 'ACF_CSV_IMPORTER_CREDIT_META_KEY', '_acf_csv_importer_credit_text' );
 define( 'ACF_CSV_IMPORTER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ACF_CSV_IMPORTER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -85,6 +86,38 @@ final class ACF_CSV_Importer {
         </div>
         <?php
     }
+}
+
+/**
+ * אפשרויות יעד לשמירת קרדיט טקסטואלי (מטא של התוסף + שדות ACF טקסטואליים)
+ *
+ * @return array<string, string> מפתח => תווית לתצוגה
+ */
+function acf_csv_importer_credit_target_options() {
+    $options = array(
+        '' => __( '— ללא —', 'acf-csv-importer' ),
+    );
+    $options[ ACF_CSV_IMPORTER_CREDIT_META_KEY ] = __( 'מטא של התוסף (מפתח: _acf_csv_importer_credit_text)', 'acf-csv-importer' );
+    if ( function_exists( 'acf_get_field_groups' ) ) {
+        $field_groups = acf_get_field_groups();
+        foreach ( $field_groups as $group ) {
+            $acf_fields = acf_get_fields( $group['ID'] );
+            if ( ! is_array( $acf_fields ) ) {
+                continue;
+            }
+            foreach ( $acf_fields as $field ) {
+                if ( empty( $field['name'] ) ) {
+                    continue;
+                }
+                if ( ! in_array( $field['type'], array( 'text', 'textarea', 'wysiwyg', 'email' ), true ) ) {
+                    continue;
+                }
+                /* translators: 1: field label, 2: field type */
+                $options[ $field['name'] ] = sprintf( '%1$s (%2$s)', $field['label'], $field['type'] );
+            }
+        }
+    }
+    return $options;
 }
 
 /**
